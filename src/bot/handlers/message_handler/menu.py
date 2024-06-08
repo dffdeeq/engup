@@ -7,4 +7,5 @@ router = Router(name=__name__)
 
 @router.callback_query(F.data == 'menu')
 async def menu_callback(callback: types.CallbackQuery):
+    await callback.answer()
     await answer_menu(callback.message)
