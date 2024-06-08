@@ -1,0 +1,18 @@
+services:
+  postgres:
+    container_name: postgres
+    image: "postgres:15.4-alpine3.18"
+    restart: always
+    environment:
+      POSTGRES_USER: ${POSTGRES_SETTINGS_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_SETTINGS_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_SETTINGS_NAME}
+    volumes:
+      - ./data/postgres:/data
+    healthcheck:
+      test: [ "CMD", "pg_isready", "-h", "postgres", "-U", "${POSTGRES_SETTINGS_USER}" ]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    ports:
+      - '5433:5432'
