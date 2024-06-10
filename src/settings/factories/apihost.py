@@ -6,10 +6,12 @@ from src.settings.factory import SettingsFactory
 
 
 class ApiHostSettings(SettingsFactory):
-    auth_token: str = Field(description="Auth token")
+    url: str = Field(description='URL of the Apihost server')
+    auth_token: str = Field(description="Apihost Authorization token")
 
     @classmethod
     def from_dict(cls, settings_dict: T.Dict[str, str]) -> 'ApiHostSettings':
         return ApiHostSettings(
-            auth_token=settings_dict.get('APIHOST_SETTING_AUTH_TOKEN'),
+            url=settings_dict.get('APIHOST_SETTINGS_URL'),
+            auth_token=settings_dict.get('APIHOST_SETTINGS_AUTH_TOKEN'),
         )
