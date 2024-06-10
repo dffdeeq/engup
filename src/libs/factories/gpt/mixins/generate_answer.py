@@ -8,15 +8,13 @@ from src.libs.factories.gpt.routes import GENERATE_ANSWERS
 
 
 class GenerateAnswerMixin(BaseGPTClient):
-    async def generate_answer(
-        self,
-        competence: Competence,
-        text: str
-    ) -> Answer:
-        questions_generate = AnswerGenerate(
-            competence=competence,
-            text=text
+    async def generate_answer(self, competence: Competence, text: str) -> Answer:
+        questions_generate = AnswerGenerate(competence=competence)
+        response = await self.request(
+            'POST',
+            GENERATE_ANSWERS,
+            data={'text': text},
+            params=questions_generate.dict(),
         )
-        response = await self.request('POST', GENERATE_ANSWERS, params=questions_generate.dict())
         print(response.body)
         return Answer(**response.body.get('response'))
