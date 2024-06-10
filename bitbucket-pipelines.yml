@@ -7,4 +7,4 @@ pipelines:
           name: Lint code
           script:
             - pip install flake8
-            - flake8 . --extend-exclude=dist,build,alembic --show-source --statistics
+            - flake8 . --show-source --statistics
