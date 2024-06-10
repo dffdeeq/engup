@@ -18,7 +18,6 @@ logging.basicConfig(
 
 async def set_commands(bot: Bot):
     commands = [
-        BotCommand(command="/start", description="Start the bot"),
         BotCommand(command="/menu", description="Menu"),
     ]
     await bot.set_my_commands(commands)

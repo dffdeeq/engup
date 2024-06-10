@@ -39,12 +39,13 @@ async def speaking_first_step(message: types.Message, state: FSMContext):
         await state.update_data({'current_answer': next_answer_pk})
         await message.answer(text=next_answer)
     else:
+        text = ("Ok! Let's proceed to part 2. Here is your card:\nDescribe an item that someone else lost."
+                "You should say:\n-What the item was.\n-When and where you found it.\n-What you did after you found it"
+                "And explain have you felt about the situation.\n\nYou have 1 minute to prepare. Then record an audio "
+                "up to 2 minutes")
         await state.set_state(SpeakingState.second_step)
         await message.answer(
-            text="Ok! Let's proceed to part 2. Here is your card:\nDescribe an item that someone else lost. "
-                 "You should say:\n-What the item was.\n-When and where you found it.\n-What you did after you found it\n"
-                 "And explain have you felt about the situation.\n\nYou have 1 minute to prepare. Then record an audio "
-                 "up to 2 minutes")
+            text=text)
 
 
 @router.message(SpeakingState.second_step)
@@ -60,7 +61,7 @@ async def speaking_second_step(message: types.Message, state: FSMContext):
 
 
 @router.message(SpeakingState.third_step)
-async def speaking_second_step(message: types.Message, state: FSMContext):
+async def speaking_third_step(message: types.Message, state: FSMContext):
     voice = message.voice
     if voice is None:
         await message.answer(text='Sorry, I couldn\'t find the audio.\n\nPlease, send me an voice message')

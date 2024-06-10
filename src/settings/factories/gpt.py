@@ -7,7 +7,7 @@ from src.settings.factory import SettingsFactory
 
 class GPTSettings(SettingsFactory):
     url: str = Field(description='URL of the GPT server')
-    auth_token: str = Field(description="Authorization token")
+    auth_token: str = Field(description="GPT Authorization token")
 
     @classmethod
     def from_dict(cls, settings_dict: T.Dict[str, str]) -> 'GPTSettings':

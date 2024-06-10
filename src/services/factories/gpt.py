@@ -36,7 +36,8 @@ class GPTService(ServiceFactory):
         user_result_json: T.Optional[dict] = None,
         already_complete: bool = False
     ):
-        await self.repo.associate_user_and_question(user_id, question_id, user_answer_json, user_result_json, already_complete)
+        await self.repo.associate_user_and_question(
+            user_id, question_id, user_answer_json, user_result_json, already_complete)
 
     async def generate_and_save_questions(self, competence, question_number) -> T.List[Question]:
         questions = await self.adapter.gpt_client.generate_question(competence, question_number=question_number)

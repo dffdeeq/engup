@@ -25,7 +25,7 @@ class BaseGPTClient:
         return await self.http_client.request(
             method,
             url,
-            data=data,
+            json_=data,
             headers=headers,
             params=params,
         )

@@ -8,4 +8,4 @@ class SettingsFactory(ABC, BaseModel):
     @classmethod
     @abstractmethod
     def from_dict(cls, settings_dict: T.Dict[str, str]):
-        raise NotImplemented
+        raise NotImplementedError

@@ -25,24 +25,25 @@ class HttpClientResponse:
 
 class HttpClient:
     async def get(
-            self, url: str,
-            headers: T.Optional[T.Dict[str, str]] = None,
-            params: T.Optional[T.Dict[str, T.Any]] = None,
+        self, url: str,
+        headers: T.Optional[T.Dict[str, str]] = None,
+        params: T.Optional[T.Dict[str, T.Any]] = None,
     ) -> HttpClientResponse:
         pass
 
     async def request(
-            self,
-            method: str,
-            url: str,
-            data: T.Optional[T.Dict[str, T.Any]] = None,
-            headers: T.Optional[T.Dict[str, str]] = None,
-            params: T.Optional[T.Dict[str, T.Any]] = None,
+        self,
+        method: str,
+        url: str,
+        data: T.Optional[T.Dict[str, T.Any]] = None,
+        json_: T.Optional[T.Dict[str, T.Any]] = None,
+        headers: T.Optional[T.Dict[str, str]] = None,
+        params: T.Optional[T.Dict[str, T.Any]] = None,
     ) -> HttpClientResponse:
         logger.info(f'Request. Url: {url}')
         try:
             async with aiohttp.ClientSession(headers=headers) as session:
-                async with session.request(method, url, data=data, params=params) as response:
+                async with session.request(method, url, data=data, json=json_, params=params) as response:
                     if response.status >= status.HTTP_400_BAD_REQUEST:
                         content = await response.content.read()
                         error_msg = self._try_fetch_error_msg(content)
@@ -72,10 +73,10 @@ class HttpClient:
         try:
             error_content = json.loads(content.decode('utf-8'))
             error_msg = (
-                    error_content.get('detail')
-                    or error_content.get('message')
-                    or error_content.get('error')
-                    or error_content
+                error_content.get('detail')
+                or error_content.get('message')
+                or error_content.get('error')
+                or error_content
             )
             return error_msg
         except (UnicodeError, JSONDecodeError):

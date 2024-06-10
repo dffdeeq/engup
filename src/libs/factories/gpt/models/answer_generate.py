@@ -5,7 +5,6 @@ from src.libs.factories.gpt.models.competence import Competence
 
 class AnswerGenerate(BaseModel):
     competence: Competence
-    text: str
 
     def dict(self, *args, **kwargs):
         d = super().dict(*args, **kwargs)

@@ -1,6 +1,6 @@
 import typing as T # noqa
 
-from sqlalchemy import select, not_, insert
+from sqlalchemy import select, not_
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.postgres.enums import CompetenceEnum
@@ -22,16 +22,14 @@ class QuestionRepo(RepoFactory):
             user_result_json: T.Optional[dict] = None,
             already_complete: bool = False
     ):
-        stmt = insert(TgUserQuestion).values(
+        await self.insert_one(
+            model=TgUserQuestion,
             user_id=user_id,
             question_id=question_id,
             user_answer_json=user_answer_json,
             user_result_json=user_result_json,
             status=already_complete
         )
-        async with self.session() as session:
-            result = await session.execute(stmt)
-            return result.scalars().first()
 
     async def get_started_question_for_user(self, user_id: int, competence: CompetenceEnum) -> Question:
         subq = select(TgUserQuestion.question_id).where(TgUserQuestion.user_id == user_id, TgUserQuestion.status.is_(False))  # noqa
