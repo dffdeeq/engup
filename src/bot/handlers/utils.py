@@ -8,7 +8,7 @@ async def generate_section(title: str, score: float, enhancements: T.List[Enhanc
     section = f'<b>{title}</b> - {score}'
     if enhancements is []:
         return section + '\n\nThere are no enhancements for this section.'
-    section += '\n\nThere are some enhancements that you can apply:'
+    section += '\n\nThere are some enhancements that you can apply:\n'
     for enhancement in enhancements:
         section += (f'\n{enhancement.basic_suggestion}\n<b>You wrote:</b> {enhancement.source_text}\n'
                     f'<b>Enhanced answer:</b> {enhancement.enhanced_text}\n')
