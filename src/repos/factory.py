@@ -37,7 +37,7 @@ class RepoFactory:
                 return instances.scalars().all()
 
     async def update_many(self, conditions: T.Dict[str, T.Any], values: T.Dict[str, T.Any]) -> int:
-        async with (self.session() as session):
+        async with self.session() as session:
             async with session.begin():
                 stmt = update(self.model).where(
                     *[getattr(self.model, k) == v for k, v in conditions.items()]
