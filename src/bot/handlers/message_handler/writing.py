@@ -4,6 +4,7 @@ import json
 
 from aiogram import Router, types, F
 from aiogram.fsm.context import FSMContext
+from pydantic import ValidationError
 
 from src.bot.core.states import WritingState
 from src.bot.handlers.utils import answer_to_message_parts
@@ -60,7 +61,7 @@ async def writing_get_user_answer(
 
     try:
         user_result = await gpt_service.get_answer(text=user_answer_text, competence=CompetenceEnum.writing)
-    except TypeError:
+    except (TypeError, ValidationError):
         await message.answer(text='GPT Service validation error. Please try again.')
         await state.clear()
         return

@@ -1,13 +1,17 @@
 import typing as T  # noqa
 
 from src.libs.factories.gpt.models.answer import Answer
+from src.libs.factories.gpt.models.suggestion import Enhancement
 
 
-async def generate_section(title: str, score: float, enhancements: T.List[dict]) -> str:
-    section = f'<b>{title}</b> - {score}\n\nThere are some enhancements that you can apply:'
+async def generate_section(title: str, score: float, enhancements: T.List[Enhancement]) -> str:
+    section = f'<b>{title}</b> - {score}'
+    if enhancements is []:
+        return section + '\n\nThere are no enhancements for this section.'
+    section += '\n\nThere are some enhancements that you can apply:'
     for enhancement in enhancements:
-        section += (f'\n{enhancement["basic_suggestion"]}\n<b>You wrote:</b> {enhancement["source_text"]}\n'
-                    f'<b>Enhanced answer:</b> {enhancement["enhanced_text"]}\n')
+        section += (f'\n{enhancement.basic_suggestion}\n<b>You wrote:</b> {enhancement.source_text}\n'
+                    f'<b>Enhanced answer:</b> {enhancement.enhanced_text}\n')
     return section
 
 
