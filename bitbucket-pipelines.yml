@@ -1,0 +1,10 @@
+image: python:3.8
+
+pipelines:
+  default:
+    - parallel:
+      - step:
+          name: Lint code
+          script:
+            - pip install flake8
+            - flake8 . --extend-exclude=dist,build --show-source --statistics
