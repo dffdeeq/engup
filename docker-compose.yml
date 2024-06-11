@@ -21,6 +21,8 @@ services:
     container_name: engup_api
     build: .
     command: python run_api.py
+    ports:
+      - '8000:8000'
 
   engup_tgbot:
     container_name: engup_tgbot
