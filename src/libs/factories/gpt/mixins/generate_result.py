@@ -1,14 +1,14 @@
 import typing as T # noqa
 
 from src.libs.factories.gpt.base import BaseGPTClient
-from src.libs.factories.gpt.models.answer import Answer
 from src.libs.factories.gpt.models.answer_generate import AnswerGenerate
 from src.libs.factories.gpt.models.competence import Competence
+from src.libs.factories.gpt.models.result import Result
 from src.libs.factories.gpt.routes import GENERATE_ANSWERS
 
 
-class GenerateAnswerMixin(BaseGPTClient):
-    async def generate_answer(self, competence: Competence, text: str) -> Answer:
+class GenerateResultMixin(BaseGPTClient):
+    async def generate_result(self, competence: Competence, text: str) -> Result:
         questions_generate = AnswerGenerate(competence=competence)
         response = await self.request(
             'POST',
@@ -17,4 +17,4 @@ class GenerateAnswerMixin(BaseGPTClient):
             params=questions_generate.dict(),
         )
         print(response.body)
-        return Answer(**response.body.get('response'))
+        return Result(**response.body.get('response'))

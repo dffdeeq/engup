@@ -1,14 +1,14 @@
 import typing as T # noqa
 
 from src.libs.factories.gpt.base import BaseGPTClient
-from src.libs.factories.gpt.mixins.generate_answer import GenerateAnswerMixin
+from src.libs.factories.gpt.mixins.generate_result import GenerateResultMixin
 from src.libs.factories.gpt.mixins.generate_questions import GenerateQuestionsMixin
 from src.libs.http_client import HttpClient
 from src.settings import GPTSettings
 
 
 class GPTClient(
-    GenerateAnswerMixin,
+    GenerateResultMixin,
     GenerateQuestionsMixin,
     BaseGPTClient
 ):
