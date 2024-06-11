@@ -1,6 +1,7 @@
 import logging
 
-from fastapi import FastAPI, Request
+from fastapi import FastAPI
+from src.api.router import router
 
 
 logging.basicConfig(
@@ -10,13 +11,7 @@ logging.basicConfig(
 
 
 app = FastAPI()
-
-
-@app.post("/webhook")
-async def webhook(request: Request):
-    payload = await request.json()
-    logging.info(payload)
-    return {"status": "success"}
+app.include_router(router)
 
 
 if __name__ == "__main__":
