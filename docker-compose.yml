@@ -17,6 +17,11 @@ services:
     ports:
       - '5433:5432'
 
+  engup_api:
+    container_name: engup_api
+    build: .
+    command: python run_api.py
+
   engup_tgbot:
     container_name: engup_tgbot
     build: .
