@@ -1,28 +1,27 @@
-import typing as T # noqa
+import typing as T  # noqa
 
-from sqlalchemy import select, not_
-from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select, not_, and_
+from sqlalchemy.ext.asyncio import async_sessionmaker
 
 from src.postgres.enums import CompetenceEnum
 from src.postgres.models.question import Question
 from src.postgres.models.tg_user_question import TgUserQuestion
 from src.repos.factory import RepoFactory
-from sqlalchemy.future import select as future_select
 
 
 class QuestionRepo(RepoFactory):
-    def __init__(self, model: T.Type[Question], session: AsyncSession):
-        super().__init__(model, session) # noqa
+    def __init__(self, model: T.Type[Question], session: async_sessionmaker):
+        super().__init__(model, session)  # noqa
 
-    async def associate_user_and_question(
-            self,
-            user_id: int,
-            question_id: int,
-            user_answer_json: T.Optional[dict] = None,
-            user_result_json: T.Optional[dict] = None,
-            already_complete: bool = False
+    async def link_user_with_question(
+        self,
+        user_id: int,
+        question_id: int,
+        user_answer_json: T.Optional[dict] = None,
+        user_result_json: T.Optional[dict] = None,
+        already_complete: bool = False
     ):
-        await self.insert_one(
+        instance = await self.insert_one(
             model=TgUserQuestion,
             user_id=user_id,
             question_id=question_id,
@@ -30,17 +29,32 @@ class QuestionRepo(RepoFactory):
             user_result_json=user_result_json,
             status=already_complete
         )
+        return instance
 
-    async def get_started_question_for_user(self, user_id: int, competence: CompetenceEnum) -> Question:
-        subq = select(TgUserQuestion.question_id).where(TgUserQuestion.user_id == user_id, TgUserQuestion.status.is_(False))  # noqa
-        stmt = future_select(Question).where(Question.id.in_(subq), Question.competence == competence, Question.is_active.is_(True))  # noqa
-        async with self.session() as session:
-            result = await session.execute(stmt)
-            return result.scalars().first()
+    async def get_question_for_user(self, user_id: int, competence: CompetenceEnum) -> Question:
+        """
+        Returns the question associated with the given user and competence if available.
 
-    async def get_new_question_for_user(self, user_id: int, competence: CompetenceEnum) -> Question:
-        subq = select(TgUserQuestion.question_id).where(TgUserQuestion.user_id == user_id)  # noqa
-        stmt = future_select(Question).where(not_(Question.id.in_(subq)), Question.competence == competence, Question.is_active.is_(True))  # noqa
+        Checks if there's a question already started for the user. If found, returns it.
+        If no started question exists, retrieves another question based on competence.
+
+        If neither started nor available questions exist, returns None.
+
+        :param user_id: The ID of the user for whom to retrieve the question.
+        :param competence: The lesson section (competence) for which to retrieve the question, e.g., 'writing', etc.
+        :return: A Question object if found, otherwise None.
+        """
+        subq = select(TgUserQuestion.question_id).where(
+            and_(TgUserQuestion.user_id == user_id, TgUserQuestion.status.is_(True))
+        )
+        stmt = select(Question).where(
+            not_(Question.id.in_(subq)),
+            and_(Question.competence == competence, Question.is_active.is_(True))
+        ).outerjoin(
+            TgUserQuestion,
+            and_(TgUserQuestion.user_id == user_id, TgUserQuestion.question_id == Question.id)
+        ).order_by(TgUserQuestion.status.desc())
+
         async with self.session() as session:
             result = await session.execute(stmt)
             return result.scalars().first()
