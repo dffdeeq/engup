@@ -1,8 +1,8 @@
-"""empty message
+"""initial
 
-Revision ID: 3efe4c2d7984
+Revision ID: 8fa9a70960c3
 Revises: 
-Create Date: 2024-06-06 19:16:56.321789
+Create Date: 2024-06-11 13:21:25.084351
 
 """
 from typing import Sequence, Union
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision: str = '3efe4c2d7984'
+revision: str = '8fa9a70960c3'
 down_revision: Union[str, None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -29,15 +29,14 @@ def upgrade() -> None:
     sa.PrimaryKeyConstraint('id')
     )
     op.create_table('tg_user',
-    sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),
-    sa.Column('tg_id', sa.BigInteger(), nullable=False),
-    sa.Column('username', sa.String(), nullable=False),
+    sa.Column('id', sa.BigInteger(), nullable=False),
+    sa.Column('username', sa.String(), nullable=True),
     sa.Column('created_at', sa.DateTime(timezone=True), nullable=True),
     sa.PrimaryKeyConstraint('id')
     )
     op.create_table('tg_user_question',
     sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),
-    sa.Column('user_id', sa.Integer(), nullable=False),
+    sa.Column('user_id', sa.BigInteger(), nullable=False),
     sa.Column('question_id', sa.Integer(), nullable=False),
     sa.Column('status', sa.Boolean(), nullable=True),
     sa.Column('start_timestamp', sa.DateTime(), nullable=True),
