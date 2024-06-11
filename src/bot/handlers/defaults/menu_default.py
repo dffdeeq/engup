@@ -7,8 +7,13 @@ from aiogram.utils.keyboard import InlineKeyboardBuilder
 async def get_menu() -> T.Tuple[str, InlineKeyboardBuilder]:
     text = 'Please select a test to practice'
     builder = InlineKeyboardBuilder([
-        [InlineKeyboardButton(text='Speaking', callback_data='speaking')],
-        [InlineKeyboardButton(text='Writing', callback_data='writing')]
+        [
+            InlineKeyboardButton(text='Speaking', callback_data='speaking'),
+            InlineKeyboardButton(text='Writing', callback_data='writing')
+         ],
+        [
+            InlineKeyboardButton(text='Pricing', callback_data='pricing')
+        ],
     ])
     return text, builder
 
