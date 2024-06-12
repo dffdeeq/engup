@@ -1,12 +1,12 @@
 import typing as T  # noqa
 
-from src.libs.factories.gpt.models.answer import Answer
+from src.libs.factories.gpt.models.result import Result
 from src.libs.factories.gpt.models.suggestion import Enhancement
 
 
 async def generate_section(title: str, score: float, enhancements: T.List[Enhancement]) -> str:
     section = f'<b>{title}</b> - {score}'
-    if enhancements is []:
+    if not enhancements:
         return section + '\n\nThere are no enhancements for this section.'
     section += '\n\nThere are some enhancements that you can apply:\n'
     for enhancement in enhancements:
@@ -15,8 +15,9 @@ async def generate_section(title: str, score: float, enhancements: T.List[Enhanc
     return section
 
 
-async def answer_to_message_parts(answer: Answer) -> T.Tuple[str, ...]:
+async def answer_parts_async_generator(answer: Result) -> T.AsyncGenerator[str, None]:
     overall_score = f'Your <b>IELTS</b> writing <b>score</b> is <b>{answer.overall_score}</b>'
+    yield overall_score
 
     criteria_titles = [
         "Task Response",
@@ -32,9 +33,6 @@ async def answer_to_message_parts(answer: Answer) -> T.Tuple[str, ...]:
         answer.competence_results.grammatical_range
     ]
 
-    sections = [overall_score]
     for title, result in zip(criteria_titles, criteria_results):
         section = await generate_section(title, result.score, result.enhancements)
-        sections.append(section)
-
-    return tuple(sections)
+        yield section

@@ -8,7 +8,7 @@ from src.libs.factories.gpt.routes import GENERATE_QUESTIONS
 
 
 class GenerateQuestionsMixin(BaseGPTClient):
-    async def generate_question(
+    async def generate_questions(
         self,
         competence: Competence,
         question_number: int

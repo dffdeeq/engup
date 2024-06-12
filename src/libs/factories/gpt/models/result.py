@@ -4,7 +4,7 @@ from pydantic import BaseModel
 from src.libs.factories.gpt.models.competence_result import CompetenceResults
 
 
-class Answer(BaseModel):
+class Result(BaseModel):
     overall_score: float
     competence_results: CompetenceResults
     vocabulary: T.List[str]
