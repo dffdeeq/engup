@@ -4,7 +4,7 @@ from src.libs.adapter import Adapter
 from src.repos.factories.question import QuestionRepo
 from src.postgres.enums import CompetenceEnum
 from src.postgres.models.question import Question
-from src.libs.factories.gpt.models.question import Question as QuestionEnum
+from src.libs.factories.gpt.models.question import Question as QuestionModel
 
 
 class QuestionGenerationMixin:
@@ -26,7 +26,7 @@ class QuestionGenerationMixin:
         return question
 
     @staticmethod
-    async def serialize_questions(questions: T.List[QuestionEnum], competence: CompetenceEnum) -> T.List[T.Dict]:
+    async def serialize_questions(questions: T.List[QuestionModel], competence: CompetenceEnum) -> T.List[T.Dict]:
         return [{
             'competence': competence,
             'question_json': question.model_dump_json(),

@@ -1,3 +1,4 @@
+import logging
 import typing as T  # noqa
 
 from src.libs.adapter import Adapter
@@ -15,13 +16,13 @@ class ResultMixin:
         answer = await self.adapter.gpt_client.generate_result(text=text, competence=competence)
         return answer
 
-    async def try_generate_result(self, text: str, competence: CompetenceEnum, attempts: int) -> T.Optional[Result]:
+    async def try_generate_result(self, text: str, competence: CompetenceEnum, attempts: int = 3) -> T.Optional[Result]:
         for attempt in range(attempts):
             try:
                 answer = await self._generate_result(text, competence)
                 return answer
             except (TypeError, ValidationError) as e:
-                print(f"Attempt {attempt + 1} failed: {e}")
+                logging.debug(f"Attempt {attempt + 1} failed: {e}")
                 await asyncio.sleep(2)
         return None
 

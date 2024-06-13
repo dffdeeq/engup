@@ -34,7 +34,7 @@ class RepoFactory:
         async with self.session() as session:
             async with session.begin():
                 instances = await session.execute(insert(self.model).values(*args).returning(self.model))
-                return instances.scalars().all()
+                return list(instances.scalars().all())
 
     async def update_many(self, conditions: T.Dict[str, T.Any], values: T.Dict[str, T.Any]) -> int:
         async with self.session() as session:
@@ -63,7 +63,7 @@ class RepoFactory:
             async with session.begin():
                 stmt = select(self.model).where(*[getattr(self.model, k) == v for k, v in conditions.items()])
                 result = await session.execute(stmt)
-                return result.scalars().all()
+                return list(result.scalars().all())
 
     async def delete_many(self, **conditions: T.Any) -> int:
         async with self.session() as session:

@@ -4,7 +4,7 @@ class Messages:
 
 
 class Constants:
-    TG_CHANNEL_LINK = "https://t.me/engupclub"
+    TG_CHANNEL_LINK = "https://t.me/IELTS_TEST_EXAM"
 
 
 class MessageTemplates:
