@@ -53,7 +53,7 @@ class QuestionRepo(RepoFactory):
         ).outerjoin(
             TgUserQuestion,
             and_(TgUserQuestion.user_id == user_id, TgUserQuestion.question_id == Question.id)
-        ).order_by(TgUserQuestion.status.desc())
+        ).order_by(TgUserQuestion.status)
 
         async with self.session() as session:
             result = await session.execute(stmt)
