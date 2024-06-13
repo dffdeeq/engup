@@ -6,6 +6,7 @@ from src.settings.factories.apihost import ApiHostSettings
 from src.settings.factories.bot import BotSettings
 from src.settings.factories.gpt import GPTSettings
 from src.settings.factories.postgres import PostgresSettings
+from src.settings.factories.rabbitmq import RabbitMQSettings
 
 
 class Settings(BaseModel):
@@ -13,6 +14,7 @@ class Settings(BaseModel):
     postgres: PostgresSettings
     apihost: ApiHostSettings
     gpt: GPTSettings
+    rabbitmq: RabbitMQSettings
 
     @classmethod
     def new(cls) -> 'Settings':
@@ -24,4 +26,5 @@ class Settings(BaseModel):
             apihost=ApiHostSettings.from_dict(settings_dict),
             postgres=PostgresSettings.from_dict(settings_dict),
             gpt=GPTSettings.from_dict(settings_dict),
+            rabbitmq=RabbitMQSettings.from_dict(settings_dict),
         )
