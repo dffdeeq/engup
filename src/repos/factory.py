@@ -1,8 +1,8 @@
 import logging
 import typing as T # noqa
 
-from sqlalchemy import delete, update, select, insert
-from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy import delete, update, insert
+from sqlalchemy.exc import SQLAlchemyError, IntegrityError
 from sqlalchemy.ext.asyncio import async_sessionmaker
 
 from src.postgres.base import Base
@@ -25,6 +25,12 @@ class RepoFactory:
                     await session.flush()
                     await session.refresh(instance)
                     return instance
+                except IntegrityError:
+                    await session.rollback()
+                    logging.info(
+                        f"Duplicate entry for {model.__name__} "
+                        f"(user_id={kwargs.get('user_id')} question_id={kwargs.get('question_id')})"
+                    )
                 except SQLAlchemyError as e:
                     await session.rollback()
                     logging.error(f"Error inserting {model.__name__}: {e}")
@@ -36,34 +42,21 @@ class RepoFactory:
                 instances = await session.execute(insert(self.model).values(*args).returning(self.model))
                 return list(instances.scalars().all())
 
-    async def update_many(self, conditions: T.Dict[str, T.Any], values: T.Dict[str, T.Any]) -> int:
+    async def update_many(self, conditions: T.Dict[str, T.Any], values: T.Dict[str, T.Any], **kwargs) -> int:
+        model = kwargs.pop('model', self.model)
         async with self.session() as session:
             async with session.begin():
-                stmt = update(self.model).where(
-                    *[getattr(self.model, k) == v for k, v in conditions.items()]
+                stmt = update(model).where(
+                    *[getattr(model, k) == v for k, v in conditions.items()]
                 ).values(values)
                 try:
                     result = await session.execute(stmt)
                     await session.commit()
-                    return result.rowcount()
+                    return result.rowcount  # noqa
                 except SQLAlchemyError as e:
                     await session.rollback()
-                    logging.error(f"Error updating {self.model.__name__}: {e}")
+                    logging.error(f"Error updating {model.__name__}: {e}")
                     raise
-
-    async def get_one(self, **conditions: T.Any) -> T.Optional[Model]:
-        async with self.session() as session:
-            async with session.begin():
-                stmt = select(self.model).where(*[getattr(self.model, k) == v for k, v in conditions.items()])
-                result = await session.execute(stmt)
-                return result.scalars().first()
-
-    async def get_many(self, **conditions: T.Any) -> T.List[Model]:
-        async with self.session() as session:
-            async with session.begin():
-                stmt = select(self.model).where(*[getattr(self.model, k) == v for k, v in conditions.items()])
-                result = await session.execute(stmt)
-                return list(result.scalars().all())
 
     async def delete_many(self, **conditions: T.Any) -> int:
         async with self.session() as session:
