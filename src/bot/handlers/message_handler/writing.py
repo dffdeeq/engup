@@ -23,6 +23,7 @@ async def writing_start(callback: types.CallbackQuery, state: FSMContext, gpt_se
 
     await state.set_state(WritingState.get_user_answer)
     await state.set_data({'question_id': question.id, 'card_body': card_body})
+    await gpt_service.link_user_with_question(user_id=callback.from_user.id, question_id=question.id)
 
     text = MessageTemplates.CARD_TEXT_TEMPLATE.format(card_title=card_title, card_body=card_body)
     await callback.message.edit_text(text=text)
@@ -45,7 +46,7 @@ async def writing_get_user_answer(message: types.Message, state: FSMContext, gpt
         await message.answer(text=Messages.ASSESSMENT_FAILURE)
         return
 
-    await gpt_service.link_user_with_question(
+    await gpt_service.update_user_question(
         user_id=message.from_user.id,
         question_id=int(question_id),
         user_answer_json=user_answer_json,
