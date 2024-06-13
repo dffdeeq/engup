@@ -1,6 +1,6 @@
-from pydantic import BaseModel
+import typing as T  # noqa
+from pydantic import RootModel
 
 
-class Question(BaseModel):
-    card_title: str
-    card_body: str
+class Question(RootModel[T.Dict[str, T.Any]]):
+    pass
