@@ -15,7 +15,7 @@ from src.services.factories.gpt import GPTService
 router = Router(name=__name__)
 
 
-@router.callback_query(F.data == 'writing', INJECTOR.inject_tg_bot, INJECTOR.inject_gpt)
+@router.callback_query(F.data == 'writing', INJECTOR.inject_gpt)
 async def writing_start(callback: types.CallbackQuery, state: FSMContext, gpt_service: GPTService):
     question = await gpt_service.get_or_generate_question_for_user(callback.from_user.id, CompetenceEnum.writing)
     question_json: T.Dict = json.loads(question.question_json)
@@ -28,7 +28,7 @@ async def writing_start(callback: types.CallbackQuery, state: FSMContext, gpt_se
     await callback.message.edit_text(text=text)
 
 
-@router.message(WritingState.get_user_answer, INJECTOR.inject_tg_bot, INJECTOR.inject_gpt)
+@router.message(WritingState.get_user_answer, INJECTOR.inject_gpt)
 async def writing_get_user_answer(message: types.Message, state: FSMContext, gpt_service: GPTService):
     user_answer = message.text
     if len(user_answer.split()) < 150:
