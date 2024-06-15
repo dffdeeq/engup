@@ -7,15 +7,15 @@ from aiogram.types import Voice
 from sqlalchemy.ext.asyncio import async_sessionmaker
 
 from src.libs.adapter import Adapter
-from src.postgres.models.tg_user import TgUser
-from src.repos.factories.user import TgUserRepo
+from src.postgres.models.temp_data import TempData
+from src.repos.factories.question import QuestionRepo
 from src.services.factory import ServiceFactory
 from src.settings import Settings
 from src.settings.static import TEMP_FILES_DIR
 
 
-class TgBotService(ServiceFactory):
-    def __init__(self, repo: TgUserRepo, adapter: Adapter, session: async_sessionmaker, settings: Settings) -> None:
+class VoiceService(ServiceFactory):
+    def __init__(self, repo: QuestionRepo, adapter: Adapter, session: async_sessionmaker, settings: Settings) -> None:
         super().__init__(repo, adapter, session, settings)
         self.repo = repo
 
@@ -36,8 +36,20 @@ class TgBotService(ServiceFactory):
         with open(filename, 'wb') as f:
             f.write(file.read())
 
-    async def get_or_create_tg_user(self, user_id: int, username: T.Optional[str] = None) -> TgUser:
-        user = await self.repo.get_tg_user_by_tg_id(user_id=user_id)
-        if not user:
-            user = await self.repo.create_tg_user(user_id=user_id, username=username)
-        return user
+    async def insert_into_temp_data(
+        self,
+        tg_user_question_id: int,
+        first_file_name: str,
+        first_part_questions: T.List[str],
+        second_part_question: str,
+        third_part_questions: T.List[str],
+    ) -> TempData:
+        instance = await self.repo.insert_one(
+            model=TempData,
+            tg_user_question_id=tg_user_question_id,
+            first_file_name=first_file_name,
+            first_part_questions=first_part_questions,
+            second_part_question=second_part_question,
+            third_part_questions=third_part_questions
+        )
+        return instance

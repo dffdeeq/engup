@@ -1,80 +1,131 @@
+import os.path
+import typing as T  # noqa
+import json
+
 from aiogram import Router, types, F
 from aiogram.fsm.context import FSMContext
-from aiogram.types import InlineKeyboardButton
-from aiogram.utils.keyboard import InlineKeyboardBuilder
 
 from src.bot.core.states import SpeakingState
+from src.bot.handlers.constants import SpeakingMessages
+from src.bot.injector import INJECTOR
+from src.postgres.enums import CompetenceEnum
+from src.rabbitmq.producer.factories.apihost import ApiHostProducer
+from src.services.factories.gpt import GPTService
+from src.services.factories.voice import VoiceService
 
 router = Router(name=__name__)
 
 
-first_step_answers = {
-    'answers': ['What do you do for living?', 'What is your hobby?']
-}
-
-
-@router.callback_query(F.data == 'speaking')
-async def speaking_start(callback: types.CallbackQuery, state: FSMContext):
+@router.callback_query(F.data == 'speaking', INJECTOR.inject_gpt)
+async def speaking_start(callback: types.CallbackQuery, state: FSMContext, gpt_service: GPTService):
     await callback.answer()
-    await state.set_state(SpeakingState.first_step)
-    await state.set_data({'answers': first_step_answers['answers'], 'current_answer': 0})
+    question = await gpt_service.get_or_generate_question_for_user(callback.from_user.id, CompetenceEnum.speaking)
+    linked_id = await gpt_service.link_user_with_question(callback.from_user.id, question.id)
+    question_json: T.Dict = json.loads(question.question_json)
+    await state.set_state(SpeakingState.first_part)
+    await state.set_data({
+        'part_1_questions': question_json['part_1'],
+        'part_2_question': question_json['part_2'],
+        'part_3_questions': question_json['part_3'],
+        'part_1_current_question': 0,
+        'part_1_q_0': question_json['part_1'][0],
+        'linked_id': linked_id,
+    })
 
-    await callback.message.answer(text='Great! I will ask you some questions. Please record audio to answer them')
-    await callback.message.answer(text="Let's start with part 1")
-    await callback.message.answer(text=first_step_answers['answers'][0])
+    await callback.message.answer(text=SpeakingMessages.FIRST_PART_MESSAGE_1)
+    await callback.message.answer(text=SpeakingMessages.FIRST_PART_MESSAGE_2)
+    await callback.message.answer(text=question_json['part_1'][0])
 
 
-@router.message(SpeakingState.first_step)
-async def speaking_first_step(message: types.Message, state: FSMContext):
+@router.message(SpeakingState.first_part, INJECTOR.inject_voice)
+async def speaking_first_part(message: types.Message, state: FSMContext, voice_service: VoiceService):
     voice = message.voice
     if voice is None:
-        await message.answer(text='Sorry, I couldn\'t find the audio.\n\nPlease, send me an voice message')
+        await message.answer(text=SpeakingMessages.COULDNT_FIND_AUDIO)
         return
 
     state_data = await state.get_data()
-    next_answer_pk = int(state_data['current_answer']) + 1
+    current_question_pk = int(state_data['part_1_current_question'])
 
-    if next_answer_pk < len(state_data['answers']):
-        next_answer = state_data['answers'][next_answer_pk]
-        await state.update_data({'current_answer': next_answer_pk})
-        await message.answer(text=next_answer)
+    filepath = voice_service.save_user_voicemail(voice, message.bot)
+    await state.update_data({f'part_1_q_{current_question_pk}_file': filepath})
+
+    next_question_pk = int(state_data['part_1_current_question']) + 1
+
+    if next_question_pk < len(state_data['part_1_questions']):
+        next_question = state_data['part_1_questions'][next_question_pk]
+        await state.update_data({
+            'part_1_current_question': next_question_pk,
+            f'part_1_q_{next_question_pk}': next_question
+        })
+        await message.answer(text=next_question)
     else:
-        text = ("Ok! Let's proceed to part 2. Here is your card:\nDescribe an item that someone else lost."
-                "You should say:\n-What the item was.\n-When and where you found it.\n-What you did after you found it"
-                "And explain have you felt about the situation.\n\nYou have 1 minute to prepare. Then record an audio "
-                "up to 2 minutes")
-        await state.set_state(SpeakingState.second_step)
-        await message.answer(
-            text=text)
+        part_2_question = state_data['part_2_question']
+        await state.update_data({'part_2_q_0': part_2_question})
+        text = SpeakingMessages.SECOND_PART_MESSAGE.format(question=part_2_question)
+        await state.set_state(SpeakingState.second_part)
+        await message.answer(text=text)
 
 
-@router.message(SpeakingState.second_step)
-async def speaking_second_step(message: types.Message, state: FSMContext):
+@router.message(SpeakingState.second_part, INJECTOR.inject_voice)
+async def speaking_second_part(message: types.Message, state: FSMContext, voice_service: VoiceService):
     voice = message.voice
     if voice is None:
-        await message.answer(text='Sorry, I couldn\'t find the audio.\n\nPlease, send me an voice message')
+        await message.answer(text=SpeakingMessages.COULDNT_FIND_AUDIO)
         return
 
-    await state.set_state(SpeakingState.third_step)
-    await message.answer(text="Great! Let's continue to the part 3")
-    await message.answer(text="What's kind of people tend to lose things more often than others?")
+    filename = await voice_service.save_user_voicemail(voice, message.bot)
+    current_question = (await state.get_data())['part_3_questions'][0]
+    await state.update_data({
+        'part_2_q_0_file': filename,
+        'part_3_current_question': 0,
+        'part_3_q_0': current_question
+    })
+
+    await state.set_state(SpeakingState.third_part)
+    await message.answer(text=SpeakingMessages.THIRD_PART_MESSAGE)
+    await message.answer(text=current_question)
 
 
-@router.message(SpeakingState.third_step)
-async def speaking_third_step(message: types.Message, state: FSMContext):
+@router.message(SpeakingState.third_part, INJECTOR.inject_voice, INJECTOR.inject_apihost_producer)
+async def speaking_third_part(
+    message: types.Message,
+    state: FSMContext,
+    voice_service: VoiceService,
+    apihost_producer: ApiHostProducer
+):
     voice = message.voice
     if voice is None:
-        await message.answer(text='Sorry, I couldn\'t find the audio.\n\nPlease, send me an voice message')
+        await message.answer(text=SpeakingMessages.COULDNT_FIND_AUDIO)
         return
 
-    await state.clear()
+    state_data = await state.get_data()
+    current_question_pk = int(state_data['part_3_current_question'])
 
-    builder = InlineKeyboardBuilder([
-        [InlineKeyboardButton(text='Another test', callback_data='speaking'),
-         InlineKeyboardButton(text='Main menu', callback_data='menu')],
-    ])
+    filepath = voice_service.save_user_voicemail(voice, message.bot)
+    await state.update_data({f'part_3_q_{current_question_pk}_file': filepath})
 
-    await message.answer(
-        text="Ok! We've finished!\n\nYou result is amazing: you scored 7 in IELTS\n\nThere are some enhancements "
-             "that you can apply in the future:\n - 1. ...\n - 2. ...\n\n...", reply_markup=builder.as_markup()
-    )
+    next_question_pk = int(state_data['part_3_current_question']) + 1
+
+    if next_question_pk < len(state_data['part_3_questions']):
+        next_question = state_data['part_3_questions'][next_question_pk]
+        await state.update_data({
+            'part_3_current_question': next_question_pk,
+            f'part_3_q_{next_question_pk}': next_question
+        })
+        await message.answer(text=next_question)
+    else:
+        for i in range(len(state_data['part_1_questions']) + len(state_data['part_3_questions']) - 1):  # *with part2
+            print(i)
+
+        filepaths = []
+        await voice_service.insert_into_temp_data(
+            tg_user_question_id=state_data['linked_id'],
+            first_file_name=os.path.basename(state_data['part_1_q_0']),
+            first_part_questions=state_data['part_1_questions'],
+            second_part_question=state_data['part_2_question'],
+            third_part_questions=state_data['part_3_questions'],
+        )
+        await apihost_producer.send_to_transcription(filepaths)
+        await state.clear()
+        await message.answer(text=SpeakingMessages.CALCULATING_RESULT)

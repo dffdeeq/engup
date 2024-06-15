@@ -2,9 +2,9 @@ from aiogram.fsm.state import State, StatesGroup
 
 
 class SpeakingState(StatesGroup):
-    first_step = State()
-    second_step = State()
-    third_step = State()
+    first_part = State()
+    second_part = State()
+    third_part = State()
 
 
 class WritingState(StatesGroup):

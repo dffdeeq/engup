@@ -3,6 +3,19 @@ class Messages:
     ASSESSMENT_FAILURE = "Sorry, but we could not assess your text, please try again with another card."
 
 
+class SpeakingMessages:
+    FIRST_PART_MESSAGE_1 = "Great! I will ask you some questions. Please record audio to answer them"
+    FIRST_PART_MESSAGE_2 = "Let's start with part 1"
+    COULDNT_FIND_AUDIO = 'Sorry, I couldn\'t find the audio.\n\nPlease, send me an voice message'
+    SECOND_PART_MESSAGE = ("Ok! Let's proceed to <b>part 2</b>. Here is your card:\n\n<b>{question}</b>\n\n"
+                           "You have 1 minute to prepare. Then record an audio up to 2 minutes")
+
+    THIRD_PART_MESSAGE = "Great! Let's continue to the part 3"
+
+    CALCULATING_RESULT = ("Your result is being calculated and may take a couple of minutes.\n"
+                          "We'll send it to you as soon as it's ready.")
+
+
 class Constants:
     TG_CHANNEL_LINK = "https://t.me/IELTS_TEST_EXAM"
 
