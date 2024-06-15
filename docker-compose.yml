@@ -8,7 +8,7 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_SETTINGS_PASSWORD}
       POSTGRES_DB: ${POSTGRES_SETTINGS_NAME}
     volumes:
-      - ./data/postgres:/data
+      - ./data/postgresql:/var/lib/postgresql/data
     healthcheck:
       test: [ "CMD", "pg_isready", "-h", "postgres", "-U", "${POSTGRES_SETTINGS_USER}" ]
       interval: 10s
@@ -27,7 +27,7 @@ services:
     ports:
       - '5672:5672'
     volumes:
-      - ./data/rabbitmq:/data
+      - ./data/rabbitmq:/var/lib/rabbitmq
     healthcheck:
       test: [ "CMD", "rabbitmqctl", "ping" ]
       interval: 10s
