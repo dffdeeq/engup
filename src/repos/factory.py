@@ -19,22 +19,17 @@ class RepoFactory:
         model = kwargs.pop('model', self.model)
         async with self.session() as session:
             async with session.begin():
-                instance = model(**kwargs)
-                session.add(instance)
                 try:
+                    existing_instance = await session.execute(select(model).filter_by(**kwargs))
+                    existing_instance = existing_instance.scalar_one_or_none()
+                    if existing_instance:
+                        return existing_instance
+
+                    instance = model(**kwargs)
+                    session.add(instance)
                     await session.flush()
                     await session.refresh(instance)
                     return instance
-                except IntegrityError:
-                    await session.rollback()
-                    logging.info(
-                        f"Duplicate entry for {model.__name__} "
-                        f"(user_id={kwargs.get('user_id')} question_id={kwargs.get('question_id')})"
-                    )
-                    existing_instance = await session.execute(
-                        select(model).filter_by(**kwargs)
-                    )
-                    return existing_instance.scalar_one_or_none()
                 except SQLAlchemyError as e:
                     await session.rollback()
                     logging.error(f"Error inserting {model.__name__}: {e}")
