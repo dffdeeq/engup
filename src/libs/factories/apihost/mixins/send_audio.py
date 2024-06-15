@@ -5,16 +5,16 @@ from pathlib import Path
 import aiohttp
 
 from src.libs.factories.apihost.base import BaseApiHostClient
-from src.libs.factories.apihost.models.STTText import STTText
-from src.libs.factories.apihost.routes import SPEECH_TO_TEXT_ROUTE
+from src.libs.factories.apihost.models.transcription_response import TranscriptionResponse
+from src.libs.factories.apihost.routes import SEND_FILES_TO_TRANSCRIPTION
 
 
-class SpeechToTextMixin(BaseApiHostClient):
-    async def speech_to_text(
-        self,
-        filepath: str | Path,
-    ) -> STTText:
+class SendAudioToTranscriptionMixin(BaseApiHostClient):
+    async def send_files_to_transcription(self, filepaths: T.List[str | Path],) -> TranscriptionResponse:
         data = aiohttp.FormData()
-        data.add_field('file', open(filepath, 'rb'), filename=os.path.basename(filepath))
-        response = await self.request('POST', SPEECH_TO_TEXT_ROUTE, data=data)
-        return STTText(**response.body)
+        for filepath in filepaths:
+            with open(filepath, 'rb') as file:
+                data.add_field('files', file, filename=os.path.basename(filepath))
+
+        response = await self.request('POST', SEND_FILES_TO_TRANSCRIPTION, data=data)
+        return TranscriptionResponse(**response.body)

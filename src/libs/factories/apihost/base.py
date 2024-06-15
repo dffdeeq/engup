@@ -16,6 +16,7 @@ class BaseApiHostClient:
         method: str,
         route: str,
         data: T.Optional[T.Dict[str, T.Any] | FormData] = None,
+        json: T.Optional[T.Dict[str, T.Any]] = None,
         params: T.Optional[T.Dict[str, T.Any]] = None,
     ) -> HttpClientResponse:
         headers = {
@@ -26,6 +27,7 @@ class BaseApiHostClient:
             method,
             url,
             data=data,
+            json_=json,
             headers=headers,
             params=params,
         )

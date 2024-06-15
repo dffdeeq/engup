@@ -6,6 +6,7 @@ from src.libs.factories.gpt.models.result import Result
 from pydantic import ValidationError
 import asyncio
 from src.postgres.enums import CompetenceEnum
+from src.services.factories.gpt.constants import TextTemplates
 
 
 class ResultMixin:
@@ -25,6 +26,17 @@ class ResultMixin:
                 logging.debug(f"Attempt {attempt + 1} failed: {e}")
                 await asyncio.sleep(2)
         return None
+
+    @staticmethod
+    def format_user_voice_answer_to_text_request(
+        questions_and_answers: T.Dict[str, T.Any],
+        # questions_and_answers format = {'part_1': [...], 'part_2': {'q': q, 'a': a}, part_3: [...]}
+    ) -> str:
+        return TextTemplates.SPEECH_REQUEST_TEMPLATE.format(
+            q_a_part_1='\n'.join([f'Q: {qa["q"]}\nA: {qa["a"]}' for qa in questions_and_answers['part_1']]),
+            q_a_part_2=f'Q: {questions_and_answers["part_2"]["q"]}\nA: {questions_and_answers["part_2"]["a"]}',
+            q_a_part_3='\n'.join([f'Q: {qa["q"]}\nA: {qa["a"]}' for qa in questions_and_answers['part_3']])
+        )
 
     @staticmethod
     async def format_user_answer_to_text_request(card_text: str, user_answer: str) -> str:

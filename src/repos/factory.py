@@ -1,7 +1,7 @@
 import logging
 import typing as T # noqa
 
-from sqlalchemy import delete, update, insert
+from sqlalchemy import delete, update, insert, select
 from sqlalchemy.exc import SQLAlchemyError, IntegrityError
 from sqlalchemy.ext.asyncio import async_sessionmaker
 
@@ -31,6 +31,10 @@ class RepoFactory:
                         f"Duplicate entry for {model.__name__} "
                         f"(user_id={kwargs.get('user_id')} question_id={kwargs.get('question_id')})"
                     )
+                    existing_instance = await session.execute(
+                        select(model).filter_by(**kwargs)
+                    )
+                    return existing_instance.scalar_one_or_none()
                 except SQLAlchemyError as e:
                     await session.rollback()
                     logging.error(f"Error inserting {model.__name__}: {e}")

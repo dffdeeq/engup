@@ -4,24 +4,17 @@ import json
 import logging
 
 from aio_pika.abc import AbstractRobustConnection, ExchangeType
-from sqlalchemy.ext.asyncio import async_sessionmaker
-
-from src.services.factories.gpt import GPTService
 
 
-class WorkerFactory:
+class RabbitMQWorkerFactory:
     def __init__(
         self,
         connection_pool: AbstractRobustConnection,
-        session: async_sessionmaker,
-        gpt_service: GPTService,
         queue_name: str,
         routing_key: str,
         exchange_name: str = 'direct',
     ):
         self.connection_pool = connection_pool
-        self.session = session
-        self.gpt_service = gpt_service
         self.exchange_name = exchange_name
         self.queue_name = queue_name
         self.routing_key = routing_key
