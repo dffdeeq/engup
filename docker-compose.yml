@@ -17,12 +17,34 @@ services:
     ports:
       - '5433:5432'
 
+  engup_rabbitmq:
+    container_name: engup_rabbitmq
+    restart: always
+    image: "rabbitmq:3.9.29-alpine"
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_SETTINGS_USER}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_SETTINGS_PASSWORD}
+    ports:
+      - '5672:5672'
+    volumes:
+      - ./data/rabbitmq:/data
+    healthcheck:
+      test: [ "CMD", "rabbitmqctl", "ping" ]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
   engup_api:
     container_name: engup_api
     build: .
     command: python run_api.py
     ports:
       - '8000:8000'
+    environment:
+      RABBITMQ_SETTINGS_HOST: engup_rabbitmq
+    depends_on:
+      engup_rabbitmq:
+        condition: service_healthy
 
   engup_tgbot:
     container_name: engup_tgbot
@@ -31,3 +53,8 @@ services:
     environment:
       POSTGRES_SETTINGS_HOST: engup_postgres
       POSTGRES_SETTINGS_PORT: 5432
+    depends_on:
+      engup_postgres:
+        condition: service_healthy
+      engup_rabbitmq:
+        condition: service_healthy
