@@ -41,6 +41,8 @@ services:
     ports:
       - '8000:8000'
     environment:
+      POSTGRES_SETTINGS_HOST: engup_postgres
+      POSTGRES_SETTINGS_PORT: 5432
       RABBITMQ_SETTINGS_HOST: engup_rabbitmq
     depends_on:
       engup_rabbitmq:
@@ -50,7 +52,24 @@ services:
     container_name: engup_tgbot
     build: .
     command: python run_bot.py
+    volumes:
+      - ./temp_files:/app/temp_files
     environment:
+      POSTGRES_SETTINGS_HOST: engup_postgres
+      POSTGRES_SETTINGS_PORT: 5432
+      RABBITMQ_SETTINGS_HOST: engup_rabbitmq
+    depends_on:
+      engup_rabbitmq:
+        condition: service_healthy
+
+  engup_apihost_worker:
+    container_name: engup_apihost_worker
+    build: .
+    command: python run_queue.py
+    volumes:
+      - ./temp_files:/app/temp_files
+    environment:
+      RABBITMQ_SETTINGS_HOST: engup_rabbitmq
       POSTGRES_SETTINGS_HOST: engup_postgres
       POSTGRES_SETTINGS_PORT: 5432
     depends_on:
