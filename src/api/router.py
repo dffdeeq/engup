@@ -1,3 +1,5 @@
+import logging
+
 from fastapi import APIRouter
 from sqlalchemy import select, and_
 
@@ -17,8 +19,8 @@ async def webhook(data: TranscriptionData):
     async with session() as session:
         query = await session.execute(select(TempData).where(and_(TempData.first_file_name == first_file_name)))
         result = query.scalar_one_or_none()
-        print(data)
+        logging.info(data)
         if result:
-            print(result.id)
+            logging.info(result.id)
         else:
-            print('No data found')
+            logging.info('No data found')
