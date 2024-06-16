@@ -1,8 +1,8 @@
 import logging
 import typing as T # noqa
 
-from sqlalchemy import delete, update, insert, select
-from sqlalchemy.exc import SQLAlchemyError, IntegrityError
+from sqlalchemy import delete, update, insert
+from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import async_sessionmaker
 
 from src.postgres.base import Base

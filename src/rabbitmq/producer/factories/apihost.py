@@ -1,4 +1,3 @@
-import asyncio
 import json
 import typing as T  # noqa
 
@@ -6,7 +5,6 @@ from aio_pika import Message
 
 from src.libs.adapter import Adapter
 from src.rabbitmq.producer.factory import RabbitMQProducerFactory
-from src.settings import Settings
 
 
 class ApiHostProducer(RabbitMQProducerFactory):
