@@ -33,7 +33,7 @@ async def main():
         queue_name='apihost',
         routing_key='to_transcription'
     )
-    await apihost_worker.start_listening(apihost_worker.send_text_to_get_result_handle)
+    await apihost_worker.start_listening(apihost_worker.send_files_to_transcription_and_clear)
 
 
 if __name__ == '__main__':
