@@ -18,5 +18,5 @@ class SendAudioToTranscriptionMixin(BaseApiHostClient):
                 content = await file.read()
                 data.add_field('files', content, filename=os.path.basename(filepath))
 
-            response = await self.request('POST', SEND_FILES_TO_TRANSCRIPTION, data=data)
-            return UploadResponse(**response.body)
+        response = await self.request('POST', SEND_FILES_TO_TRANSCRIPTION, data=data)
+        return UploadResponse(**response.body)
