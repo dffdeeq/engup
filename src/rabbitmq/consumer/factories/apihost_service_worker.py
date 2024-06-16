@@ -1,4 +1,6 @@
 import typing as T  # noqa
+from pathlib import Path
+
 from aio_pika.abc import AbstractRobustConnection
 from sqlalchemy.ext.asyncio import async_sessionmaker
 
@@ -19,8 +21,13 @@ class ApiHostWorker(RabbitMQWorkerFactory):
         self.session = session
         self.apihost_service = apihost_service
 
-    async def send_text_to_get_result_handle(self, filepaths: dict) -> None:
+    async def send_files_to_transcription_and_clear(self, filepaths: dict) -> None:
         await self.apihost_service.send_to_transcription(filepaths['files'])
+        self.clear_temp_files(filepaths['files'])
 
-    async def send_text_to_get_result(self, filepaths: T.List[str]) -> None:
-        await self.apihost_service.send_to_transcription(filepaths)
+    @staticmethod
+    def clear_temp_files(filepaths: T.List[str]) -> None:
+        for file in filepaths:
+            path = Path(file)
+            if path.exists():
+                path.unlink()
