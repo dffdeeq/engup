@@ -20,11 +20,6 @@ class RepoFactory:
         async with self.session() as session:
             async with session.begin():
                 try:
-                    existing_instance = await session.execute(select(model).filter_by(**kwargs))
-                    existing_instance = existing_instance.scalar_one_or_none()
-                    if existing_instance:
-                        return existing_instance
-
                     instance = model(**kwargs)
                     session.add(instance)
                     await session.flush()

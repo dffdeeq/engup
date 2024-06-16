@@ -8,12 +8,11 @@ from src.libs.adapter import Adapter
 
 
 class RabbitMQProducerFactory:
-    def __init__(self, dsn_string: str, exchange_name: str, routing_key: str, adapter: Adapter):
+    def __init__(self, dsn_string: str, exchange_name: str, adapter: Adapter):
         """
         RabbitMQ Producer Base Class.
         :param dsn_string: Connection string for RabbitMQ.
         :param exchange_name: Name of the exchange to use.
-        :param routing_key: Routing key to use for messages.
         :param adapter: Adapter instance.
         """
         self.dsn_string: str = dsn_string

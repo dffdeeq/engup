@@ -40,7 +40,6 @@ class BaseInjector:
         )
         self.apihost_producer = ApiHostProducer(
             dsn_string=settings.rabbitmq.dsn,
-            exchange_name='',
-            routing_key='',
+            exchange_name='direct',
             adapter=self.adapter
         )

@@ -20,7 +20,7 @@ class BaseApiHostClient:
         params: T.Optional[T.Dict[str, T.Any]] = None,
     ) -> HttpClientResponse:
         headers = {
-            'Authorization': f'{self.settings.token}',
+            'Authorization': f'Bearer {self.settings.auth_token}',
         }
         url = self.settings.url + route
         return await self.http_client.request(

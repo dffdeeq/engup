@@ -1,3 +1,5 @@
+import asyncio
+import logging
 import typing as T  # noqa
 import uuid
 
@@ -17,12 +19,14 @@ class ApiHostService(ServiceFactory):
     async def send_to_transcription(self, filepaths: T.List[str]):
         transcribe_id = await self._send_files_to_transcription(filepaths)
         if transcribe_id:
+            await asyncio.sleep(2)
             transcribe_id = await self._confirm_transcription(transcribe_id)
             return transcribe_id
 
     async def _send_files_to_transcription(self, filepaths: T.List[str]) -> uuid.UUID:
         transcription = await self.adapter.apihost_client.send_files_to_transcription(filepaths)
-        return transcription.transcribe_id
+        logging.info(transcription.upload_id)
+        return transcription.upload_id
 
     async def _confirm_transcription(self, transcription_id: uuid.UUID) -> uuid.UUID:
         transcription = await self.adapter.apihost_client.confirm_transcription(transcription_id)

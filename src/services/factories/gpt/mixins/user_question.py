@@ -16,7 +16,7 @@ class UserQuestionMixin:
         user_result_json: T.Optional[dict] = None,
         already_complete: bool = False
     ) -> TgUserQuestion:
-        instance = await self.repo.link_user_with_question(
+        instance = await self.repo.get_or_create_user_link_question(
             user_id=user_id,
             question_id=question_id,
             user_answer_json=user_answer_json,

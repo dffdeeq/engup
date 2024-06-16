@@ -20,7 +20,7 @@ router = Router(name=__name__)
 async def speaking_start(callback: types.CallbackQuery, state: FSMContext, gpt_service: GPTService):
     await callback.answer()
     question = await gpt_service.get_or_generate_question_for_user(callback.from_user.id, CompetenceEnum.speaking)
-    linked_id = await gpt_service.link_user_with_question(callback.from_user.id, question.id)
+    linked_instance = await gpt_service.link_user_with_question(callback.from_user.id, question.id)
     question_json: T.Dict = json.loads(question.question_json)
     await state.set_state(SpeakingState.first_part)
     await state.set_data({
@@ -29,7 +29,7 @@ async def speaking_start(callback: types.CallbackQuery, state: FSMContext, gpt_s
         'part_3_questions': question_json['part_3'],
         'part_1_current_question': 0,
         'part_1_q_0': question_json['part_1'][0],
-        'linked_id': linked_id,
+        'linked_id': linked_instance.id,
     })
 
     await callback.message.answer(text=SpeakingMessages.FIRST_PART_MESSAGE_1)
@@ -47,7 +47,7 @@ async def speaking_first_part(message: types.Message, state: FSMContext, voice_s
     state_data = await state.get_data()
     current_question_pk = int(state_data['part_1_current_question'])
 
-    filepath = voice_service.save_user_voicemail(voice, message.bot)
+    filepath = await voice_service.save_user_voicemail(voice, message.bot)
     await state.update_data({f'part_1_q_{current_question_pk}_file': filepath})
 
     next_question_pk = int(state_data['part_1_current_question']) + 1
@@ -102,7 +102,7 @@ async def speaking_third_part(
     state_data = await state.get_data()
     current_question_pk = int(state_data['part_3_current_question'])
 
-    filepath = voice_service.save_user_voicemail(voice, message.bot)
+    filepath = await voice_service.save_user_voicemail(voice, message.bot)
     await state.update_data({f'part_3_q_{current_question_pk}_file': filepath})
 
     next_question_pk = int(state_data['part_3_current_question']) + 1
@@ -115,10 +115,14 @@ async def speaking_third_part(
         })
         await message.answer(text=next_question)
     else:
-        for i in range(len(state_data['part_1_questions']) + len(state_data['part_3_questions']) - 1):  # *with part2
-            print(i)
-
+        state_data[f'part_3_q_{current_question_pk}_file'] = filepath
         filepaths = []
+        for i in range(len(state_data['part_1_questions'])):
+            filepaths.append(state_data[f'part_1_q_{i}_file'])
+        filepaths.append(str(state_data['part_2_q_0_file']))
+        for i in range(len(state_data['part_3_questions'])):
+            filepaths.append(state_data[f'part_3_q_{i}_file'])
+
         await voice_service.insert_into_temp_data(
             tg_user_question_id=state_data['linked_id'],
             first_file_name=os.path.basename(state_data['part_1_q_0']),

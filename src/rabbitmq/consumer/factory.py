@@ -29,6 +29,6 @@ class RabbitMQWorkerFactory:
                 async for message in queue_iter:
                     payload = json.loads(message.body)  # noqa
                     logging.info(str(payload))
-                    await asyncio.create_task(async_func(*args, **kwargs))
+                    await asyncio.create_task(async_func(payload))
                     await message.ack()  # noqa
                     await asyncio.sleep(1)
