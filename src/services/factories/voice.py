@@ -21,7 +21,7 @@ class VoiceService(ServiceFactory):
 
     async def save_user_voicemail(self, voice: Voice, bot_instance: Bot) -> str:
         file = await self._convert_telegram_voice_to_file(voice, bot_instance)
-        filename = os.path.join(TEMP_FILES_DIR, uuid.uuid4().hex)
+        filename = os.path.join(TEMP_FILES_DIR, uuid.uuid4().hex + '.ogg')
         self._download_file(file, filename)
         return filename
 

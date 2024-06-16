@@ -74,10 +74,10 @@ async def speaking_second_part(message: types.Message, state: FSMContext, voice_
         await message.answer(text=SpeakingMessages.COULDNT_FIND_AUDIO)
         return
 
-    filename = await voice_service.save_user_voicemail(voice, message.bot)
+    filepath = await voice_service.save_user_voicemail(voice, message.bot)
     current_question = (await state.get_data())['part_3_questions'][0]
     await state.update_data({
-        'part_2_q_0_file': filename,
+        'part_2_q_0_file': filepath,
         'part_3_current_question': 0,
         'part_3_q_0': current_question
     })
