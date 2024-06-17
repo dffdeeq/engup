@@ -16,18 +16,17 @@ class RepoFactory:
         self.session = session
 
     async def insert_one(self, **kwargs: T.Any) -> Model:
-        model = kwargs.pop('model', self.model)
         async with self.session() as session:
             async with session.begin():
                 try:
-                    instance = model(**kwargs)
+                    instance = self.model(**kwargs)
                     session.add(instance)
                     await session.flush()
                     await session.refresh(instance)
                     return instance
                 except SQLAlchemyError as e:
                     await session.rollback()
-                    logging.error(f"Error inserting {model.__name__}: {e}")
+                    logging.error(f"Error inserting {self.model.__name__}: {e}")
                     raise
 
     async def insert_many(self, *args: T.Any) -> T.List[Model]:
@@ -36,12 +35,11 @@ class RepoFactory:
                 instances = await session.execute(insert(self.model).values(*args).returning(self.model))
                 return list(instances.scalars().all())
 
-    async def update_many(self, conditions: T.Dict[str, T.Any], values: T.Dict[str, T.Any], **kwargs) -> int:
-        model = kwargs.pop('model', self.model)
+    async def update(self, conditions: T.Dict[str, T.Any], values: T.Dict[str, T.Any]) -> int:
         async with self.session() as session:
             async with session.begin():
-                stmt = update(model).where(
-                    *[getattr(model, k) == v for k, v in conditions.items()]
+                stmt = update(self.model).where(
+                    *[getattr(self.model, k) == v for k, v in conditions.items()]
                 ).values(values)
                 try:
                     result = await session.execute(stmt)
@@ -49,7 +47,7 @@ class RepoFactory:
                     return result.rowcount  # noqa
                 except SQLAlchemyError as e:
                     await session.rollback()
-                    logging.error(f"Error updating {model.__name__}: {e}")
+                    logging.error(f"Error updating {self.model.__name__}: {e}")
                     raise
 
     async def delete_many(self, **conditions: T.Any) -> int:

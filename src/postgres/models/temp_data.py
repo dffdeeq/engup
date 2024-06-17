@@ -1,4 +1,4 @@
-from sqlalchemy import Column, BigInteger, String, ForeignKey, ARRAY, JSON, UUID
+from sqlalchemy import Column, BigInteger, String, ForeignKey, ARRAY
 
 from src.postgres.base import Base
 

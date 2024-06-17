@@ -1,4 +1,3 @@
-import logging
 import uuid
 
 from src.libs.factories.apihost.base import BaseApiHostClient
@@ -21,6 +20,5 @@ class ConfirmTranscriptionMixin(BaseApiHostClient):
                 "words"
             ]
         }  # **** temp realization **** -> move payload to models or defaults
-        logging.info(payload)
         response = await self.request('POST', CONFIRM_TRANSCRIPTION, json=payload)
         return TranscriptionResponse(**response.body)

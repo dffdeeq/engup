@@ -1,4 +1,3 @@
-import json
 import typing as T  # noqa
 from sqlalchemy.ext.asyncio import async_sessionmaker
 
@@ -17,15 +16,6 @@ class QuestionService(ServiceFactory):
         self.repo = repo
 
     async def get_or_generate_question_for_user(self, user_id: int, competence: CompetenceEnum) -> Question:
-        return Question(id=7, question_json=json.dumps({
-            "part_1": [
-                "Do you prefer to study in the morning or at night?",
-            ],
-            "part_2": "Describe a place you have visited that had a big impact on you. You should say: - where the place was - when you visited it - what you did there and explain why this place had such a big impact on you.",
-            "part_3": [
-                "How often do you like to travel to new places?",
-            ]
-        }))
         question = await self.repo.get_question_for_user(user_id, competence)
         if not question:
             new_questions = await self.generate_and_save_questions(competence, 1)
