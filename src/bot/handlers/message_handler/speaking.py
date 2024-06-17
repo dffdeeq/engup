@@ -10,17 +10,24 @@ from src.bot.handlers.constants import SpeakingMessages
 from src.bot.injector import INJECTOR
 from src.postgres.enums import CompetenceEnum
 from src.rabbitmq.producer.factories.apihost import ApiHostProducer
-from src.services.factories.gpt import GPTService
+from src.services.factories.answer_process import AnswerProcessService
+from src.services.factories.question import QuestionService
+from src.services.factories.user_question import UserQuestionService
 from src.services.factories.voice import VoiceService
 
 router = Router(name=__name__)
 
 
-@router.callback_query(F.data == 'speaking', INJECTOR.inject_gpt)
-async def speaking_start(callback: types.CallbackQuery, state: FSMContext, gpt_service: GPTService):
+@router.callback_query(F.data == 'speaking', INJECTOR.inject_question, INJECTOR.inject_uq)
+async def speaking_start(
+    callback: types.CallbackQuery,
+    state: FSMContext,
+    question_service: QuestionService,
+    uq_service: UserQuestionService,
+):
     await callback.answer()
-    question = await gpt_service.get_or_generate_question_for_user(callback.from_user.id, CompetenceEnum.speaking)
-    linked_instance = await gpt_service.link_user_with_question(callback.from_user.id, question.id)
+    question = await question_service.get_or_generate_question_for_user(callback.from_user.id, CompetenceEnum.speaking)
+    uq_instance = await uq_service.get_or_create_user_question(callback.from_user.id, question.id)
     question_json: T.Dict = json.loads(question.question_json)
     await state.set_state(SpeakingState.first_part)
     await state.set_data({
@@ -29,7 +36,7 @@ async def speaking_start(callback: types.CallbackQuery, state: FSMContext, gpt_s
         'part_3_questions': question_json['part_3'],
         'part_1_current_question': 0,
         'part_1_q_0': question_json['part_1'][0],
-        'linked_id': linked_instance.id,
+        'linked_id': uq_instance.id,
     })
 
     await callback.message.answer(text=SpeakingMessages.FIRST_PART_MESSAGE_1)
@@ -87,12 +94,18 @@ async def speaking_second_part(message: types.Message, state: FSMContext, voice_
     await message.answer(text=current_question)
 
 
-@router.message(SpeakingState.third_part, INJECTOR.inject_voice, INJECTOR.inject_apihost_producer)
+@router.message(
+    SpeakingState.third_part,
+    INJECTOR.inject_voice,
+    INJECTOR.inject_apihost_producer,
+    INJECTOR.inject_answer_process
+)
 async def speaking_third_part(
     message: types.Message,
     state: FSMContext,
     voice_service: VoiceService,
-    apihost_producer: ApiHostProducer
+    apihost_producer: ApiHostProducer,
+    answer_process: AnswerProcessService
 ):
     voice = message.voice
     if voice is None:
@@ -123,7 +136,7 @@ async def speaking_third_part(
         for i in range(len(state_data['part_3_questions'])):
             filepaths.append(state_data[f'part_3_q_{i}_file'])
 
-        await voice_service.insert_into_temp_data(
+        await answer_process.insert_into_temp_data(
             tg_user_question_id=state_data['linked_id'],
             first_file_name=os.path.basename(state_data['part_1_q_0']),
             first_part_questions=state_data['part_1_questions'],
