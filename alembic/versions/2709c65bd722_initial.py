@@ -1,8 +1,8 @@
-"""empty message
+"""initial
 
-Revision ID: 80d868ce4f80
+Revision ID: 2709c65bd722
 Revises: 
-Create Date: 2024-06-15 16:41:24.038562
+Create Date: 2024-06-19 21:09:18.534153
 
 """
 from typing import Sequence, Union
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision: str = '80d868ce4f80'
+revision: str = '2709c65bd722'
 down_revision: Union[str, None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -53,10 +53,10 @@ def upgrade() -> None:
     op.create_table('temp_data',
     sa.Column('id', sa.BigInteger(), autoincrement=True, nullable=False),
     sa.Column('tg_user_question_id', sa.Integer(), nullable=False),
-    sa.Column('first_file_name', sa.String(), nullable=False),
-    sa.Column('first_part_questions', sa.ARRAY(sa.String()), nullable=False),
-    sa.Column('second_part_question', sa.String(), nullable=False),
-    sa.Column('third_part_questions', sa.ARRAY(sa.String()), nullable=False),
+    sa.Column('part', sa.Enum('first', 'second', 'third', name='partenum'), nullable=True),
+    sa.Column('question_text', sa.String(), nullable=True),
+    sa.Column('filename', sa.String(), nullable=True),
+    sa.Column('answer_text', sa.String(), nullable=True),
     sa.ForeignKeyConstraint(['tg_user_question_id'], ['tg_user_question.id'], ),
     sa.PrimaryKeyConstraint('id')
     )
