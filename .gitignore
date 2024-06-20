@@ -8,8 +8,7 @@ dist/
 # Local Variables
 .env
 
-# Volumes
-/data
-
-# Temp files
-/temp_files/*
+# Volumes and Temp Files
+/data/postgresql/*
+/data/rabbitmq/*
+/data/temp_files/*

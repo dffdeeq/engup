@@ -1,5 +1,6 @@
-/data
+/data/postgresql/*
+/data/rabbitmq/*
 /tests
-/temp_files/*
+/data/temp_files/*
 .idea
 .venv
