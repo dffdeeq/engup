@@ -53,7 +53,7 @@ services:
     build: .
     command: python run_bot.py
     volumes:
-      - ./temp_files:/app/temp_files
+      - ./data/temp_files:/app/data/temp_files
     environment:
       POSTGRES_SETTINGS_HOST: engup_postgres
       POSTGRES_SETTINGS_PORT: 5432
@@ -67,7 +67,7 @@ services:
     build: .
     command: python run_queue_apihost.py
     volumes:
-      - ./temp_files:/app/temp_files
+      - ./data/temp_files:/app/data/temp_files
     environment:
       RABBITMQ_SETTINGS_HOST: engup_rabbitmq
       POSTGRES_SETTINGS_HOST: engup_postgres
@@ -81,7 +81,7 @@ services:
     build: .
     command: python run_queue_gpt.py
     volumes:
-      - ./temp_files:/app/temp_files
+      - ./data/temp_files:/app/data/temp_files
     environment:
       RABBITMQ_SETTINGS_HOST: engup_rabbitmq
       POSTGRES_SETTINGS_HOST: engup_postgres
