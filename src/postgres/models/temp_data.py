@@ -1,6 +1,7 @@
-from sqlalchemy import Column, BigInteger, String, ForeignKey, ARRAY
+from sqlalchemy import Column, BigInteger, String, ForeignKey, Enum
 
 from src.postgres.base import Base
+from src.postgres.enums import PartEnum
 
 
 class TempData(Base):
@@ -8,8 +9,8 @@ class TempData(Base):
 
     id = Column(BigInteger, primary_key=True, autoincrement=True)
     tg_user_question_id = Column(ForeignKey('tg_user_question.id'), nullable=False)
-    first_file_name = Column(String, nullable=False)
 
-    first_part_questions = Column(ARRAY(String), nullable=False)
-    second_part_question = Column(String, nullable=False)
-    third_part_questions = Column(ARRAY(String), nullable=False)
+    part = Column(Enum(PartEnum))
+    question_text = Column(String, nullable=True)
+    filename = Column(String, nullable=True)
+    answer_text = Column(String, nullable=True)
