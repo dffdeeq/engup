@@ -8,7 +8,7 @@ from src.libs.adapter import Adapter
 
 
 class RabbitMQProducerFactory:
-    def __init__(self, dsn_string: str, exchange_name: str, adapter: Adapter):
+    def __init__(self, dsn_string: str, adapter: Adapter, exchange_name: str = 'direct'):
         """
         RabbitMQ Producer Base Class.
         :param dsn_string: Connection string for RabbitMQ.
@@ -16,8 +16,8 @@ class RabbitMQProducerFactory:
         :param adapter: Adapter instance.
         """
         self.dsn_string: str = dsn_string
-        self.exchange_name: str = exchange_name
         self.adapter: Adapter = adapter
+        self.exchange_name: str = exchange_name
         self._rabbitmq_pool: T.Optional[AbstractRobustConnection] = None
         self._channel: T.Optional[AbstractRobustChannel] = None
         self._exchange: T.Optional[AbstractRobustExchange] = None
