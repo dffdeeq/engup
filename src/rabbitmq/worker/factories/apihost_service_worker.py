@@ -41,7 +41,7 @@ class ApiHostWorker(RabbitMQWorkerFactory):
                 await session.execute(
                     update(TgUserQuestion)
                     .where(and_(TgUserQuestion.id == uq_id))
-                    .values(user_answer_json=all_user_qa)
+                    .values(user_answer_json=all_user_qa, status=True)
                 )
                 await session.commit()
                 logging.info('apihost --> update_user_answer_json == OK')

@@ -45,6 +45,8 @@ class GPTWorker(RabbitMQWorkerFactory):
             result = await self.get_result(request_text, competence)
             if result:
                 instance.user_result_json = result.model_dump()
+                session.add(instance)
+                await session.commit()
                 await self.gpt_producer.create_task_return_result_to_user(user_id, result)
 
         logging.info(f'---------- End of Task {self.process_result_task.__name__} ----------')
