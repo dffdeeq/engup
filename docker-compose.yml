@@ -65,13 +65,38 @@ services:
   engup_apihost_worker:
     container_name: engup_apihost_worker
     build: .
-    command: python run_queue.py
+    command: python run_queue_apihost.py
     volumes:
       - ./temp_files:/app/temp_files
     environment:
       RABBITMQ_SETTINGS_HOST: engup_rabbitmq
       POSTGRES_SETTINGS_HOST: engup_postgres
       POSTGRES_SETTINGS_PORT: 5432
+    depends_on:
+      engup_rabbitmq:
+        condition: service_healthy
+
+  engup_gpt_worker:
+    container_name: engup_gpt_worker
+    build: .
+    command: python run_queue_gpt.py
+    volumes:
+      - ./temp_files:/app/temp_files
+    environment:
+      RABBITMQ_SETTINGS_HOST: engup_rabbitmq
+      POSTGRES_SETTINGS_HOST: engup_postgres
+      POSTGRES_SETTINGS_PORT: 5432
+    depends_on:
+      engup_rabbitmq:
+        condition: service_healthy
+
+  engup_tg_bot_worker:
+    container_name: engup_tg_bot_worker
+    build: .
+    command: python run_queue_tg_bot.py
+    environment:
+      RABBITMQ_SETTINGS_HOST: engup_rabbitmq
+      POSTGRES_SETTINGS_HOST: engup_postgres
     depends_on:
       engup_rabbitmq:
         condition: service_healthy

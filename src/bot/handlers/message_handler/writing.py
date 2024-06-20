@@ -1,3 +1,4 @@
+import logging
 import typing as T  # noqa
 import asyncio
 import json
@@ -6,7 +7,7 @@ from aiogram import Router, types, F
 from aiogram.fsm.context import FSMContext
 
 from src.bot.core.states import WritingState
-from src.bot.handlers.constants import Messages, MessageTemplates
+from src.bot.handlers.constants import DefaultMessages, MessageTemplates
 from src.bot.handlers.utils import answer_parts_async_generator
 from src.bot.injector import INJECTOR
 from src.postgres.enums import CompetenceEnum
@@ -45,24 +46,25 @@ async def writing_get_user_answer(
 ):
     user_answer = message.text
     if len(user_answer.split()) < 150:
-        await message.answer(text=Messages.TOO_SHORT_TEXT_WARNING)
+        await message.answer(text=DefaultMessages.TOO_SHORT_TEXT_WARNING)
         return
 
     state_data = await state.get_data()
     user_answer_text = await result_service.format_question_answer_to_text(state_data['card_body'], user_answer)
     user_answer_json = await result_service.format_question_answer_to_dict(state_data['card_body'], user_answer)
-    user_result = await result_service.generate_result(user_answer_text, CompetenceEnum.writing)
-    if not user_result:
-        await message.answer(text=Messages.ASSESSMENT_FAILURE)
-        return
 
-    await uq_service.update_user_question(state_data['uq_id'], user_answer_json,  user_result.model_dump(), True)
-
-    async for msg in answer_parts_async_generator(user_result):
-        await message.answer(text=msg)
-        await asyncio.sleep(3)
-
-    general_recommendations = MessageTemplates.GENERAL_RECOMMENDATIONS_TEMPLATE.format(
-        vocabulary='\n'.join(f'- {word}' for word in user_result.vocabulary)
-    )
-    await message.answer(text=general_recommendations)
+    try:
+        user_result = await result_service.generate_result(user_answer_text, CompetenceEnum.writing)
+        if not user_result:
+            await message.answer(text=DefaultMessages.ASSESSMENT_FAILURE)
+            return
+        await uq_service.update_user_question(state_data['uq_id'], user_answer_json, user_result.model_dump(), True)
+        async for msg in answer_parts_async_generator(user_result):
+            await message.answer(text=msg)
+            await asyncio.sleep(3)
+        general_recommendations = MessageTemplates.GENERAL_RECOMMENDATIONS_TEMPLATE.format(
+            vocabulary='\n'.join(f'- {word}' for word in user_result.vocabulary)
+        )
+        await message.answer(text=general_recommendations)
+    except Exception as e:
+        logging.error(e)
