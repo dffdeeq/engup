@@ -4,13 +4,13 @@ from aiogram.types import Message
 
 from src.bot.handlers.defaults.menu_default import get_menu
 from src.bot.injector import INJECTOR
-from src.services.factories.tg_bot import TgBotService
+from src.services.factories.tg_user import TgUserService
 
 router = Router(name=__name__)
 
 
 @router.message(Command('menu'), INJECTOR.inject_tg_bot)
-async def command_menu_handler(message: Message, tg_bot_service: TgBotService) -> None:
-    await tg_bot_service.get_or_create_tg_user(message.from_user.id, message.from_user.username)
+async def command_menu_handler(message: Message, tg_user_service: TgUserService) -> None:
+    await tg_user_service.get_or_create_tg_user(message.from_user.id, message.from_user.username)
     text, builder = await get_menu()
     await message.answer(text, reply_markup=builder.as_markup())

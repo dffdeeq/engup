@@ -16,16 +16,18 @@ class BaseApiHostClient:
         method: str,
         route: str,
         data: T.Optional[T.Dict[str, T.Any] | FormData] = None,
+        json: T.Optional[T.Dict[str, T.Any]] = None,
         params: T.Optional[T.Dict[str, T.Any]] = None,
     ) -> HttpClientResponse:
         headers = {
-            'Authorization': f'{self.settings.token}',
+            'Authorization': f'Bearer {self.settings.auth_token}',
         }
         url = self.settings.url + route
         return await self.http_client.request(
             method,
             url,
             data=data,
+            json_=json,
             headers=headers,
             params=params,
         )

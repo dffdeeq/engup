@@ -10,3 +10,6 @@ dist/
 
 # Volumes
 /data
+
+# Temp files
+/temp_files/*

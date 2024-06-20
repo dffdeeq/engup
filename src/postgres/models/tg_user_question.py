@@ -1,4 +1,4 @@
-from sqlalchemy import ForeignKey, Column, Integer, DateTime, Boolean, JSON, func, BigInteger
+from sqlalchemy import ForeignKey, Column, Integer, DateTime, Boolean, JSON, func, BigInteger, UniqueConstraint, Index
 
 from src.postgres.base import Base
 
@@ -17,3 +17,8 @@ class TgUserQuestion(Base):
     is_liked = Column(Boolean)
     user_answer_json = Column(JSON)
     user_result_json = Column(JSON)
+
+    __table_args__ = (
+        UniqueConstraint('user_id', 'question_id', name='uq_user_question'),
+        Index('uq_tg_user_question_id', 'id', unique=True)
+    )

@@ -1,5 +1,4 @@
 import typing as T  # noqa
-
 from sqlalchemy.ext.asyncio import async_sessionmaker
 
 from src.libs.adapter import Adapter
@@ -9,7 +8,7 @@ from src.services.factory import ServiceFactory
 from src.settings import Settings
 
 
-class TgBotService(ServiceFactory):
+class TgUserService(ServiceFactory):
     def __init__(self, repo: TgUserRepo, adapter: Adapter, session: async_sessionmaker, settings: Settings) -> None:
         super().__init__(repo, adapter, session, settings)
         self.repo = repo
