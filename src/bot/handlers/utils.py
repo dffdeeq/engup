@@ -34,5 +34,6 @@ async def answer_parts_async_generator(answer: Result) -> T.AsyncGenerator[str, 
     ]
 
     for title, result in zip(criteria_titles, criteria_results):
-        section = await generate_section(title, result.score, result.enhancements)
-        yield section
+        if result is not None:
+            section = await generate_section(title, result.score, result.enhancements)
+            yield section
