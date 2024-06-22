@@ -82,6 +82,7 @@ services:
     command: python run_queue_gpt.py
     volumes:
       - ./data/temp_files:/app/data/temp_files
+      - ./data/nn_models:/app/data/nn_models
     environment:
       RABBITMQ_SETTINGS_HOST: engup_rabbitmq
       POSTGRES_SETTINGS_HOST: engup_postgres

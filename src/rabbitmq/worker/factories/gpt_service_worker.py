@@ -41,7 +41,7 @@ class GPTWorker(RabbitMQWorkerFactory):
                 .join(TgUser, TgUserQuestion.user_id == TgUser.id)
                 .where(and_(TgUserQuestion.id == uq_id['uq_id'])))
             instance, user_id, competence = query.first()
-            request_text = await self.format_user_qa_to_text(instance)
+            request_text = await self.format_user_qa_to_text(instance.user_answer_json)
             result = await self.get_result(request_text, competence)
             if result:
                 instance.user_result_json = result.model_dump()
@@ -52,9 +52,9 @@ class GPTWorker(RabbitMQWorkerFactory):
         logging.info(f'---------- End of Task {self.process_result_task.__name__} ----------')
 
     @staticmethod
-    async def format_user_qa_to_text(uq_instance: TgUserQuestion) -> str:
+    async def format_user_qa_to_text(user_answer_json: T.Dict) -> str:
         parts_text = []
-        for part, questions in uq_instance.user_answer_json.items():
+        for part, questions in user_answer_json.items():
             part_num = part.split('_')[1]
             part_text = [f"Part {part_num}:\n"]
             for i, q in enumerate(questions):
