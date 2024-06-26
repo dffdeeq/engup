@@ -1,6 +1,7 @@
-import asyncio
 import logging
 import typing as T  # noqa
+import asyncio
+from functools import wraps
 
 from aio_pika.abc import AbstractRobustConnection
 from sqlalchemy.ext.asyncio import async_sessionmaker
@@ -12,6 +13,20 @@ from src.bot.injector import INJECTOR
 from src.libs.factories.gpt.models.result import Result
 from src.rabbitmq.worker.factory import RabbitMQWorkerFactory
 from src.repos.factories.temp_data import TempDataRepo
+
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+
+def async_log(func):
+    @wraps(func)
+    async def wrapper(self, data):
+        user_id = data.get('user_id', 'Unknown user_id')
+        logger.info(f"user_id: {user_id} >>> {func.__name__}")
+        result = await func(self, data)
+        return result
+    return wrapper
 
 
 class TgBotWorker(RabbitMQWorkerFactory):
@@ -27,17 +42,15 @@ class TgBotWorker(RabbitMQWorkerFactory):
         self.session = session
         self.bot = get_bot(INJECTOR.settings)
 
+    @async_log
     async def process_return_simple_result_task(self, data: T.Dict[str, T.Any]):
-        logging.info(f'---------- Start of Task {self.process_return_result_task.__name__} ----------')
         for msg in data['result']:
             await asyncio.sleep(2)
-            await self.send_message([data['user_id']], msg)
-        logging.info(f'---------- End of Task {self.process_return_result_task.__name__} ----------')
+            await self.send_messages([data['user_id']], msg)
 
+    @async_log
     async def process_return_result_task(self, data: T.Dict[str, T.Any]):
-        logging.info(f'---------- Start of Task {self.process_return_result_task.__name__} ----------')
         await self.send_result_to_user(data['user_id'], data['result'])
-        logging.info(f'---------- End of Task {self.process_return_result_task.__name__} ----------')
 
     async def send_result_to_user(self, user_id: int, result: dict):
         result = Result.parse_obj(result)
@@ -50,6 +63,6 @@ class TgBotWorker(RabbitMQWorkerFactory):
         )
         await self.bot.send_message(user_id, text=general_recommendations)
 
-    async def send_message(self, user_ids: T.List[int], message: str) -> None:
+    async def send_messages(self, user_ids: T.List[int], message: str) -> None:
         for user_id in user_ids:
             await self.bot.send_message(user_id, message)

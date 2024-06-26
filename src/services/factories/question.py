@@ -18,7 +18,7 @@ class QuestionService(ServiceFactory):
     async def get_or_generate_question_for_user(self, user_id: int, competence: CompetenceEnum) -> Question:
         question = await self.repo.get_question_for_user(user_id, competence)
         if not question:
-            new_questions = await self.generate_and_save_questions(competence, 1)
+            new_questions = await self.generate_and_save_questions(competence, 5)
             question = new_questions[0]
         return question
 

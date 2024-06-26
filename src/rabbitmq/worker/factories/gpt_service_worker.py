@@ -1,6 +1,7 @@
 import json
 import logging
 import typing as T  # noqa
+from functools import wraps
 
 from aio_pika.abc import AbstractRobustConnection
 from sqlalchemy import select, and_
@@ -16,6 +17,20 @@ from src.rabbitmq.worker.factory import RabbitMQWorkerFactory
 from src.repos.factories.temp_data import TempDataRepo
 from src.services.factories.result import ResultService
 from src.services.factories.user_question import UserQuestionService
+
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+
+def async_log(func):
+    @wraps(func)
+    async def wrapper(self, uq_id):
+        user_id = uq_id.get('uq_id', 'Unknown user_id')
+        logger.info(f"uq_id: {user_id} >>> {func.__name__}")
+        result = await func(self, uq_id)
+        return result
+    return wrapper
 
 
 class GPTWorker(RabbitMQWorkerFactory):
@@ -42,6 +57,7 @@ class GPTWorker(RabbitMQWorkerFactory):
         except Exception as e:
             logging.error(e)
 
+    @async_log
     async def process_result_task(self, uq_id: T.Dict[str, int]):
         instance, user_id, competence = await self.get_uq_extra_params(
             TgUser.id, Question.competence, uq_id=uq_id['uq_id'])
@@ -51,6 +67,7 @@ class GPTWorker(RabbitMQWorkerFactory):
             await self.update_uq(instance, result.model_dump())
             await self.gpt_producer.create_task_return_result_to_user(user_id, result)
 
+    @async_log
     async def process_result_local_model_task(self, uq_id: T.Dict[str, int]):
         instance, user_id, competence = await self.get_uq_extra_params(
             TgUser.id, Question.competence, uq_id=uq_id['uq_id'])
