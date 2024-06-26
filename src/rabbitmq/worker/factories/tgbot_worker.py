@@ -27,6 +27,13 @@ class TgBotWorker(RabbitMQWorkerFactory):
         self.session = session
         self.bot = get_bot(INJECTOR.settings)
 
+    async def process_return_simple_result_task(self, data: T.Dict[str, T.Any]):
+        logging.info(f'---------- Start of Task {self.process_return_result_task.__name__} ----------')
+        for msg in data['result']:
+            await asyncio.sleep(2)
+            await self.send_message([data['user_id']], msg)
+        logging.info(f'---------- End of Task {self.process_return_result_task.__name__} ----------')
+
     async def process_return_result_task(self, data: T.Dict[str, T.Any]):
         logging.info(f'---------- Start of Task {self.process_return_result_task.__name__} ----------')
         await self.send_result_to_user(data['user_id'], data['result'])

@@ -2,8 +2,8 @@ from src.bot.injector.base import BaseInjector
 from src.bot.injector.factories.answer_process_injector import AnswerProcessInjectorMixin
 from src.bot.injector.factories.apihost_client_injector import ApiHostClientInjectorMixin
 from src.bot.injector.factories.apihost_producer_injector import ApiHostProducerInjectorMixin
+from src.bot.injector.factories.gpt_producer_injector import GPTProducerInjectorMixin
 from src.bot.injector.factories.question_service_injector import QuestionServiceInjectorMixin
-from src.bot.injector.factories.result_service_injector import ResultServiceInjectorMixin
 from src.bot.injector.factories.tg_user_service_injector import TgUserServiceInjectorMixin
 from src.bot.injector.factories.user_question_service_injector import UserQuestionServiceInjectorMixin
 from src.bot.injector.factories.voice_service_injector import VoiceServiceInjectorMixin
@@ -16,9 +16,9 @@ class _I(
     VoiceServiceInjectorMixin,
     ApiHostProducerInjectorMixin,
     QuestionServiceInjectorMixin,
-    ResultServiceInjectorMixin,
     UserQuestionServiceInjectorMixin,
     AnswerProcessInjectorMixin,
+    GPTProducerInjectorMixin,
     BaseInjector
 ):
     def __init__(self, settings: Settings):

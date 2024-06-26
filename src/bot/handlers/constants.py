@@ -1,5 +1,10 @@
 class DefaultMessages:
     TOO_SHORT_TEXT_WARNING = "Your text contains fewer than 150 words. Please rewrite it to meet the required length."
+    TEXT_IS_NOT_ENGLISH = ("It appears that your text is not written in English. Unfortunately, "
+                           "I cannot process such an answer. Please rewrite it using English words and content.")
+    TEXT_IS_COPY_PASTE = ('It appears that your text contains repeated phrases and seems to be copied and pasted '
+                          'multiple times. Unfortunately, I cannot process such an answer. Please rewrite it with '
+                          'original and meaningful content.')
     ASSESSMENT_FAILURE = "Sorry, but we could not assess your text, please try again with another card."
 
 

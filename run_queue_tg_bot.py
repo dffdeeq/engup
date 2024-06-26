@@ -25,10 +25,12 @@ async def main():
         session=session,
         queues_info=[
             ('tgbot', 'tg_bot_return_result_to_user'),
+            ('tgbot', 'tg_bot_return_simple_result_to_user'),
         ],
     )
     await tg_bot_worker.start_listening({
         'tg_bot_return_result_to_user': tg_bot_worker.process_return_result_task,
+        'tg_bot_return_simple_result_to_user': tg_bot_worker.process_return_simple_result_task,
     })
 
 

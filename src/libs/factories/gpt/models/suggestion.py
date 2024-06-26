@@ -11,3 +11,8 @@ class Enhancement(BaseModel):
 class Suggestion(BaseModel):
     score: float
     enhancements: T.List[Enhancement]
+
+
+class SimpleSuggestion(BaseModel):
+    score: float
+    text: str

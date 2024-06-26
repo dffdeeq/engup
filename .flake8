@@ -1,3 +1,8 @@
 [flake8]
 max-line-length = 122
-extend-exclude = dist,build,alembic,requirements
+extend-exclude =
+    dist,
+    build,
+    alembic,
+    requirements,
+    src/neural_network/criteria_json.py

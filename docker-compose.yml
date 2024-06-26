@@ -41,9 +41,9 @@ services:
     ports:
       - '8000:8000'
     environment:
+      RABBITMQ_SETTINGS_HOST: engup_rabbitmq
       POSTGRES_SETTINGS_HOST: engup_postgres
       POSTGRES_SETTINGS_PORT: 5432
-      RABBITMQ_SETTINGS_HOST: engup_rabbitmq
     depends_on:
       engup_rabbitmq:
         condition: service_healthy
@@ -55,9 +55,9 @@ services:
     volumes:
       - ./data/temp_files:/app/data/temp_files
     environment:
+      RABBITMQ_SETTINGS_HOST: engup_rabbitmq
       POSTGRES_SETTINGS_HOST: engup_postgres
       POSTGRES_SETTINGS_PORT: 5432
-      RABBITMQ_SETTINGS_HOST: engup_rabbitmq
     depends_on:
       engup_rabbitmq:
         condition: service_healthy
@@ -78,10 +78,12 @@ services:
 
   engup_gpt_worker:
     container_name: engup_gpt_worker
-    build: .
+    build:
+      dockerfile: Dockerfile.neuro
     command: python run_queue_gpt.py
     volumes:
       - ./data/temp_files:/app/data/temp_files
+      - ./data/nn_models:/app/data/nn_models
     environment:
       RABBITMQ_SETTINGS_HOST: engup_rabbitmq
       POSTGRES_SETTINGS_HOST: engup_postgres
@@ -97,6 +99,7 @@ services:
     environment:
       RABBITMQ_SETTINGS_HOST: engup_rabbitmq
       POSTGRES_SETTINGS_HOST: engup_postgres
+      POSTGRES_SETTINGS_PORT: 5432
     depends_on:
       engup_rabbitmq:
         condition: service_healthy
