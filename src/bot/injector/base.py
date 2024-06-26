@@ -7,13 +7,13 @@ from src.postgres.models.temp_data import TempData
 from src.postgres.models.tg_user import TgUser
 from src.postgres.models.tg_user_question import TgUserQuestion
 from src.rabbitmq.producer.factories.apihost import ApiHostProducer
+from src.rabbitmq.producer.factories.gpt import GPTProducer
 from src.repos.factories.question import QuestionRepo
 from src.repos.factories.temp_data import TempDataRepo
 from src.repos.factories.user import TgUserRepo
 from src.repos.factories.user_question import TgUserQuestionRepo
 from src.services.factories.answer_process import AnswerProcessService
 from src.services.factories.question import QuestionService
-from src.services.factories.result import ResultService
 from src.services.factories.tg_user import TgUserService
 from src.services.factories.user_question import UserQuestionService
 from src.services.factories.voice import VoiceService
@@ -29,12 +29,6 @@ class BaseInjector:
         self.apihost_client = ApiHostClient(http_client=self.http_client, settings=self.settings.apihost)
 
         self.question_service = QuestionService(
-            repo=QuestionRepo(Question, self.session),
-            adapter=self.adapter,
-            session=self.session,
-            settings=self.settings
-        )
-        self.result_service = ResultService(
             repo=QuestionRepo(Question, self.session),
             adapter=self.adapter,
             session=self.session,
@@ -59,6 +53,11 @@ class BaseInjector:
             settings=self.settings
         )
         self.apihost_producer = ApiHostProducer(
+            dsn_string=settings.rabbitmq.dsn,
+            exchange_name='direct',
+            adapter=self.adapter
+        )
+        self.gpt_producer = GPTProducer(
             dsn_string=settings.rabbitmq.dsn,
             exchange_name='direct',
             adapter=self.adapter

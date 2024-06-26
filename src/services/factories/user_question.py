@@ -25,3 +25,11 @@ class UserQuestionService(ServiceFactory):
         status: bool = False
     ):
         await self.repo.update_user_question(uq_id, answer_json, result_json, status)
+
+    @staticmethod
+    async def format_question_answer_to_text(card_text: str, user_answer: str) -> str:
+        return f"Card text: '{card_text}', response text: '{user_answer}'"
+
+    @staticmethod
+    async def format_question_answer_to_dict(card_text: str, user_answer: str) -> T.Dict:
+        return {'card_text': card_text, 'user_answer': user_answer}

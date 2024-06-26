@@ -1,6 +1,7 @@
-/data/postgresql/*
-/data/rabbitmq/*
-/data/temp_files/*
-/tests
+./data/postgresql/*
+./data/rabbitmq/*
+./data/temp_files/*
+./data/nn_models/*
+./tests
 .idea
 .venv

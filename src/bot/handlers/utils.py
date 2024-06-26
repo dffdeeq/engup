@@ -1,7 +1,38 @@
+import re
 import typing as T  # noqa
+
+from langdetect import detect, LangDetectException
 
 from src.libs.factories.gpt.models.result import Result
 from src.libs.factories.gpt.models.suggestion import Enhancement
+
+
+def is_copypaste(text):
+    normalized_text = re.sub(r'\\s+', ' ', text).strip()
+    sentences = re.split(r'(?<=[.!?]) +', normalized_text)
+
+    sentence_count = len(sentences)
+    if sentence_count < 2:
+        return False
+    for i in range(sentence_count):
+        repetition_count = normalized_text.count(sentences[i])
+        if repetition_count > 1:
+            return True
+    return False
+
+
+def is_english(text):
+    """
+    Detects if the given text is in English.
+    Parameters: text (str): The text to be checked.
+    Returns: bool: True if the text is in English, False otherwise.
+    """
+    try:
+        language = detect(text)
+        print(language)
+        return True if language == "en" else False
+    except LangDetectException:
+        return False
 
 
 async def generate_section(title: str, score: float, enhancements: T.List[Enhancement]) -> str:

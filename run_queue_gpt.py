@@ -4,6 +4,7 @@ import logging
 import aio_pika
 
 from src.libs.adapter import Adapter
+from src.neural_network.models.local_models import ScoreGeneratorNNModel
 from src.postgres.factory import initialize_postgres_pool
 from src.postgres.models.question import Question
 from src.postgres.models.temp_data import TempData
@@ -29,15 +30,17 @@ async def main():
         repo=TempDataRepo(TempData, session),
         connection_pool=connection_pool,
         session=session,
-        queues_info=[
-            ('gpt', 'gpt_generate_result'),
-        ],
         result_service=ResultService(
             repo=QuestionRepo(Question, session),
             adapter=adapter,
             session=session,
-            settings=settings
+            settings=settings,
+            nn_service=ScoreGeneratorNNModel()
         ),
+        queues_info=[
+            ('gpt', 'gpt_generate_result'),
+            ('gpt', 'gpt_generate_result_use_local_model'),
+        ],
         gpt_producer=GPTProducer(
             dsn_string=settings.rabbitmq.dsn,
             adapter=adapter,
@@ -45,6 +48,7 @@ async def main():
     )
     await gpt_worker.start_listening({
         'gpt_generate_result': gpt_worker.process_result_task,
+        'gpt_generate_result_use_local_model': gpt_worker.process_result_local_model_task,
     })
 
 

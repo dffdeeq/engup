@@ -1,7 +1,7 @@
 import typing as T  # noqa
 from pydantic import BaseModel
 
-from src.libs.factories.gpt.models.suggestion import Suggestion
+from src.libs.factories.gpt.models.suggestion import Suggestion, SimpleSuggestion
 
 
 class CompetenceResults(BaseModel):
@@ -9,3 +9,10 @@ class CompetenceResults(BaseModel):
     fluency_coherence: Suggestion
     lexical_resources: Suggestion
     grammatical_range: Suggestion
+
+
+class SimpleCompetenceResults(BaseModel):
+    task_achievement: SimpleSuggestion
+    coherence_cohesion: SimpleSuggestion
+    lexical_resources: SimpleSuggestion
+    grammatical_range: SimpleSuggestion

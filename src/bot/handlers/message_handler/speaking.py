@@ -7,7 +7,6 @@ from aiogram.fsm.context import FSMContext
 
 from src.bot.core.filters.voicemail_filter import VoicemailFilter
 from src.bot.core.states import SpeakingState
-from src.bot.handlers.constants import SpeakingMessages
 from src.bot.injector import INJECTOR
 from src.postgres.enums import CompetenceEnum, PartEnum
 from src.rabbitmq.producer.factories.apihost import ApiHostProducer
@@ -15,6 +14,8 @@ from src.services.factories.answer_process import AnswerProcessService
 from src.services.factories.question import QuestionService
 from src.services.factories.user_question import UserQuestionService
 from src.services.factories.voice import VoiceService
+
+from src.bot.handlers.constants import SpeakingMessages as Messages
 
 router = Router(name=__name__)
 
@@ -45,9 +46,8 @@ async def speaking_start(
         'uq_id': uq_instance.id,
     })
 
-    await callback.message.answer(text=SpeakingMessages.FIRST_PART_MESSAGE_1)
-    await callback.message.answer(text=SpeakingMessages.FIRST_PART_MESSAGE_2)
-    await callback.message.answer(text=question_json['part_1'][0])
+    for msg in [Messages.FIRST_PART_MESSAGE_1, Messages.FIRST_PART_MESSAGE_2, question_json['part_1'][0]]:
+        await callback.message.answer(msg)
 
 
 @router.message(
@@ -79,7 +79,7 @@ async def speaking_first_part(
     else:
         part_2_question = state_data['part_2_question']
         await state.update_data({'part_2_q_0': part_2_question})
-        text = SpeakingMessages.SECOND_PART_MESSAGE.format(question=part_2_question)
+        text = Messages.SECOND_PART_MESSAGE.format(question=part_2_question)
         await state.set_state(SpeakingState.second_part)
         await message.answer(text=text)
 
@@ -108,7 +108,7 @@ async def speaking_second_part(
     })
 
     await state.set_state(SpeakingState.third_part)
-    await message.answer(text=SpeakingMessages.THIRD_PART_MESSAGE)
+    await message.answer(text=Messages.THIRD_PART_MESSAGE)
     await message.answer(text=current_question)
 
 
@@ -144,4 +144,4 @@ async def speaking_third_part(
         filepaths = await answer_process.get_temp_data_filepaths(state_data['uq_id'])
         await apihost_producer.create_task_send_to_transcription(filepaths)
         await state.clear()
-        await message.answer(text=SpeakingMessages.CALCULATING_RESULT)
+        await message.answer(text=Messages.CALCULATING_RESULT)

@@ -51,7 +51,7 @@ CRITERIA_JSON = {
             'Brainstorm a wide range of examples before writing to ensure you have a variety of relevant options to choose from.',
             'Draw examples from different sources, such as historical events, scientific studies, and personal experiences, to add richness to your essay.',
             'Use specific details in your examples to make them more convincing and relatable.',
-            'Connect examples directly to your main points to demonstrate their relevance\n\n and enhance your argument.',
+            'Connect examples directly to your main points to demonstrate their relevance and enhance your argument.',
             'Avoid using overly general or vague examples that do not clearly support your thesis.',
             'Incorporate statistics, quotations, and factual data to provide concrete evidence for your claims.',
             'Use examples to clarify complex ideas, making them more accessible to the reader.',
@@ -80,7 +80,7 @@ CRITERIA_JSON = {
             'Summarize key points in your conclusion to reinforce the main ideas of your essay.',
             'Review and revise your essay to clarify any points that may be unclear or underdeveloped.',
             'Seek feedback from peers or instructors to identify areas where your ideas may need further clarification or expansion.'],
-        'Appropriate word count': ['You used a sufficient number of words in your essay.']
+        'Appropriate word count': ['Your essay contains too few words. Next time please try to write more']
     },
     'Lexical Resources': {
         'Accurate spelling & word formation': [

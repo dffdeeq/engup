@@ -27,7 +27,7 @@ class NeuralNetworkBase:
 
     @staticmethod
     def _predict(text: str, model_info: T.Dict[str, T.Any]) -> float:
-        device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+        device = torch.device('cpu')
         model, tokenizer = model_info['model'], model_info['tokenizer']
         inputs = tokenizer(text, truncation=True, padding=True, return_tensors='pt').to(device)
         model.eval().to(device)
