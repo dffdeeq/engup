@@ -1,12 +1,14 @@
 import typing as T  # noqa
 
-from aiogram.types import InlineKeyboardButton, Message
+from aiogram.types import InlineKeyboardButton, Message, CallbackQuery
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 
+from src.postgres.models.tg_user import TgUser
 
-async def get_pricing() -> T.Tuple[str, InlineKeyboardBuilder]:
+
+async def get_pricing(user: TgUser) -> T.Tuple[str, InlineKeyboardBuilder]:
     text = ('Premium points (priority processing of requests)\n'
-            'You have: 0 points\n\n'
+            f'You have: {user.pts} points\n\n'
             'Choose how many points to buy')
     builder = InlineKeyboardBuilder([
         [
@@ -17,6 +19,9 @@ async def get_pricing() -> T.Tuple[str, InlineKeyboardBuilder]:
     return text, builder
 
 
-async def answer_pricing(msg: Message) -> None:
-    text, builder = await get_pricing()
-    await msg.answer(text, reply_markup=builder.as_markup())
+async def answer_pricing(instance: T.Union[Message, CallbackQuery], user: TgUser) -> None:
+    text, builder = await get_pricing(user)
+    if isinstance(instance, CallbackQuery):
+        await instance.message.edit_text(text, reply_markup=builder.as_markup())
+    else:
+        await instance.answer(text, reply_markup=builder.as_markup())

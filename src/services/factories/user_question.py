@@ -4,18 +4,36 @@ from sqlalchemy.ext.asyncio import async_sessionmaker
 
 from src.libs.adapter import Adapter
 from src.postgres.models.tg_user_question import TgUserQuestion
+from src.repos.factories.user import TgUserRepo
 from src.repos.factories.user_question import TgUserQuestionRepo
 from src.services.factory import ServiceFactory
 from src.settings import Settings
 
 
 class UserQuestionService(ServiceFactory):
-    def __init__(self, repo: TgUserQuestionRepo, adapter: Adapter, session: async_sessionmaker, settings: Settings):
+    def __init__(
+        self,
+        repo: TgUserQuestionRepo,
+        adapter: Adapter,
+        session: async_sessionmaker,
+        settings: Settings,
+        user_repo: TgUserRepo
+    ):
         super().__init__(repo, adapter, session, settings)
         self.repo = repo
+        self.user_repo = user_repo
 
     async def get_or_create_user_question(self, user_id, question_id) -> TgUserQuestion:
-        return await self.repo.get_or_create_user_question(user_id, question_id)
+        instance = await self.repo.get_user_question(user_id, question_id)
+        if not instance:
+            instance = await self.repo.create_user_question(user_id, question_id)
+        if not instance.premium_queue and await self.user_repo.deduct_point(user_id):
+            async with self.session() as session:
+                instance.premium_queue = True
+                session.add(instance)
+                await session.commit()
+                await session.refresh(instance)
+        return instance
 
     async def update_user_question(
         self,
