@@ -18,6 +18,8 @@ class TgUserQuestion(Base):
     user_answer_json = Column(JSON)
     user_result_json = Column(JSON)
 
+    premium_queue = Column(Boolean, default=False, nullable=True)
+
     __table_args__ = (
         UniqueConstraint('user_id', 'question_id', name='uq_user_question'),
         Index('uq_tg_user_question_id', 'id', unique=True)
