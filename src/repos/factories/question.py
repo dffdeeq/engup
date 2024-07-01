@@ -11,9 +11,9 @@ from src.repos.factory import RepoFactory
 
 class QuestionRepo(RepoFactory):
     def __init__(self, model: T.Type[Question], session: async_sessionmaker):
-        super().__init__(model, session)  # noqa
+        super().__init__(model, session)
 
-    async def get_question_for_user(self, user_id: int, competence: CompetenceEnum) -> Question:
+    async def get_question_for_user(self, user_id: int, competence: CompetenceEnum) -> T.Optional[Question]:
         """
         Returns the question associated with the given user and competence if available.
 
@@ -29,7 +29,7 @@ class QuestionRepo(RepoFactory):
         subq = select(TgUserQuestion.question_id).where(
             and_(TgUserQuestion.user_id == user_id, TgUserQuestion.status.is_(True))
         )
-        stmt = select(Question).where(
+        query = select(Question).where(
             not_(Question.id.in_(subq)),
             and_(Question.competence == competence, Question.is_active.is_(True))
         ).outerjoin(
@@ -38,5 +38,5 @@ class QuestionRepo(RepoFactory):
         ).order_by(TgUserQuestion.status)
 
         async with self.session() as session:
-            result = await session.execute(stmt)
+            result = await session.execute(query)
             return result.scalars().first()

@@ -13,5 +13,5 @@ class _TgUserServiceInjector(Filter):
 
 class TgUserServiceInjectorMixin(BaseInjector):
     @property
-    def inject_tg_bot(self) -> _TgUserServiceInjector:
+    def inject_tg_user(self) -> _TgUserServiceInjector:
         return _TgUserServiceInjector(self.tg_user_service)

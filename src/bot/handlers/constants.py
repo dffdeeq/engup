@@ -1,3 +1,6 @@
+from src.postgres.enums import CompetenceEnum
+
+
 class DefaultMessages:
     TOO_SHORT_TEXT_WARNING = "Your text contains fewer than 150 words. Please rewrite it to meet the required length."
     TEXT_IS_NOT_ENGLISH = ("It appears that your text is not written in English. Unfortunately, "
@@ -6,6 +9,12 @@ class DefaultMessages:
                           'multiple times. Unfortunately, I cannot process such an answer. Please rewrite it with '
                           'original and meaningful content.')
     ASSESSMENT_FAILURE = "Sorry, but we could not assess your text, please try again with another card."
+    DONT_HAVE_POINTS = ("<i>You don't have enough points on your balance to pass the test in advanced mode. "
+                        "The advanced mode provides additional recommendations for effectively growing your skills "
+                        "and increasing your grades, and also provides a priority pass to minimize waiting in line. "
+                        "You can always buy additional points in the menu.</i>")
+    CALCULATING_RESULT = ("Your result is being calculated and may take a couple of minutes.\n"
+                          "We'll send it to you as soon as it's ready.")
 
 
 class SpeakingMessages:
@@ -17,12 +26,17 @@ class SpeakingMessages:
 
     THIRD_PART_MESSAGE = "Great! Let's continue to the part 3"
 
-    CALCULATING_RESULT = ("Your result is being calculated and may take a couple of minutes.\n"
-                          "We'll send it to you as soon as it's ready.")
 
-
-class Links:
+class Constants:
     TG_CHANNEL_LINK = "https://t.me/IELTS_TEST_EXAM"
+
+    PRACTICE_SPEAKING = ('Consistent practice is key to improvement. Train your speaking skills on a variety '
+                         'of topics and receive feedback. Reviewing and revising your results based on feedback will '
+                         'help you identify and correct recurring issues.')
+    PRACTICE_WRITING = ('    Consistent practice is key to improvement. Write essays on a variety of topics and get '
+                        'feedback. Reviewing and revising your essays based on feedback will help you identify and '
+                        'correct recurring issues.')
+    PRACTICE_REGULARLY_DICT = {CompetenceEnum.speaking: PRACTICE_SPEAKING, CompetenceEnum.writing: PRACTICE_WRITING}
 
 
 class MessageTemplates:
@@ -36,7 +50,6 @@ class MessageTemplates:
         "1. Expand Your Vocabulary:</b>\n"
         "{vocabulary}\n\n"
         "<b>2. Practice Regularly:</b>\n"
-        " - Consistent practice is key to improvement. Write essays on a variety of topics and get feedback. "
-        "Reviewing and revising your essays based on feedback will help you identify and correct recurring issues.\n\n"
-        f"<b>3. Visit our channel</b> to get some useful tips: {Links.TG_CHANNEL_LINK}"
+        "{practice_regularly}\n\n"
+        f"<b>3. Visit our channel</b> to get some useful tips: {Constants.TG_CHANNEL_LINK}"
     )
