@@ -45,8 +45,6 @@ class TgBotWorker(RabbitMQWorkerFactory):
 
     @async_log
     async def process_return_simple_result_task(self, data: T.Dict[str, T.Any]):
-        if len(data['result']) == 6:
-            data['result'][5] = '<b>Vocabulary:</b>\n' + '\n'.join(f'- {word}' for word in data['result'][5])
         for msg in data['result']:
             await asyncio.sleep(2)
             await self.send_messages([data['user_id']], msg)

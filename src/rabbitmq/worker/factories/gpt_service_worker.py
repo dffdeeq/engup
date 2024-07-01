@@ -8,6 +8,7 @@ from sqlalchemy import select, and_
 from sqlalchemy.ext.asyncio import async_sessionmaker
 
 from src.libs.factories.gpt.models.result import Result
+from src.libs.factories.gpt.models.suggestion import Suggestion
 from src.postgres.enums import CompetenceEnum
 from src.postgres.models.question import Question
 from src.postgres.models.tg_user import TgUser
@@ -78,11 +79,39 @@ class GPTWorker(RabbitMQWorkerFactory):
         result = await self.result_service.generate_result(request_text, competence, local_model=True)
         if data['priority']:
             premium_result = await self.result_service.generate_result(request_text, competence)
-            vocabulary = premium_result.vocabulary
+            result.append('<b>Recommendations</b>')
+            premium_recommendations = self.format_result(premium_result)
+            result.extend(premium_recommendations)
+            vocabulary = '<b>Vocabulary:</b>\n' + '\n'.join(f'- {word}' for word in premium_result.vocabulary)
             result.append(vocabulary)
         if result:
             await self.update_uq(instance, json.dumps(result))
             await self.gpt_producer.create_task_return_simple_result_to_user(user_id, result, data['priority'])
+
+    @staticmethod
+    def format_result(result: Result) -> T.List[str]:
+        def format_suggestion(suggestion_name: str, suggestion: T.Optional[Suggestion]) -> T.Optional[str]:
+            if suggestion is None:
+                return None
+            formatted_text = f"{suggestion_name}:\n"
+            for enhancement in suggestion.enhancements:
+                formatted_text += (
+                    f"\n{enhancement.basic_suggestion}\n"
+                    f"<b>Your answer:</b> {enhancement.source_text}\n"
+                    f"<b>Enhanced answer:</b> {enhancement.enhanced_text}\n"
+                )
+            return formatted_text.strip()
+
+        competence_results = result.competence_results
+        suggestion_names = [
+            ("Task Achievement", competence_results.task_achievement),
+            ("Fluency Coherence", competence_results.fluency_coherence),
+            ("Lexical Resources", competence_results.lexical_resources),
+            ("Grammatical Range", competence_results.grammatical_range)
+        ]
+        formatted_suggestions = [format_suggestion(name, suggestion) for name, suggestion in suggestion_names if
+                                 suggestion is not None]
+        return formatted_suggestions
 
     async def get_uq_extra_params(self, *select_params, uq_id: int):
         async with self.session() as session:
