@@ -1,3 +1,4 @@
+import math
 import typing as T  # noqa
 
 from sqlalchemy.ext.asyncio import async_sessionmaker
@@ -62,6 +63,6 @@ class ResultService(ServiceFactory):
                 category_text = f"<b>{category} (score {category_min_score}):</b>\n\n" + "\n".join(category_advice_text)
                 output_texts.append(category_text)
         if all_category_min_scores:
-            average_score = sum(all_category_min_scores) / len(all_category_min_scores)
+            average_score = math.floor(sum(all_category_min_scores) / len(all_category_min_scores) * 2) / 2
             output_texts.insert(0, f"\nYour <b>IELTS</b> {competence.value} <b>score</b> is <b>{average_score:.1f}</b>")
         return output_texts
