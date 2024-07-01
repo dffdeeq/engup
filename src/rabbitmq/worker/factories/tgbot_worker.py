@@ -7,10 +7,11 @@ from aio_pika.abc import AbstractRobustConnection
 from sqlalchemy.ext.asyncio import async_sessionmaker
 
 from src.bot.core.bot import get_bot
-from src.bot.handlers.constants import MessageTemplates
+from src.bot.handlers.constants import MessageTemplates, Constants
 from src.bot.handlers.utils import answer_parts_async_generator
 from src.bot.injector import INJECTOR
 from src.libs.factories.gpt.models.result import Result
+from src.postgres.enums import CompetenceEnum
 from src.rabbitmq.worker.factory import RabbitMQWorkerFactory
 from src.repos.factories.temp_data import TempDataRepo
 
@@ -44,22 +45,25 @@ class TgBotWorker(RabbitMQWorkerFactory):
 
     @async_log
     async def process_return_simple_result_task(self, data: T.Dict[str, T.Any]):
+        if len(data['result']) == 6:
+            data['result'][5] = '<b>Vocabulary:</b>\n' + '\n'.join(f'- {word}' for word in data['result'][5])
         for msg in data['result']:
             await asyncio.sleep(2)
             await self.send_messages([data['user_id']], msg)
 
     @async_log
     async def process_return_result_task(self, data: T.Dict[str, T.Any]):
-        await self.send_result_to_user(data['user_id'], data['result'])
+        await self.send_result_to_user(data['user_id'], data['result'], data['competence'])
 
-    async def send_result_to_user(self, user_id: int, result: dict):
+    async def send_result_to_user(self, user_id: int, result: dict, competence: CompetenceEnum):
         result = Result.parse_obj(result)
-        async for msg in answer_parts_async_generator(result):
+        async for msg in answer_parts_async_generator(result, competence):
             await self.bot.send_message(user_id, text=msg)
             await asyncio.sleep(3)
 
         general_recommendations = MessageTemplates.GENERAL_RECOMMENDATIONS_TEMPLATE.format(
-            vocabulary='\n'.join(f'- {word}' for word in result.vocabulary)
+            vocabulary='\n'.join(f'- {word}' for word in result.vocabulary),
+            practice_regularly=Constants.PRACTICE_REGULARLY_DICT[competence]
         )
         await self.bot.send_message(user_id, text=general_recommendations)
 

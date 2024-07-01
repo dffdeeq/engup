@@ -44,8 +44,9 @@ class RabbitMQWorkerFactory:
     @staticmethod
     async def handle_message(message: IncomingMessage, async_funcs: T.Dict[str, T.Callable[..., T.Awaitable[None]]]):
         payload = json.loads(message.body)
+        payload['priority'] = message.priority
         routing_key = message.routing_key
-        logging.debug(f'Received message with routing_key {routing_key}: {payload}')
+        logging.info(f'Received message with routing_key {routing_key}: {payload}')
 
         if routing_key in async_funcs:
             await asyncio.create_task(async_funcs[routing_key](payload))
@@ -53,4 +54,3 @@ class RabbitMQWorkerFactory:
             logging.warning(f'No handler for routing_key {routing_key}')
 
         await message.ack()
-        await asyncio.sleep(1)

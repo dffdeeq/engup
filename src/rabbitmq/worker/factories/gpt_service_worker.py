@@ -58,26 +58,31 @@ class GPTWorker(RabbitMQWorkerFactory):
             logging.error(e)
 
     @async_log
-    async def process_result_task(self, uq_id: T.Dict[str, int]):
+    async def process_result_task(self, data: T.Dict[str, T.Any]):
         instance, user_id, competence = await self.get_uq_extra_params(
-            TgUser.id, Question.competence, uq_id=uq_id['uq_id'])
+            TgUser.id, Question.competence, uq_id=data['uq_id'])
         request_text = await self.format_user_qa_to_text(instance.user_answer_json)
         result = await self.get_result(request_text, competence)
         if result:
             await self.update_uq(instance, result.model_dump())
-            await self.gpt_producer.create_task_return_result_to_user(user_id, result)
+            await self.gpt_producer.create_task_return_result_to_user(
+                user_id, result, competence, premium_queue=data['priority'])
 
     @async_log
-    async def process_result_local_model_task(self, uq_id: T.Dict[str, int]):
+    async def process_result_local_model_task(self, data: T.Dict[str, T.Any]):
         instance, user_id, competence = await self.get_uq_extra_params(
-            TgUser.id, Question.competence, uq_id=uq_id['uq_id'])
+            TgUser.id, Question.competence, uq_id=data['uq_id'])
         request_text = await UserQuestionService.format_question_answer_to_text(
             instance.user_answer_json['card_text'], instance.user_answer_json['user_answer']
         )
         result = await self.result_service.generate_result(request_text, competence, local_model=True)
+        if data['priority']:
+            premium_result = await self.result_service.generate_result(request_text, competence)
+            vocabulary = premium_result.vocabulary
+            result.append(vocabulary)
         if result:
             await self.update_uq(instance, json.dumps(result))
-            await self.gpt_producer.create_task_return_simple_result_to_user(user_id, result)
+            await self.gpt_producer.create_task_return_simple_result_to_user(user_id, result, data['priority'])
 
     async def get_uq_extra_params(self, *select_params, uq_id: int):
         async with self.session() as session:
@@ -96,6 +101,19 @@ class GPTWorker(RabbitMQWorkerFactory):
             instance.user_result_json = user_result_json
             instance.status = True
             session.add(instance)
+
+            user_query = await session.execute(select(TgUser).where(and_(TgUser.id == instance.user_id)))
+            user = user_query.scalar_one_or_none()
+            user.completed_questions += 1
+            session.add(user)
+            if user.completed_questions == 3 and user.referrer_id:
+                referrer_query = await session.execute(
+                    select(TgUser).where(and_(TgUser.id == user.referrer_id))
+                )
+                referrer = referrer_query.scalar_one_or_none()
+                if referrer:
+                    referrer.pts += 5
+                    session.add(referrer)
             await session.commit()
 
     @staticmethod

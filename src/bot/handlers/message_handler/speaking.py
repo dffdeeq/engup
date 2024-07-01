@@ -1,3 +1,4 @@
+import asyncio
 import os.path
 import typing as T  # noqa
 import json
@@ -15,13 +16,13 @@ from src.services.factories.question import QuestionService
 from src.services.factories.user_question import UserQuestionService
 from src.services.factories.voice import VoiceService
 
-from src.bot.handlers.constants import SpeakingMessages as Messages
+from src.bot.handlers.constants import SpeakingMessages as Messages, DefaultMessages
 
 router = Router(name=__name__)
 
 
 @router.callback_query(
-    F.data == 'speaking',
+    F.data.startswith('speaking'),
     INJECTOR.inject_question,
     INJECTOR.inject_uq,
     INJECTOR.inject_answer_process,
@@ -44,7 +45,11 @@ async def speaking_start(
         'part_3_questions': question_json['part_3'],
         'part_1_current_question': 0,
         'uq_id': uq_instance.id,
+        'premium_queue': uq_instance.premium_queue,
     })
+    if not uq_instance.premium_queue:
+        await callback.message.answer(text=DefaultMessages.DONT_HAVE_POINTS)
+        await asyncio.sleep(2)
 
     for msg in [Messages.FIRST_PART_MESSAGE_1, Messages.FIRST_PART_MESSAGE_2, question_json['part_1'][0]]:
         await callback.message.answer(msg)
@@ -141,7 +146,8 @@ async def speaking_third_part(
         })
         await message.answer(text=next_question)
     else:
+        await answer_process.update_user_qa_premium_queue(state_data['uq_id'], state_data['premium_queue'])
         filepaths = await answer_process.get_temp_data_filepaths(state_data['uq_id'])
-        await apihost_producer.create_task_send_to_transcription(filepaths)
+        await apihost_producer.create_task_send_to_transcription(filepaths, premium_queue=state_data['premium_queue'])
         await state.clear()
-        await message.answer(text=Messages.CALCULATING_RESULT)
+        await message.answer(text=DefaultMessages.CALCULATING_RESULT)

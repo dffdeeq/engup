@@ -31,22 +31,23 @@ class ApiHostWorker(RabbitMQWorkerFactory):
         self.apihost_service = apihost_service
         self.gpt_producer = gpt_producer
 
-    async def process_answers(self, updates: T.List[T.Dict[str, str]]):
+    async def process_answers(self, updates: T.Dict[str, T.Any]):
         logging.info(f'---------- Start of Task {self.process_answers.__name__} ----------')
-        uq_id = await self.update_multiple_temp_data_answers(updates)
+        uq_id = await self.update_multiple_temp_data_answers(updates['filenames'])
         if uq_id:
             logging.info('apihost --> update_multiple_temp_data_answers == OK')
             all_user_qa = await self.get_all_user_qa(uq_id)
             async with self.session() as session:
-                await session.execute(
+                premium_queue = (await session.execute(
                     update(TgUserQuestion)
                     .where(and_(TgUserQuestion.id == uq_id))
                     .values(user_answer_json=all_user_qa, status=True)
-                )
+                    .returning(TgUserQuestion.premium_queue)
+                )).scalar_one_or_none()
                 await session.commit()
                 logging.info('apihost --> update_user_answer_json == OK')
             logging.info('apihost --> gpt (create_task_generate_result) == OK')
-            await self.gpt_producer.create_task_generate_result(uq_id)
+            await self.gpt_producer.create_task_generate_result(uq_id, premium_queue=premium_queue)
         logging.info(f'---------- End of Task {self.process_answers.__name__} ----------')
 
     async def update_multiple_temp_data_answers(self, updates: T.List[T.Dict[str, str]]) -> T.Optional[int]:

@@ -12,8 +12,8 @@ class RabbitMQProducerFactory:
         """
         RabbitMQ Producer Base Class.
         :param dsn_string: Connection string for RabbitMQ.
-        :param exchange_name: Name of the exchange to use.
         :param adapter: Adapter instance.
+        :param exchange_name: Name of the exchange to use.
         """
         self.dsn_string: str = dsn_string
         self.adapter: Adapter = adapter
@@ -22,9 +22,10 @@ class RabbitMQProducerFactory:
         self._channel: T.Optional[AbstractRobustChannel] = None
         self._exchange: T.Optional[AbstractRobustExchange] = None
 
-    async def _publish(self, message: Message, routing_key: str):
+    async def _publish(self, message: Message, routing_key: str, priority: int = 0):
         await self.__ensure_connection_and_channel()
         exchange = await self.__get_exchange()
+        message.priority = priority
         await exchange.publish(message, routing_key=routing_key)
 
     async def __ensure_connection_and_channel(self):
@@ -37,3 +38,7 @@ class RabbitMQProducerFactory:
         if not self._exchange:
             self._exchange = await self._channel.declare_exchange(self.exchange_name, auto_delete=True)
         return self._exchange
+
+    @staticmethod
+    def get_priority(premium_queue: bool):
+        return 5 if premium_queue else 0
