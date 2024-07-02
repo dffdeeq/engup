@@ -2,7 +2,8 @@ from src.postgres.enums import CompetenceEnum
 
 
 class DefaultMessages:
-    TOO_SHORT_TEXT_WARNING = "Your text contains fewer than 150 words. Please rewrite it to meet the required length."
+    TOO_SHORT_TEXT_WARNING = ("Your essay must contain at least 150 words to meet the requirement. "
+                              "However, for a better evaluation, aim for at least 250 words.")
     TEXT_IS_NOT_ENGLISH = ("It appears that your text is not written in English. Unfortunately, "
                            "I cannot process such an answer. Please rewrite it using English words and content.")
     TEXT_IS_COPY_PASTE = ('It appears that your text contains repeated phrases and seems to be copied and pasted '

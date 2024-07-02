@@ -8,10 +8,10 @@ async def get_balance(user_points: int) -> T.Tuple[str, InlineKeyboardBuilder]:
     text = f'You have {user_points} points.\n\nPoints give you the advantage of priority processing for your results.'
     builder = InlineKeyboardBuilder([
         [
-            InlineKeyboardButton(text='Купить', callback_data='pricing'),
+            InlineKeyboardButton(text='Purchase', callback_data='pricing'),
          ],
         [
-            InlineKeyboardButton(text='Назад', callback_data='menu'),
+            InlineKeyboardButton(text='Return', callback_data='menu'),
         ]
     ])
     return text, builder

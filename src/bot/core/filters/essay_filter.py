@@ -10,12 +10,12 @@ class EssayFilter(Filter):
     A filter to check if a message contains a valid english essay.
     """
     async def __call__(self, message: Message) -> bool:
-        if len(message.text.split()) < 150:
-            warning = DefaultMessages.TOO_SHORT_TEXT_WARNING
+        if is_copypaste(message.text):
+            warning = DefaultMessages.TEXT_IS_COPY_PASTE
         elif not is_english(message.text):
             warning = DefaultMessages.TEXT_IS_NOT_ENGLISH
-        elif is_copypaste(message.text):
-            warning = DefaultMessages.TEXT_IS_COPY_PASTE
+        elif len(message.text.split()) < 150:
+            warning = DefaultMessages.TOO_SHORT_TEXT_WARNING
         else:
             return True
 
