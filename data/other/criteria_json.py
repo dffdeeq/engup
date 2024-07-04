@@ -1,3 +1,12 @@
+GRAMMAR_AND_LEXICAL_ERRORS_ADVICE = {
+    9: "Uses a wide range of structures with full flexibility and accuracy; rare minor errors occur only as 'slips'.",
+    8: "Uses a wide range of structures. The majority of sentences are error-free. Makes only very occasional errors or inappropriacies.",
+    7: "Uses a variety of complex structures. Produces frequent error-free sentences. Has good control of grammar and punctuation but may make a few errors.",
+    6: "Uses a mix of simple and complex sentence forms. Makes some errors in grammar and punctuation but they rarely reduce communication.",
+    5: "Uses only a limited range of structures. Attempts complex sentences but these tend to be less accurate than simple sentences. May make frequent grammatical errors and punctuation may be faulty; errors can cause some difficulty for the reader.",
+}
+
+
 ACHIEVEMENT_JSON = {
     "Grammatical Range": {
         "Clear and correct grammar": ["Your essay demonstrates excellent grammar usage, with minimal errors and clear sentence construction, making it easy to read and understand."],

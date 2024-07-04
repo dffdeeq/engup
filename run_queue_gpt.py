@@ -4,7 +4,7 @@ import logging
 import aio_pika
 
 from src.libs.adapter import Adapter
-from src.neural_network.models.local_models import ScoreGeneratorNNModel
+from src.neural_network import ScoreGeneratorNNModel
 from src.postgres.factory import initialize_postgres_pool
 from src.postgres.models.question import Question
 from src.postgres.models.temp_data import TempData
