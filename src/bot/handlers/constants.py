@@ -19,13 +19,23 @@ class DefaultMessages:
 
 
 class SpeakingMessages:
-    FIRST_PART_MESSAGE_1 = "Great! I will ask you some questions. Please record audio to answer them"
+    FIRST_PART_MESSAGE_1 = ("Great! I will ask you some questions.\nPlease record audio to answer them\n"
+                            "<u><a href='https://telegra.ph/How-to-Record-an-Audio-File-in-Telegram-07-04'>"
+                            "How to Record an Audio File in Telegram</a></u>")
     FIRST_PART_MESSAGE_2 = "Let's start with part 1"
     COULDNT_FIND_AUDIO = 'Sorry, I couldn\'t find the audio.\n\nPlease, send me an voice message'
     SECOND_PART_MESSAGE = ("Ok! Let's proceed to <b>part 2</b>. Here is your card:\n\n<b>{question}</b>\n\n"
                            "You have 1 minute to prepare. Then record an audio up to 2 minutes")
 
     THIRD_PART_MESSAGE = "Great! Let's continue to the part 3"
+
+    HOW_TO_RECORD_AUDIO = ("How to Record an Audio File in Telegram:\n\n"
+                           "1. Tap on the microphone icon at the bottom right corner of the chat screen. "
+                           "If you see a paperclip icon instead, tap on it to switch to the microphone.)\n"
+                           "2. Hold down the microphone icon to start recording your voice message.\n"
+                           "3. Speak clearly into your device's microphone.\n"
+                           "4. Release the microphone icon when you are done recording. The audio message will be "
+                           "automatically sent to the chat.")
 
 
 class Constants:

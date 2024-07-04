@@ -5,4 +5,4 @@ extend-exclude =
     build,
     alembic,
     requirements,
-    src/neural_network/criteria_json.py
+    data

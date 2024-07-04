@@ -1,11 +1,13 @@
+import logging
 import math
 import typing as T  # noqa
 
 from sqlalchemy.ext.asyncio import async_sessionmaker
 
+from data.other.criteria_json import GRAMMAR_AND_LEXICAL_ERRORS_ADVICE
 from src.libs.adapter import Adapter
 from src.libs.factories.gpt.models.result import Result
-from src.neural_network.models.local_models import ScoreGeneratorNNModel
+from src.neural_network import ScoreGeneratorNNModel
 from src.postgres.enums import CompetenceEnum
 from src.repos.factories.question import QuestionRepo
 from src.services.constants import NeuralNetworkConstants
@@ -31,19 +33,34 @@ class ResultService(ServiceFactory):
         if not self.nn_service.models:
             self.nn_service.load_models(NeuralNetworkConstants.predict_params)
 
-    def _generate_result_local_model(self, text: str, competence: CompetenceEnum) -> T.List[str]:
+    def _generate_result_local_model(
+        self,
+        text: str,
+        competence: CompetenceEnum,
+        premium: bool = False
+    ) -> T.List[str]:
         self.check_or_load_models()
         results = self.nn_service.predict_all(text=text, model_names=NeuralNetworkConstants.predict_params)
+        gr_score, gr_errors, lxc_errors, pnkt_errors = results.pop('clear_grammar_result')
+        results['gr_Clear and correct grammar'] = gr_score
         advice_dict = self.nn_service.select_random_advice(results)
-        return self.format_advice(advice_dict, results, competence)
+        print(advice_dict)
+        logging.info(advice_dict)
+        advice_dict['Grammatical Range']['Clear and correct grammar'] = GRAMMAR_AND_LEXICAL_ERRORS_ADVICE[gr_score]
+        result = self.format_advice(advice_dict, results, competence)
+        if premium:
+            grammar_errors = self.format_grammar_errors(gr_errors, lxc_errors, pnkt_errors)
+            result.append(grammar_errors)
+        return result
 
     async def generate_result(
         self, text: str,
         competence: CompetenceEnum,
-        local_model: bool = False
+        local_model: bool = False,
+        premium: bool = False
     ) -> T.Union[Result, T.List]:
         if local_model:
-            return self._generate_result_local_model(text, competence)
+            return self._generate_result_local_model(text, competence, premium)
         return await self.adapter.gpt_client.generate_result(text=text, competence=competence)
 
     @staticmethod
@@ -66,3 +83,30 @@ class ResultService(ServiceFactory):
             average_score = math.floor(sum(all_category_min_scores) / len(all_category_min_scores) * 2) / 2
             output_texts.insert(0, f"\nYour <b>IELTS</b> {competence.value} <b>score</b> is <b>{average_score:.1f}</b>")
         return output_texts
+
+    @staticmethod
+    def format_error_examples(error_list, error_type):
+        examples = [f"    <b>{error_type} Mistakes</b> ({len(error_list)}):\n"]
+        for i, error in enumerate(error_list, 1):
+            highlighted_text = error.context.replace(error.matchedText, f"<u>{error.matchedText}</u>")
+            examples.append(f"        <b>Example {i}:</b> \"{highlighted_text}\" (Comment: \"{error.message}\")\n")
+        return examples
+
+    @staticmethod
+    def format_grammar_errors(grammar_errors: T.List, lexical_errors: T.List, punctuation_errors: T.List) -> str:
+        output = [
+            "<b>Grammar and lexical errors:</b>\n\n",
+            f"During the review of your text, we identified a total of <b>{len(grammar_errors)} grammar mistakes, "
+            f"{len(lexical_errors)} lexical mistakes </b> and <b>{len(punctuation_errors)} punctuation mistakes</b>. "
+        ]
+        if len(grammar_errors + lexical_errors + punctuation_errors) > 0:
+            output.append("Below are some examples of each type of error:\n\n")
+            output.extend(ResultService.format_error_examples(grammar_errors, "Grammar"))
+            output.append("\n")
+            output.extend(ResultService.format_error_examples(lexical_errors, "Lexical"))
+            output.append("\n")
+            output.extend(ResultService.format_error_examples(punctuation_errors, "Punctuation"))
+            output.append("\nIt is important to address these mistakes to enhance the clarity "
+                          "and professionalism of your writing.\n")
+        final_output = "".join(output)
+        return final_output

@@ -76,7 +76,8 @@ class GPTWorker(RabbitMQWorkerFactory):
         request_text = await UserQuestionService.format_question_answer_to_text(
             instance.user_answer_json['card_text'], instance.user_answer_json['user_answer']
         )
-        result = await self.result_service.generate_result(request_text, competence, local_model=True)
+        result = await self.result_service.generate_result(
+            request_text, competence, local_model=True, premium=data['priority'])
         if data['priority']:
             premium_result = await self.result_service.generate_result(request_text, competence)
             result.append('<b>Recommendations</b>')
