@@ -8,6 +8,7 @@ from sqlalchemy import select, and_
 from sqlalchemy.ext.asyncio import async_sessionmaker
 
 from src.libs.factories.gpt.models.result import Result
+from src.libs.factories.gpt.models.suggestion import Suggestion
 from src.postgres.enums import CompetenceEnum
 from src.postgres.models.question import Question
 from src.postgres.models.tg_user import TgUser
@@ -58,26 +59,59 @@ class GPTWorker(RabbitMQWorkerFactory):
             logging.error(e)
 
     @async_log
-    async def process_result_task(self, uq_id: T.Dict[str, int]):
+    async def process_result_task(self, data: T.Dict[str, T.Any]):
         instance, user_id, competence = await self.get_uq_extra_params(
-            TgUser.id, Question.competence, uq_id=uq_id['uq_id'])
+            TgUser.id, Question.competence, uq_id=data['uq_id'])
         request_text = await self.format_user_qa_to_text(instance.user_answer_json)
         result = await self.get_result(request_text, competence)
         if result:
             await self.update_uq(instance, result.model_dump())
-            await self.gpt_producer.create_task_return_result_to_user(user_id, result)
+            await self.gpt_producer.create_task_return_result_to_user(
+                user_id, result, competence, premium_queue=data['priority'])
 
     @async_log
-    async def process_result_local_model_task(self, uq_id: T.Dict[str, int]):
+    async def process_result_local_model_task(self, data: T.Dict[str, T.Any]):
         instance, user_id, competence = await self.get_uq_extra_params(
-            TgUser.id, Question.competence, uq_id=uq_id['uq_id'])
+            TgUser.id, Question.competence, uq_id=data['uq_id'])
         request_text = await UserQuestionService.format_question_answer_to_text(
             instance.user_answer_json['card_text'], instance.user_answer_json['user_answer']
         )
         result = await self.result_service.generate_result(request_text, competence, local_model=True)
+        if data['priority']:
+            premium_result = await self.result_service.generate_result(request_text, competence)
+            result.append('<b>Recommendations</b>')
+            premium_recommendations = self.format_result(premium_result)
+            result.extend(premium_recommendations)
+            vocabulary = '<b>Vocabulary:</b>\n' + '\n'.join(f'- {word}' for word in premium_result.vocabulary)
+            result.append(vocabulary)
         if result:
             await self.update_uq(instance, json.dumps(result))
-            await self.gpt_producer.create_task_return_simple_result_to_user(user_id, result)
+            await self.gpt_producer.create_task_return_simple_result_to_user(user_id, result, data['priority'])
+
+    @staticmethod
+    def format_result(result: Result) -> T.List[str]:
+        def format_suggestion(suggestion_name: str, suggestion: T.Optional[Suggestion]) -> T.Optional[str]:
+            if suggestion is None:
+                return None
+            formatted_text = f"{suggestion_name}:\n"
+            for enhancement in suggestion.enhancements:
+                formatted_text += (
+                    f"\n{enhancement.basic_suggestion}\n"
+                    f"<b>Your answer:</b> {enhancement.source_text}\n"
+                    f"<b>Enhanced answer:</b> {enhancement.enhanced_text}\n"
+                )
+            return formatted_text.strip()
+
+        competence_results = result.competence_results
+        suggestion_names = [
+            ("Task Achievement", competence_results.task_achievement),
+            ("Fluency Coherence", competence_results.fluency_coherence),
+            ("Lexical Resources", competence_results.lexical_resources),
+            ("Grammatical Range", competence_results.grammatical_range)
+        ]
+        formatted_suggestions = [format_suggestion(name, suggestion) for name, suggestion in suggestion_names if
+                                 suggestion is not None]
+        return formatted_suggestions
 
     async def get_uq_extra_params(self, *select_params, uq_id: int):
         async with self.session() as session:
@@ -96,6 +130,19 @@ class GPTWorker(RabbitMQWorkerFactory):
             instance.user_result_json = user_result_json
             instance.status = True
             session.add(instance)
+
+            user_query = await session.execute(select(TgUser).where(and_(TgUser.id == instance.user_id)))
+            user = user_query.scalar_one_or_none()
+            user.completed_questions += 1
+            session.add(user)
+            if user.completed_questions == 3 and user.referrer_id:
+                referrer_query = await session.execute(
+                    select(TgUser).where(and_(TgUser.id == user.referrer_id))
+                )
+                referrer = referrer_query.scalar_one_or_none()
+                if referrer:
+                    referrer.pts += 5
+                    session.add(referrer)
             await session.commit()
 
     @staticmethod

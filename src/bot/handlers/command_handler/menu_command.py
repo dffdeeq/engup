@@ -9,7 +9,7 @@ from src.services.factories.tg_user import TgUserService
 router = Router(name=__name__)
 
 
-@router.message(Command('menu'), INJECTOR.inject_tg_bot)
+@router.message(Command('menu'), INJECTOR.inject_tg_user)
 async def command_menu_handler(message: Message, tg_user_service: TgUserService) -> None:
     await tg_user_service.get_or_create_tg_user(message.from_user.id, message.from_user.username)
     text, builder = await get_menu()

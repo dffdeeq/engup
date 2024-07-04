@@ -11,22 +11,8 @@ class TgUserQuestionRepo(RepoFactory):
     def __init__(self, model: T.Type[TgUserQuestion], session: async_sessionmaker):
         super().__init__(model, session)
 
-    async def get_or_create_user_question(self, user_id: int, question_id: int) -> T.Optional[TgUserQuestion]:
-        instance = await self.get_user_question(user_id, question_id)
-        if not instance:
-            instance = await self.create_user_question(user_id, question_id)
-        return instance
-
-    async def update_user_question(
-        self,
-        uq_id: int,
-        answer_json: T.Optional[dict] = None,
-        result_json: T.Optional[dict] = None,
-        status: bool = False
-    ):
-        await self.update(
-            conditions={'id': uq_id},
-            values={'user_answer_json': answer_json, 'user_result_json': result_json, 'status': status})
+    async def create_user_question(self, user_id, question_id) -> T.Optional[TgUserQuestion]:
+        return await self.insert_one(user_id=user_id, question_id=question_id)
 
     async def get_user_question(self, user_id, question_id) -> T.Optional[TgUserQuestion]:
         async with self.session() as session:
@@ -35,5 +21,19 @@ class TgUserQuestionRepo(RepoFactory):
             )))
         return instance.scalar_one_or_none()
 
-    async def create_user_question(self, user_id, question_id) -> T.Optional[TgUserQuestion]:
-        return await self.insert_one(user_id=user_id, question_id=question_id)
+    async def update_user_question(
+        self,
+        uq_id: int,
+        answer_json: T.Optional[dict] = None,
+        result_json: T.Optional[dict] = None,
+        status: bool = False,
+        premium_queue: bool = False,
+    ):
+        await self.update(
+            conditions={'id': uq_id},
+            values={
+                'user_answer_json': answer_json,
+                'user_result_json': result_json,
+                'status': status,
+                'premium_queue': premium_queue},
+        )

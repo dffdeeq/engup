@@ -12,7 +12,7 @@ logging.basicConfig(
 )
 
 
-app = FastAPI(dependencies=[Depends(get_apihost_producer)])
+app = FastAPI(dependencies=[Depends(get_apihost_producer), ])
 app.include_router(router)
 
 

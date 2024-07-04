@@ -13,8 +13,13 @@ class TgUserService(ServiceFactory):
         super().__init__(repo, adapter, session, settings)
         self.repo = repo
 
-    async def get_or_create_tg_user(self, user_id: int, username: T.Optional[str] = None) -> TgUser:
+    async def get_or_create_tg_user(
+        self,
+        user_id: int,
+        username: T.Optional[str] = None,
+        referrer_id: int = None
+    ) -> TgUser:
         user = await self.repo.get_tg_user_by_tg_id(user_id=user_id)
         if not user:
-            user = await self.repo.create_tg_user(user_id=user_id, username=username)
+            user = await self.repo.create_tg_user(user_id=user_id, username=username, referrer_id=referrer_id)
         return user
