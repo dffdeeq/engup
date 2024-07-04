@@ -52,7 +52,7 @@ async def speaking_start(
         await asyncio.sleep(2)
 
     for msg in [Messages.FIRST_PART_MESSAGE_1, Messages.FIRST_PART_MESSAGE_2, question_json['part_1'][0]]:
-        await callback.message.answer(msg)
+        await callback.message.answer(msg, disable_web_page_preview=True)
 
 
 @router.message(
