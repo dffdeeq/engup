@@ -8,3 +8,15 @@ pipelines:
           script:
             - pip install flake8
             - flake8 . --show-source --statistics
+      - step:
+          name: Deploy to Server
+          deployment: production
+          script:
+            - pipe: atlassian/ssh-run:0.8.0
+              variables:
+                SSH_USER: $SSH_USER
+                SERVER: $SERVER
+                COMMAND: |
+                  cd /opt/engup
+                  git pull
+                  docker-compose up -d --build
