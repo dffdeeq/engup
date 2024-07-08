@@ -52,7 +52,7 @@ services:
   engup_tgbot:
     container_name: engup_tgbot
     build: .
-    command: python run_bot.py
+    command: /bin/sh -c "alembic upgrade head && python run_bot.py"
     volumes:
       - ./data/temp_files:/app/data/temp_files
     environment:
