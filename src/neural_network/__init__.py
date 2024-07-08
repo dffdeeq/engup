@@ -7,18 +7,19 @@ from pathlib import Path
 import language_tool_python
 import nltk
 import spacy
-from language_tool_python import Match
 from nltk import word_tokenize
 
 from src.neural_network.base import NeuralNetworkBase
 from data.other.criteria_json import CRITERIA_JSON, ACHIEVEMENT_JSON
 from src.neural_network.nn_models.accurate_spelling_and_word_formation import AccurateSpellingAndWordFormation
+from src.neural_network.nn_models.gr_clear_and_correct_grammar import GrClearAndCorrectGrammar
 from src.neural_network.nn_models.mix_of_complex_and_simple_sentences import MixOfComplexAndSimpleSentences
 from src.neural_network.nn_models.varied_vocabulary import VariedVocabulary
 from src.settings.static import NN_MODELS_DIR, OTHER_DATA_DIR
 
 
 class ScoreGeneratorNNModel(
+    GrClearAndCorrectGrammar,
     MixOfComplexAndSimpleSentences,
     VariedVocabulary,
     AccurateSpellingAndWordFormation,
@@ -53,22 +54,12 @@ class ScoreGeneratorNNModel(
         scores = {}
         for model_name in model_names:
             scores[model_name] = self.predict(text, model_name)
-        scores['clear_grammar_result'] = self.gr_clear_and_correct_grammar_premium(text)
+        scores['clear_grammar_result'] = self.gr_clear_and_correct_grammar(text)
         scores['ta_Appropriate word count'] = self.ta_appropriate_word_count(text)
         scores['gr_Mix of complex & simple sentences'] = self.gr_mix_of_complex_and_simple_sentences(text)
         scores['lr_Varied vocabulary'] = self.lr_varied_vocabulary(text)
         scores['lr_Accurate spelling & word formation'] = self.lr_accurate_spelling_and_word_formation(text)
         return scores
-
-    def gr_clear_and_correct_grammar(self, text) -> float:
-        grammar_score, grammar_errors, lexical_errors, punctuation_errors = self.get_grammar_score_and_grammar_errors(
-            text=text, tool=self.language_tool)
-        return grammar_score
-
-    def gr_clear_and_correct_grammar_premium(self, text) -> T.Tuple[float, T.List, T.List, T.List]:
-        grammar_score, grammar_errors, lexical_errors, punctuation_errors = self.get_grammar_score_and_grammar_errors(
-            text=text, tool=self.language_tool)
-        return grammar_score, grammar_errors, lexical_errors, punctuation_errors
 
     @staticmethod
     def select_random_advice(results):
@@ -92,33 +83,3 @@ class ScoreGeneratorNNModel(
         words = word_tokenize(text)
         words_count = len([w for w in words if w.isalpha()])
         return 9.0 if words_count >= 250 else 4.0
-
-    @staticmethod
-    def get_grammar_score_and_grammar_errors(text, tool) -> T.Tuple[float, T.List[Match], T.List[Match], T.List[Match]]:
-        matches = tool.check(text)
-        grammar_errors = []
-        lexical_errors = []
-        punctuation_errors = []
-        for match in matches:
-            issue_type = match.ruleIssueType.lower()
-            if 'grammar' in issue_type:
-                grammar_errors.append(match)
-            elif 'typographical' in issue_type or 'whitespace' in issue_type:
-                punctuation_errors.append(match)
-            elif 'spelling' in issue_type:
-                lexical_errors.append(match)
-            else:
-                grammar_errors.append(match)
-        grammar_errors_len = len(matches)
-        total_words = len(text.split())
-        grammar_score = ((total_words - grammar_errors_len) / total_words)
-        grammar_main_score = ScoreGeneratorNNModel.get_band_from_grammar_score(grammar_score)
-        return grammar_main_score, grammar_errors, lexical_errors, punctuation_errors
-
-    @staticmethod
-    def get_band_from_grammar_score(grammar_score: float) -> float:
-        bands = {(0.99, 1.00): 9.0, (0.97, 0.99): 8.0, (0.94, 0.97): 7.0, (0.88, 0.94): 6.0}
-        for (lower, upper), band in bands.items():
-            if lower <= grammar_score < upper:
-                return band
-        return 5.0
