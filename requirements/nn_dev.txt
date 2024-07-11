@@ -16,3 +16,5 @@ language-tool-python==2.8
 spacy==3.7.5
 pandas==2.2.2
 lexicalrichness==0.5.1
+pydub==0.25.1
+pyannote.audio==3.3.1
