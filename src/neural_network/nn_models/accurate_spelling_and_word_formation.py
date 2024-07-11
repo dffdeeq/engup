@@ -1,6 +1,18 @@
-class AccurateSpellingAndWordFormation:
-    def __init__(self):
+import language_tool_python
+
+from src.neural_network.base import NeuralNetworkBase
+from src.settings import NNModelsSettings
+
+
+class AccurateSpellingAndWordFormation(NeuralNetworkBase):
+    def __init__(self, settings: NNModelsSettings):
+        super().__init__(settings)
         self.language_tool = None
+
+    def load(self):
+        if not self.language_tool:
+            self.language_tool = language_tool_python.LanguageTool('en-US')
+        super().load()
 
     def lr_accurate_spelling_and_word_formation(self, text) -> float:
         matches = self.language_tool.check(text)

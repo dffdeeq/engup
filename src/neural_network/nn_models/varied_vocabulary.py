@@ -1,11 +1,23 @@
+import os
 import typing as T  # noqa
 import pandas as pd
 from lexicalrichness import LexicalRichness
 
+from src.neural_network.base import NeuralNetworkBase
+from src.settings import NNModelsSettings
+from src.settings.static import OTHER_DATA_DIR
 
-class VariedVocabulary:
-    def __init__(self):
+
+class VariedVocabulary(NeuralNetworkBase):
+    def __init__(self, settings: NNModelsSettings):
+        super().__init__(settings)
         self.ielts_academic_vocabulary: T.Optional[T.List[str]] = None
+
+    def load(self):
+        if not self.ielts_academic_vocabulary:
+            self.ielts_academic_vocabulary = self.load_ielts_academic_words(
+                os.path.join(OTHER_DATA_DIR, 'ielts_academic_vocabulary.csv'))
+        super().load()
 
     @staticmethod
     def load_ielts_academic_words(file_path):

@@ -1,10 +1,21 @@
+import os
 import typing as T  # noqa
 import spacy
 
+from src.neural_network.base import NeuralNetworkBase
+from src.settings import NNModelsSettings
+from src.settings.static import NN_MODELS_DIR
 
-class MixOfComplexAndSimpleSentences:
-    def __init__(self):
+
+class MixOfComplexAndSimpleSentences(NeuralNetworkBase):
+    def __init__(self, settings: NNModelsSettings):
+        super().__init__(settings)
         self.nlp: T.Optional[spacy.Language] = None
+
+    def load(self):
+        if not self.nlp:
+            self.nlp = spacy.load(os.path.join(NN_MODELS_DIR, 'en_core_web_sm-3.7.1'))
+        super().load()
 
     def classify_sentence(self, sentence):
         doc = self.nlp(sentence)

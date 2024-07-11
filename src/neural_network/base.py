@@ -6,12 +6,15 @@ import torch
 from pathlib import Path
 from transformers import BertForSequenceClassification, BertTokenizer
 
+from src.settings import NNModelsSettings
+
 
 class NeuralNetworkBase:
-    @staticmethod
-    def load_json(file_path: str) -> T.Dict:
-        with open(file_path, 'r') as file:
-            return json.load(file)
+    def __init__(self, settings: NNModelsSettings) -> None:
+        self.settings = settings
+
+    def load(self):
+        pass
 
     def _load_model(self, model_path: T.Union[str, Path]) -> T.Dict[str, T.Any]:
         model = BertForSequenceClassification.from_pretrained(os.path.join(model_path, 'model'))
@@ -24,6 +27,11 @@ class NeuralNetworkBase:
             "label_to_int": label_to_int,
             "int_to_label": int_to_label,
         }
+
+    @staticmethod
+    def load_json(file_path: str) -> T.Dict:
+        with open(file_path, 'r') as file:
+            return json.load(file)
 
     @staticmethod
     def _predict(text: str, model_info: T.Dict[str, T.Any]) -> float:

@@ -3,10 +3,19 @@ import typing as T  # noqa
 import language_tool_python
 from language_tool_python import Match
 
+from src.neural_network.base import NeuralNetworkBase
+from src.settings import NNModelsSettings
 
-class GrClearAndCorrectGrammar:
-    def __init__(self):
+
+class GrClearAndCorrectGrammar(NeuralNetworkBase):
+    def __init__(self, settings: NNModelsSettings):
+        super().__init__(settings)
         self.language_tool: T.Optional[language_tool_python.LanguageTool] = None
+
+    def load(self):
+        if not self.language_tool:
+            self.language_tool = language_tool_python.LanguageTool('en-US')
+        super().load()
 
     def gr_clear_and_correct_grammar(self, text) -> T.Tuple[float, T.List, T.List, T.List]:
         grammar_score, grammar_errors, lexical_errors, punctuation_errors = self.get_grammar_score_and_grammar_errors(
