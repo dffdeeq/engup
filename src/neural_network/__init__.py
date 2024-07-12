@@ -4,21 +4,21 @@ from os.path import join
 
 from data.other.criteria_json import CRITERIA_JSON, ACHIEVEMENT_JSON
 from src.neural_network.nn_models.accurate_spelling_and_word_formation import AccurateSpellingAndWordFormation
-from src.neural_network.nn_models.gr_clear_and_correct_grammar import GrClearAndCorrectGrammar
+from src.neural_network.nn_models.gr_clear_and_correct_grammar import GRClearAndCorrectGrammar
 from src.neural_network.nn_models.mix_of_complex_and_simple_sentences import MixOfComplexAndSimpleSentences
-from src.neural_network.nn_models.ta_appropriate_word_count import TaAppropriateWordCount
-from src.neural_network.nn_models.varied_vocabulary import VariedVocabulary
+from src.neural_network.nn_models.ta_appropriate_word_count import TAAppropriateWordCount
+from src.neural_network.nn_models.lr_varied_vocabulary import LRVariedVocabulary
 from src.neural_network.nn_models.pr_pronunciation import PrPronunciation
 from src.settings import NNModelsSettings
 
 
 class ScoreGeneratorNNModel(
-    GrClearAndCorrectGrammar,
+    GRClearAndCorrectGrammar,
     MixOfComplexAndSimpleSentences,
-    VariedVocabulary,
+    LRVariedVocabulary,
     AccurateSpellingAndWordFormation,
     PrPronunciation,
-    TaAppropriateWordCount,
+    TAAppropriateWordCount,
 ):
     def __init__(self, settings: NNModelsSettings):
         super().__init__(settings)

@@ -7,7 +7,7 @@ from src.neural_network.base import NeuralNetworkBase
 from src.settings import NNModelsSettings
 
 
-class GrClearAndCorrectGrammar(NeuralNetworkBase):
+class GRClearAndCorrectGrammar(NeuralNetworkBase):
     def __init__(self, settings: NNModelsSettings):
         super().__init__(settings)
         self.language_tool: T.Optional[language_tool_python.LanguageTool] = None

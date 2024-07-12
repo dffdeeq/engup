@@ -8,7 +8,7 @@ from src.settings import NNModelsSettings
 from src.settings.static import OTHER_DATA_DIR
 
 
-class VariedVocabulary(NeuralNetworkBase):
+class LRVariedVocabulary(NeuralNetworkBase):
     def __init__(self, settings: NNModelsSettings):
         super().__init__(settings)
         self.ielts_academic_vocabulary: T.Optional[T.List[str]] = None
@@ -40,9 +40,9 @@ class VariedVocabulary(NeuralNetworkBase):
             'ielts_count': [(15, 9), (12, 8), (9, 7), (6, 6), (4, 5), (3, 4), (2, 3), (1, 2)]
         }
         scores = [
-            VariedVocabulary.calculate_metric_score(cttr, thresholds['cttr']),
-            VariedVocabulary.calculate_metric_score(terms, thresholds['terms']),
-            VariedVocabulary.calculate_metric_score(ielts_count, thresholds['ielts_count'])
+            LRVariedVocabulary.calculate_metric_score(cttr, thresholds['cttr']),
+            LRVariedVocabulary.calculate_metric_score(terms, thresholds['terms']),
+            LRVariedVocabulary.calculate_metric_score(ielts_count, thresholds['ielts_count'])
         ]
         final_score = round(sum(scores) / 3)
         return float(final_score)

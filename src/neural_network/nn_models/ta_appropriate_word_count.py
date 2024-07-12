@@ -7,7 +7,7 @@ from src.neural_network.base import NeuralNetworkBase
 from src.settings import NNModelsSettings
 
 
-class TaAppropriateWordCount(NeuralNetworkBase):
+class TAAppropriateWordCount(NeuralNetworkBase):
     def __init__(self, settings: NNModelsSettings):
         self.nltk_dir = os.path.join(self._nn_models_dir, 'nltk')
         super().__init__(settings)
