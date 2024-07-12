@@ -1,3 +1,6 @@
+from src.postgres.enums import CompetenceEnum
+
+
 class TextTemplates:
     SPEECH_REQUEST_TEMPLATE = (
         'Part 1:\n'
@@ -10,14 +13,36 @@ class TextTemplates:
 
 
 class NeuralNetworkConstants:
-    predict_params = [
-        'gr_Clear and correct grammar',
-        'ta_Relevant & specific examples',
-        'ta_Complete response',
-        'ta_Clear & comprehensive ideas',
-        'cc_Supported main points',  #
-        'cc_Logical structure',
-        'cc_Introduction & conclusion present',
-        'cc_Variety in linking words',
-        'cc_Accurate linking words'
-    ]
+    predict_params = {
+        CompetenceEnum.speaking: [
+            'clear_grammar_result',
+            'gr_Mix of complex & simple sentences',
+            'lr_Varied vocabulary',
+            'lr_Accurate spelling & word formation',
+        ],
+        CompetenceEnum.writing: [
+            'clear_grammar_result',
+            'ta_Appropriate word count',
+            'gr_Mix of complex & simple sentences',
+            'lr_Varied vocabulary',
+            'lr_Accurate spelling & word formation',
+            'ta_Relevant & specific examples',
+            'ta_Complete response',
+            'ta_Clear & comprehensive ideas',
+            'cc_Supported main points',  #
+            'cc_Logical structure',
+            'cc_Introduction & conclusion present',
+            'cc_Variety in linking words',
+            'cc_Accurate linking words'
+        ],
+        'to_load': [
+            'ta_Relevant & specific examples',
+            'ta_Complete response',
+            'ta_Clear & comprehensive ideas',
+            'cc_Supported main points',  #
+            'cc_Logical structure',
+            'cc_Introduction & conclusion present',
+            'cc_Variety in linking words',
+            'cc_Accurate linking words'
+        ]
+    }

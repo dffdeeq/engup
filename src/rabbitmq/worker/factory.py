@@ -9,6 +9,13 @@ from aio_pika.abc import AbstractRobustConnection, ExchangeType
 from src.repos.factory import RepoFactory
 
 
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(levelname)s - %(message)s'
+)
+logger = logging.getLogger(__name__)
+
+
 class RabbitMQWorkerFactory:
     def __init__(
         self,
@@ -17,12 +24,13 @@ class RabbitMQWorkerFactory:
         queues_info: T.List[T.Tuple[str, str]],
         exchange_name: str = 'direct',
     ):
-        self.repo = repo
+        self.temp_data_repo = repo
         self.connection_pool = connection_pool
         self.exchange_name = exchange_name
         self.queues_info = queues_info
 
     async def start_listening(self, async_funcs: T.Dict[str, T.Callable[..., T.Awaitable[None]]]):
+        logger.info('start listening')
         async with self.connection_pool, self.connection_pool.channel() as channel:
             exchange = await channel.declare_exchange(self.exchange_name, type=ExchangeType.DIRECT, auto_delete=True)
             queues = []
@@ -30,7 +38,8 @@ class RabbitMQWorkerFactory:
             for queue_name, routing_key in self.queues_info:
                 queue = await channel.declare_queue(queue_name, auto_delete=True)
                 await queue.bind(exchange=exchange, routing_key=routing_key)
-                logging.info(f'{queue_name}:{routing_key} --> Worker is healthy')
+                logger.info(f'{queue_name}:{routing_key} --> Worker is healthy')
+                print(f'{queue_name}:{routing_key} --> Worker is healthy')
                 task = self.process_queue(queue, async_funcs)
                 queues.append(task)
 
@@ -46,11 +55,12 @@ class RabbitMQWorkerFactory:
         payload = json.loads(message.body)
         payload['priority'] = message.priority
         routing_key = message.routing_key
-        logging.info(f'Received message with routing_key {routing_key}: {payload}')
+        logger.info(f'Received message with routing_key {routing_key}: {payload}')
+        print(f'Received message with routing_key {routing_key}: {payload}')
 
         if routing_key in async_funcs:
             await asyncio.create_task(async_funcs[routing_key](payload))
         else:
-            logging.warning(f'No handler for routing_key {routing_key}')
+            logger.warning(f'No handler for routing_key {routing_key}')
 
         await message.ack()

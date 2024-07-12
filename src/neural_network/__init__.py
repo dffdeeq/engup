@@ -1,20 +1,15 @@
-import os
 import random
 import typing as T  # noqa
 from os.path import join
-from pathlib import Path
-
-import nltk
-from nltk import word_tokenize
 
 from data.other.criteria_json import CRITERIA_JSON, ACHIEVEMENT_JSON
 from src.neural_network.nn_models.accurate_spelling_and_word_formation import AccurateSpellingAndWordFormation
 from src.neural_network.nn_models.gr_clear_and_correct_grammar import GrClearAndCorrectGrammar
 from src.neural_network.nn_models.mix_of_complex_and_simple_sentences import MixOfComplexAndSimpleSentences
+from src.neural_network.nn_models.ta_appropriate_word_count import TaAppropriateWordCount
 from src.neural_network.nn_models.varied_vocabulary import VariedVocabulary
-from src.neural_network.nn_models.voice_model import VoiceModel
+from src.neural_network.nn_models.pr_pronunciation import PrPronunciation
 from src.settings import NNModelsSettings
-from src.settings.static import NN_MODELS_DIR
 
 
 class ScoreGeneratorNNModel(
@@ -22,11 +17,11 @@ class ScoreGeneratorNNModel(
     MixOfComplexAndSimpleSentences,
     VariedVocabulary,
     AccurateSpellingAndWordFormation,
-    VoiceModel,
+    PrPronunciation,
+    TaAppropriateWordCount,
 ):
-    def __init__(self, settings: NNModelsSettings, nn_models_dir: Path = NN_MODELS_DIR):
+    def __init__(self, settings: NNModelsSettings):
         super().__init__(settings)
-        self._nn_models_dir = nn_models_dir
         self.models = {}
         self.func_models: T.Dict[str, T.Callable[[str], T.Any]] = {
             'clear_grammar_result': self.gr_clear_and_correct_grammar,
@@ -37,10 +32,6 @@ class ScoreGeneratorNNModel(
         }
 
     def load(self):
-        nltk_dir = join(self._nn_models_dir, 'nltk')
-        if not os.path.exists(nltk_dir):
-            nltk.download('punkt', download_dir=nltk_dir)
-        nltk.data.path.append(nltk_dir)
         super().load()
 
     def load_models(self, model_list: T.List[str]) -> None:
@@ -74,9 +65,3 @@ class ScoreGeneratorNNModel(
                     selected_advice[category][subcategory] = advice
                     break
         return selected_advice
-
-    @staticmethod
-    def ta_appropriate_word_count(text: str) -> float:
-        words = word_tokenize(text)
-        words_count = len([w for w in words if w.isalpha()])
-        return 9.0 if words_count >= 250 else 4.0

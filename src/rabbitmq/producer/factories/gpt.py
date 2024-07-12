@@ -16,7 +16,6 @@ class GPTProducer(RabbitMQProducerFactory):
     async def create_task_generate_result(
         self,
         uq_id: int,
-        local_model: bool = False,
         premium_queue: bool = False
     ):
         message = Message(
@@ -25,7 +24,7 @@ class GPTProducer(RabbitMQProducerFactory):
         )
         await self._publish(
             message,
-            'gpt_generate_result_use_local_model' if local_model else 'gpt_generate_result',
+            'gpt_generate_result_use_local_model',
             priority=self.get_priority(premium_queue)
         )
 

@@ -3,6 +3,8 @@ import typing as T # noqa
 from sqlalchemy import select, and_
 from sqlalchemy.ext.asyncio import async_sessionmaker
 
+from src.postgres.models.question import Question
+from src.postgres.models.tg_user import TgUser
 from src.postgres.models.tg_user_question import TgUserQuestion
 from src.repos.factory import RepoFactory
 
@@ -10,6 +12,18 @@ from src.repos.factory import RepoFactory
 class TgUserQuestionRepo(RepoFactory):
     def __init__(self, model: T.Type[TgUserQuestion], session: async_sessionmaker):
         super().__init__(model, session)
+
+    async def get_uq_with_relations(self, uq_id: int) -> T.Tuple[TgUserQuestion, TgUser, Question]:
+        async with self.session() as session:
+            query = (
+                select(TgUserQuestion, TgUser, Question)
+                .join(TgUser, TgUserQuestion.user_id == TgUser.id)
+                .join(Question, TgUserQuestion.question_id == Question.id)
+                .where(and_(TgUserQuestion.id == uq_id))
+            )
+            result = await session.execute(query)
+            instance, user, question = result.first()
+            return instance, user, question
 
     async def create_user_question(self, user_id, question_id) -> T.Optional[TgUserQuestion]:
         return await self.insert_one(user_id=user_id, question_id=question_id)

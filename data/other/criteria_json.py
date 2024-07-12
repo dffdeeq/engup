@@ -6,28 +6,48 @@ GRAMMAR_AND_LEXICAL_ERRORS_ADVICE = {
     5: "Uses only a limited range of structures. Attempts complex sentences but these tend to be less accurate than simple sentences. May make frequent grammatical errors and punctuation may be faulty; errors can cause some difficulty for the reader.",
 }
 
-
 ACHIEVEMENT_JSON = {
     "Grammatical Range": {
-        "Clear and correct grammar": ["Your essay demonstrates excellent grammar usage, with minimal errors and clear sentence construction, making it easy to read and understand."],
-        "Mix of complex & simple sentences": ["Your writing effectively combines complex and simple sentences, providing a balanced and engaging reading experience."]
+        "Clear and correct grammar": [
+            "Your essay demonstrates excellent grammar usage, with minimal errors and clear sentence construction, making it easy to read and understand."],
+        "Mix of complex & simple sentences": [
+            "Your writing effectively combines complex and simple sentences, providing a balanced and engaging reading experience."]
     },
     "Task Achievement": {
-        "Relevant & specific examples": ["You have provided relevant and specific examples that enhance your arguments and make your essay more persuasive."],
-        "Complete response": ["Your essay thoroughly addresses all parts of the prompt, ensuring a comprehensive response."],
-        "Clear & comprehensive ideas": ["Your ideas are presented clearly and comprehensively, making your arguments easy to follow and understand."],
+        "Relevant & specific examples": [
+            "You have provided relevant and specific examples that enhance your arguments and make your essay more persuasive."],
+        "Complete response": [
+            "Your essay thoroughly addresses all parts of the prompt, ensuring a comprehensive response."],
+        "Clear & comprehensive ideas": [
+            "Your ideas are presented clearly and comprehensively, making your arguments easy to follow and understand."],
         "Appropriate word count": ["Your essay contains a sufficient number of words."]
     },
     "Lexical Resources": {
-        "Accurate spelling & word formation": ["Your essay demonstrates accurate spelling and word formation, with minimal errors, showcasing your strong language skills."],
-        "Varied vocabulary": ["You have used a varied vocabulary, which enriches your essay and makes it more interesting to read."]
+        "Accurate spelling & word formation": [
+            "Your essay demonstrates accurate spelling and word formation, with minimal errors, showcasing your strong language skills."],
+        "Varied vocabulary": [
+            "You have used a varied vocabulary, which enriches your essay and makes it more interesting to read."]
     },
     "Coherence and Cohesion": {
-        "Supported main points": ["Your main points are well-supported with evidence and examples, strengthening your overall argument."],
-        "Logical structure": ["Your essay has a logical structure, with ideas flowing smoothly from one paragraph to the next."],
-        "Introduction & conclusion present": ["Your essay includes a clear introduction and a strong conclusion, effectively framing your arguments."],
-        "Variety in linking words": ["You have used a variety of linking words, which enhances the coherence and flow of your essay."],
-        "Accurate linking words": ["Your use of linking words is accurate and appropriate, contributing to the clarity and cohesion of your essay."]
+        "Supported main points": [
+            "Your main points are well-supported with evidence and examples, strengthening your overall argument."],
+        "Logical structure": [
+            "Your essay has a logical structure, with ideas flowing smoothly from one paragraph to the next."],
+        "Introduction & conclusion present": [
+            "Your essay includes a clear introduction and a strong conclusion, effectively framing your arguments."],
+        "Variety in linking words": [
+            "You have used a variety of linking words, which enhances the coherence and flow of your essay."],
+        "Accurate linking words": [
+            "Your use of linking words is accurate and appropriate, contributing to the clarity and cohesion of your essay."]
+    },
+    "Pronunciation": {
+        "Pronunciation general": [
+            "Excellent Work! Your pronunciation is clear and natural. Keep up the great work!",
+            "Great Job! Your pronunciation is very good, with clear and accurate articulation. Well done!",
+            "Fantastic! Your pronunciation is excellent, making your speech easy to understand. Keep it up!",
+            "Impressive! Your pronunciation is spot on, with clear sounds and good intonation. Excellent work!",
+            "Well Done! Your pronunciation is very strong, demonstrating clear and accurate speech. Keep up the great effort!",
+        ]
     }
 }
 
@@ -169,5 +189,14 @@ CRITERIA_JSON = {
             'Use linking words to enhance coherence, ensuring that ideas flow smoothly from one to the next.',
             'Avoid overusing linking words, which can disrupt the natural flow of your writing.',
             'Practice writing essays with a focus on accurate and appropriate use of linking words.']
+    },
+    "Pronunciation": {
+        "Pronunciation general": [
+            "<b>Improve Clarity:</b> Practice pronouncing words clearly by speaking slowly and enunciating each sound. This will help improve your overall clarity.",
+            "<b>Focus on Intonation:</b> Pay attention to the natural rise and fall of English intonation. Try to mimic the intonation patterns of native speakers.",
+            "<b>Work on Vowel Sounds:</b> Practice the different vowel sounds in English, as they can significantly impact your pronunciation. Use resources like online vowel charts or pronunciation guides.",
+            "<b>Use Tongue Twisters:</b> Tongue twisters are a fun and effective way to improve your pronunciation. Practice them regularly to improve your articulation and speed.",
+            "<b>Record and Listen:</b> Record yourself speaking and listen to the playback. Identify areas where your pronunciation could be improved and practice those specific sounds or words.",
+        ]
     }
 }

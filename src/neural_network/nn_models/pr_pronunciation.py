@@ -17,18 +17,17 @@ from src.settings import NNModelsSettings
 from src.settings.static import NN_MODELS_DIR
 
 
-class VoiceModel(NeuralNetworkBase):
+class PrPronunciation(NeuralNetworkBase):
     def __init__(self, settings: NNModelsSettings) -> None:
         super().__init__(settings)
-        self.model_dir = os.path.join(NN_MODELS_DIR, 'voice_model')
-        self.nn_model: T.Optional[SimpleNN] = None
+        self.voice_model_dir = os.path.join(NN_MODELS_DIR, 'pr_pronunciation_model')
+        self.voice_model: T.Optional[SimpleNN] = None
 
     def load(self):
-        if not self.nn_model:
-            self.nn_model = SimpleNN()
-            self.nn_model.load_state_dict(torch.load(os.path.join(self.model_dir, 'best_model.pth')))
-            self.nn_model.eval()
-            print('loaded+')
+        if not self.voice_model:
+            self.voice_model = SimpleNN()
+            self.voice_model.load_state_dict(torch.load(os.path.join(self.voice_model_dir, 'best_model.pth')))
+            self.voice_model.eval()
         super().load()
 
     def get_pronunciation_score(self, ogg_file_paths: T.List[str]) -> float:
@@ -45,9 +44,9 @@ class VoiceModel(NeuralNetworkBase):
         return math.floor(sum(final_scores) / len(final_scores) * 2) / 2
 
     def _get_raw_score(self, emb) -> int:
-        with open(os.path.join(self.model_dir, 'scaler.pkl'), 'rb') as f:
+        with open(os.path.join(self.voice_model_dir, 'scaler.pkl'), 'rb') as f:
             scaler = pickle.load(f)
-        with open(os.path.join(self.model_dir, 'label_mappings.pkl'), 'rb') as f:
+        with open(os.path.join(self.voice_model_dir, 'label_mappings.pkl'), 'rb') as f:
             mappings = pickle.load(f)
             int_to_label = mappings['int_to_label']
 
@@ -56,7 +55,7 @@ class VoiceModel(NeuralNetworkBase):
         new_embedding_tensor = torch.tensor(new_embedding, dtype=torch.float32)
 
         with torch.no_grad():
-            output = self.nn_model(new_embedding_tensor)
+            output = self.voice_model(new_embedding_tensor)
             _, predicted = torch.max(output.data, 0)
 
         return int(int_to_label[predicted.item()])

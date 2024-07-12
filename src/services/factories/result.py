@@ -1,16 +1,17 @@
-import logging
 import math
 import typing as T  # noqa
 
+from sqlalchemy import select, and_
 from sqlalchemy.ext.asyncio import async_sessionmaker
 
 from data.other.criteria_json import GRAMMAR_AND_LEXICAL_ERRORS_ADVICE
 from src.libs.adapter import Adapter
-from src.libs.factories.gpt.models.result import Result
 from src.neural_network import ScoreGeneratorNNModel
 from src.postgres.enums import CompetenceEnum
+from src.postgres.models.tg_user import TgUser
+from src.postgres.models.tg_user_question import TgUserQuestion
 from src.repos.factories.question import QuestionRepo
-from src.services.constants import NeuralNetworkConstants
+from src.services.constants import NeuralNetworkConstants as NNConstants
 from src.services.factory import ServiceFactory
 from src.settings import Settings
 
@@ -18,8 +19,7 @@ from src.settings import Settings
 class ResultService(ServiceFactory):
     def __init__(
         self,
-        repo:
-        QuestionRepo,
+        repo: QuestionRepo,
         adapter: Adapter,
         session: async_sessionmaker,
         settings: Settings,
@@ -31,42 +31,67 @@ class ResultService(ServiceFactory):
 
     def check_or_load_models(self):
         if not self.nn_service.models:
-            self.nn_service.load_models(NeuralNetworkConstants.predict_params)
+            self.nn_service.load_models(NNConstants.predict_params['to_load'])
+
+    async def generate_result(
+        self,
+        text: str,
+        competence: CompetenceEnum,
+        premium: bool = False,
+        **kwargs
+    ) -> T.List:
+        self.check_or_load_models()
+        return self._generate_result_local_model(text, competence, premium, **kwargs)
 
     def _generate_result_local_model(
         self,
         text: str,
         competence: CompetenceEnum,
-        premium: bool = False
+        premium: bool = False,
+        **kwargs
     ) -> T.List[str]:
-        self.check_or_load_models()
-        results = self.nn_service.predict_all(text=text, model_names=NeuralNetworkConstants.predict_params)
+        predict_params = NNConstants.predict_params[competence]
+        results = self.nn_service.predict_all(text=text, model_names=predict_params)
+        if (filepaths := kwargs.get('voice_filepaths')) is not None:
+            pronunciation_score = self.nn_service.get_pronunciation_score(filepaths)
+            results['pr_Pronunciation general'] = pronunciation_score
+
         gr_score, gr_errors, lxc_errors, pnkt_errors = results.pop('clear_grammar_result')
         results['gr_Clear and correct grammar'] = gr_score
         advice_dict = self.nn_service.select_random_advice(results)
-        print(advice_dict)
-        logging.info(advice_dict)
         advice_dict['Grammatical Range']['Clear and correct grammar'] = GRAMMAR_AND_LEXICAL_ERRORS_ADVICE[gr_score]
-        result = self.format_advice(advice_dict, results, competence)
-        if premium:
+        temp_score = kwargs.get('temp_score', 5)
+        result = self.format_advice(advice_dict, results, competence, temp_score)
+
+        if competence == competence.writing and premium:
             grammar_errors = self.format_grammar_errors(gr_errors, lxc_errors, pnkt_errors)
             result.append(grammar_errors)
         return result
 
-    async def generate_result(
-        self, text: str,
-        competence: CompetenceEnum,
-        local_model: bool = False,
-        premium: bool = False
-    ) -> T.Union[Result, T.List]:
-        if local_model:
-            return self._generate_result_local_model(text, competence, premium)
-        return await self.adapter.gpt_client.generate_result(text=text, competence=competence)
+    async def update_uq(self, instance: TgUserQuestion, user_result_json):
+        async with self.session() as session:
+            instance.user_result_json = user_result_json
+            instance.status = True
+            session.add(instance)
+
+            user_query = await session.execute(select(TgUser).where(and_(TgUser.id == instance.user_id)))
+            user = user_query.scalar_one_or_none()
+            user.completed_questions += 1
+            session.add(user)
+            if user.completed_questions == 3 and user.referrer_id:
+                referrer_query = await session.execute(
+                    select(TgUser).where(and_(TgUser.id == user.referrer_id))
+                )
+                referrer = referrer_query.scalar_one_or_none()
+                if referrer:
+                    referrer.pts += 5
+                    session.add(referrer)
+            await session.commit()
 
     @staticmethod
-    def format_advice(advice_dict, results, competence: CompetenceEnum):
+    def format_advice(advice_dict, results, competence: CompetenceEnum, temp_score: int):
         output_texts = []
-        all_category_min_scores = []
+        all_category_min_scores = [temp_score, ]
         for category, subcategories in advice_dict.items():
             sorted_advice = sorted(
                 ((results.get(key, 0), advice) for subcategory, advice in subcategories.items() for key in results if

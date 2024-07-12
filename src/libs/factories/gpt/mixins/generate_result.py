@@ -8,7 +8,7 @@ from src.libs.factories.gpt.routes import GENERATE_ANSWERS
 
 
 class GenerateResultMixin(BaseGPTClient):
-    async def generate_result(self, competence: Competence, text: str) -> Result:
+    async def generate_result(self, text: str, competence: Competence) -> Result:
         questions_generate = AnswerGenerate(competence=competence)
         response = await self.request(
             'POST',

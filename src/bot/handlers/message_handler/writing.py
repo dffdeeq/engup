@@ -69,10 +69,6 @@ async def writing_get_user_answer(
     state_data = await state.get_data()
     user_answer_json = await uq_service.format_question_answer_to_dict(state_data['card_body'], message.text)
     await uq_service.update_user_question(state_data['uq_id'], user_answer_json)
-    await gpt_producer.create_task_generate_result(
-        state_data['uq_id'],
-        local_model=True,
-        premium_queue=state_data['premium_queue']
-    )
+    await gpt_producer.create_task_generate_result(state_data['uq_id'], premium_queue=state_data['premium_queue'])
     await state.clear()
     await message.answer(text=DefaultMessages.CALCULATING_RESULT)
