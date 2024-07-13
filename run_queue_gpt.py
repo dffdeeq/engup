@@ -31,8 +31,10 @@ async def main():
     session = initialize_postgres_pool(settings.postgres)
     adapter = Adapter(settings)
     repo = TempDataRepo(TempData, session)
+    uq_repo = TgUserQuestionRepo(TgUserQuestion, session)
     gpt_worker = GPTWorker(
         temp_data_repo=repo,
+        uq_repo=uq_repo,
         connection_pool=connection_pool,
         session=session,
         result_service=ResultService(
@@ -51,7 +53,7 @@ async def main():
             adapter=adapter,
             session=session,
             settings=settings,
-            user_qa_repo=TgUserQuestionRepo(TgUserQuestion, session)
+            user_qa_repo=uq_repo
         ),
         gpt_producer=GPTProducer(
             dsn_string=settings.rabbitmq.dsn,

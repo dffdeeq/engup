@@ -19,15 +19,6 @@ class LRVariedVocabulary(NeuralNetworkBase):
                 os.path.join(OTHER_DATA_DIR, 'ielts_academic_vocabulary.csv'))
         super().load()
 
-    @staticmethod
-    def load_ielts_academic_words(file_path):
-        df = pd.read_csv(file_path, header=None, names=["words"])
-        return df['words'].tolist()
-
-    @staticmethod
-    def calculate_metric_score(value, thresholds):
-        return next((score for threshold, score in thresholds if value >= threshold), 1)
-
     def lr_varied_vocabulary(self, text) -> float:
         lex = LexicalRichness(text)
         cttr = lex.cttr
@@ -46,3 +37,12 @@ class LRVariedVocabulary(NeuralNetworkBase):
         ]
         final_score = round(sum(scores) / 3)
         return float(final_score)
+
+    @staticmethod
+    def calculate_metric_score(value, thresholds):
+        return next((score for threshold, score in thresholds if value >= threshold), 1)
+
+    @staticmethod
+    def load_ielts_academic_words(file_path):
+        df = pd.read_csv(file_path, header=None, names=["words"])
+        return df['words'].tolist()

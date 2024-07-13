@@ -22,6 +22,7 @@ class PrPronunciation(NeuralNetworkBase):
         super().__init__(settings)
         self.voice_model_dir = os.path.join(NN_MODELS_DIR, 'pr_pronunciation_model')
         self.voice_model: T.Optional[SimpleNN] = None
+        self.device = torch.device('cpu')
 
     def load(self):
         if not self.voice_model:
@@ -62,7 +63,7 @@ class PrPronunciation(NeuralNetworkBase):
 
     def _get_embs_by_ogg(self, file_path) -> T.List[np.ndarray]:
         model = Model.from_pretrained(
-            "pyannote/embedding", use_auth_token=self.settings.pyannotate_auth_token)
+            "pyannote/embedding", use_auth_token=self.settings.pyannotate_auth_token).to(self.device)
         emb_list = [
             self.transform_wav_to_emb(f"{file_path}.wav", model)
             for bit_rate in [40, 64, 128, 256]
@@ -79,9 +80,8 @@ class PrPronunciation(NeuralNetworkBase):
         audio_mp3.export(f"{file_path}.wav", format="wav")
         return True
 
-    @staticmethod
-    def transform_wav_to_emb(wav_path, model) -> np.ndarray:
-        inference = Inference(model, window="whole")
+    def transform_wav_to_emb(self, wav_path, model) -> np.ndarray:
+        inference = Inference(model, window="whole", device=self.device)
         embedding = inference(wav_path)
         return embedding
 
