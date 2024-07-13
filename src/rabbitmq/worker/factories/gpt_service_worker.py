@@ -6,8 +6,7 @@ from functools import wraps
 from aio_pika.abc import AbstractRobustConnection
 from sqlalchemy.ext.asyncio import async_sessionmaker
 
-from src.bot.handlers.constants import MessageTemplates, Constants
-from src.bot.handlers.utils import generate_section
+from src.bot.utils import generate_section
 from src.libs.factories.gpt.models.result import Result
 from src.libs.factories.gpt.models.suggestion import Suggestion
 from src.postgres.enums import CompetenceEnum
@@ -86,11 +85,10 @@ class GPTWorker(RabbitMQWorkerFactory):
             section = await generate_section(
                 'Fluency and Coherence', fluency_coherence.score, fluency_coherence.enhancements)
             result.append(section)
-            general_recommendations = MessageTemplates.GENERAL_RECOMMENDATIONS_TEMPLATE.format(
-                vocabulary='\n'.join(f'- {word}' for word in additional_result.vocabulary),
-                practice_regularly=Constants.PRACTICE_REGULARLY_DICT[competence]
-            )
-            result.append(general_recommendations)
+
+            if data['priority']:
+                formatted_premium_results = self.format_premium_result(additional_result)
+                result.extend(formatted_premium_results)
 
         else:
             return

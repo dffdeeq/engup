@@ -19,6 +19,7 @@ class NeuralNetworkConstants:
             'gr_Mix of complex & simple sentences',
             'lr_Varied vocabulary',
             'lr_Accurate spelling & word formation',
+            'lr_Idiomatic vocabulary or expressions',
         ],
         CompetenceEnum.writing: [
             'clear_grammar_result',

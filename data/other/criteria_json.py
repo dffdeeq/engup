@@ -26,7 +26,10 @@ ACHIEVEMENT_JSON = {
         "Accurate spelling & word formation": [
             "Your essay demonstrates accurate spelling and word formation, with minimal errors, showcasing your strong language skills."],
         "Varied vocabulary": [
-            "You have used a varied vocabulary, which enriches your essay and makes it more interesting to read."]
+            "You have used a varied vocabulary, which enriches your essay and makes it more interesting to read."],
+        'Idiomatic vocabulary or expressions': [
+            'Idiomatic vocabulary or expressions good',
+        ]
     },
     "Coherence and Cohesion": {
         "Supported main points": [
@@ -133,7 +136,11 @@ CRITERIA_JSON = {
             'Use precise and specific words to convey your ideas clearly and accurately.',
             'Avoid repetition of the same words; instead, use synonyms and related terms.',
             'Incorporate idiomatic expressions and phrasal verbs to add richness to your language.',
-            'Edit your writing to replace overused words with more varied and interesting vocabulary.']},
+            'Edit your writing to replace overused words with more varied and interesting vocabulary.'],
+        'Idiomatic vocabulary or expressions': [
+            'Idiomatic vocabulary or expressions bad',
+        ]
+    },
     'Coherence and Cohesion': {
         'Supported main points': [
             'Gather a range of evidence before writing to ensure you have ample support for your main points.',

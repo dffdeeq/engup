@@ -7,13 +7,11 @@ from pathlib import Path
 from transformers import BertForSequenceClassification, BertTokenizer
 
 from src.settings import NNModelsSettings
-from src.settings.static import NN_MODELS_DIR
 
 
 class NeuralNetworkBase:
-    def __init__(self, settings: NNModelsSettings, nn_models_dir: Path = NN_MODELS_DIR) -> None:
+    def __init__(self, settings: NNModelsSettings) -> None:
         self.settings = settings
-        self._nn_models_dir = nn_models_dir
 
     def load(self):
         pass
