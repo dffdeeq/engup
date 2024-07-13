@@ -1,8 +1,8 @@
 from aiogram.filters import Filter
 from aiogram.types import Message
 
-from src.bot.handlers.constants import DefaultMessages
-from src.bot.handlers.utils import is_english, is_copypaste
+from src.bot.constants import DefaultMessages
+from src.bot.utils import is_english, is_copypaste
 
 
 class EssayFilter(Filter):

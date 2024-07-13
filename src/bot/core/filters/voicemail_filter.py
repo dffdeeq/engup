@@ -1,7 +1,7 @@
 from aiogram.filters import Filter
 from aiogram.types import Message
 
-from src.bot.handlers.constants import SpeakingMessages
+from src.bot.constants import SpeakingMessages
 
 
 class VoicemailFilter(Filter):

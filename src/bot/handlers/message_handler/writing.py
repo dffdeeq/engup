@@ -9,7 +9,7 @@ from aiogram.utils.keyboard import InlineKeyboardBuilder
 
 from src.bot.core.filters.essay_filter import EssayFilter
 from src.bot.core.states import WritingState
-from src.bot.handlers.constants import MessageTemplates, DefaultMessages
+from src.bot.constants import MessageTemplates, DefaultMessages
 from src.bot.injector import INJECTOR
 from src.postgres.enums import CompetenceEnum
 from src.rabbitmq.producer.factories.gpt import GPTProducer

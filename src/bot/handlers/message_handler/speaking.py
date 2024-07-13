@@ -16,7 +16,7 @@ from src.services.factories.question import QuestionService
 from src.services.factories.user_question import UserQuestionService
 from src.services.factories.voice import VoiceService
 
-from src.bot.handlers.constants import SpeakingMessages as Messages, DefaultMessages
+from src.bot.constants import SpeakingMessages as Messages, DefaultMessages
 
 router = Router(name=__name__)
 

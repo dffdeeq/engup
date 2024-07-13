@@ -7,8 +7,8 @@ from aio_pika.abc import AbstractRobustConnection
 from sqlalchemy.ext.asyncio import async_sessionmaker
 
 from src.bot.core.bot import get_bot
-from src.bot.handlers.constants import MessageTemplates, Constants
-from src.bot.handlers.utils import answer_parts_async_generator
+from src.bot.constants import MessageTemplates, Constants
+from src.bot.utils import answer_parts_async_generator
 from src.bot.injector import INJECTOR
 from src.libs.factories.gpt.models.result import Result
 from src.postgres.enums import CompetenceEnum
