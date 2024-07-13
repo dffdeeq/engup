@@ -28,7 +28,7 @@ class AnswerProcessService(ServiceFactory):
         self.user_qa_repo = user_qa_repo
 
     async def update_user_qa_premium_queue(self, uq_id: int, premium_queue: bool):
-        await self.user_qa_repo.update(conditions={'uq_id': uq_id}, values={'premium_queue': premium_queue})
+        await self.user_qa_repo.update(conditions={'id': uq_id}, values={'premium_queue': premium_queue})
 
     async def insert_temp_data(self, uq_id: int, part: PartEnum, question_text: str, filename: str) -> TempData:
         """
