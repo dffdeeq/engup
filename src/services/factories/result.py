@@ -59,6 +59,8 @@ class ResultService(ServiceFactory):
         gr_score, gr_errors, lxc_errors, pnkt_errors = results.pop('clear_grammar_result')
         results['gr_Clear and correct grammar'] = gr_score
         advice_dict = self.nn_service.select_random_advice(results)
+        if gr_score < 5:
+            gr_score = 5
         advice_dict['Grammatical Range']['Clear and correct grammar'] = GRAMMAR_AND_LEXICAL_ERRORS_ADVICE[gr_score]
         temp_score = kwargs.get('temp_score', 5)
         result = self.format_advice(advice_dict, results, competence, temp_score)
