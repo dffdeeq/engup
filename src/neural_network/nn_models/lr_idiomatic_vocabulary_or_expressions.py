@@ -15,7 +15,7 @@ class LrIdiomaticVocabulary(NeuralNetworkBase):
             self.idioms = IDIOMS_LIST
         super().load()
 
-    def lr_idiomatic_vocabulary_or_expressions(self, text, threshold=65):
+    def lr_idiomatic_vocabulary_or_expressions(self, text, threshold=65, **kwargs):
         found_idioms = []
         for idiom in self.idioms:
             if process.extractOne(idiom, [text], scorer=fuzz.partial_ratio)[1] >= threshold:

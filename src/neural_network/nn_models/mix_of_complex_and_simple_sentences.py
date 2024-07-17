@@ -17,6 +17,11 @@ class MixOfComplexAndSimpleSentences(NeuralNetworkBase):
             self.nlp = spacy.load(os.path.join(NN_MODELS_DIR, 'en_core_web_sm-3.7.1'))
         super().load()
 
+    def gr_mix_of_complex_and_simple_sentences(self, text, **kwargs) -> int:
+        doc = self.nlp(text)
+        sentences = list(doc.sents)
+        return self.score_sentence_mix(sentences)
+
     def classify_sentence(self, sentence):
         doc = self.nlp(sentence)
         has_conjunction = any(token.dep_ == 'cc' for token in doc)
@@ -56,8 +61,3 @@ class MixOfComplexAndSimpleSentences(NeuralNetworkBase):
             if complex_ratio >= c_ratio and simple_ratio <= s_ratio and compound_ratio <= cmp_ratio:
                 return band
         return 3
-
-    def gr_mix_of_complex_and_simple_sentences(self, text) -> int:
-        doc = self.nlp(text)
-        sentences = list(doc.sents)
-        return self.score_sentence_mix(sentences)

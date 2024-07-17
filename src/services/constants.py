@@ -16,10 +16,15 @@ class NeuralNetworkConstants:
     predict_params = {
         CompetenceEnum.speaking: [
             'clear_grammar_result',
-            'gr_Mix of complex & simple sentences',
-            'lr_Varied vocabulary',
-            'lr_Accurate spelling & word formation',
-            'lr_Idiomatic vocabulary or expressions',
+            'gr_Wide Range of Grammar Used',
+            'gr_Flexible Use of Complex Structures',
+            'lr_Wide Range of Vocabulary',
+            'lr_Idiomatic Vocabulary or Expressions',
+            'fc_Minimal Hesitation',
+            'fc_Minimal Self-Correction',
+            'fc_Topics Developed Logically',
+            'fc_Range of Linking Words and Discourse Markers',
+            'pr_Pronunciation'
         ],
         CompetenceEnum.writing: [
             'clear_grammar_result',
@@ -40,7 +45,7 @@ class NeuralNetworkConstants:
             'ta_Relevant & specific examples',
             'ta_Complete response',
             'ta_Clear & comprehensive ideas',
-            'cc_Supported main points',  #
+            'cc_Supported main points',
             'cc_Logical structure',
             'cc_Introduction & conclusion present',
             'cc_Variety in linking words',

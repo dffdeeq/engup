@@ -19,7 +19,7 @@ class LRVariedVocabulary(NeuralNetworkBase):
                 os.path.join(OTHER_DATA_DIR, 'ielts_academic_vocabulary.csv'))
         super().load()
 
-    def lr_varied_vocabulary(self, text) -> float:
+    def lr_varied_vocabulary(self, text, **kwargs) -> float:
         lex = LexicalRichness(text)
         cttr = lex.cttr
         terms = lex.terms

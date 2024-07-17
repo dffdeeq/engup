@@ -51,22 +51,26 @@ class ResultService(ServiceFactory):
         **kwargs
     ) -> T.List[str]:
         predict_params = NNConstants.predict_params[competence]
-        results = self.nn_service.predict_all(text=text, model_names=predict_params)
-        if (filepaths := kwargs.get('voice_filepaths')) is not None:
-            pronunciation_score = self.nn_service.get_pronunciation_score(filepaths)
-            results['pr_Pronunciation general'] = pronunciation_score
+        file_paths: T.Optional[T.List] = kwargs.get('file_paths', None)
+        results = self.nn_service.predict_all(
+            text=text, model_names=predict_params, competence=competence, file_paths=file_paths)
 
         gr_score, gr_errors, lxc_errors, pnkt_errors = results.pop('clear_grammar_result')
-        results['gr_Clear and correct grammar'] = gr_score
-        advice_dict = self.nn_service.select_random_advice(results)
         if gr_score < 5:
             gr_score = 5
-        advice_dict['Grammatical Range']['Clear and correct grammar'] = GRAMMAR_AND_LEXICAL_ERRORS_ADVICE[gr_score]
-        temp_score = kwargs.get('temp_score', 5)
-        result = self.format_advice(advice_dict, results, competence, temp_score)
 
-        if competence == competence.writing and premium:
-            grammar_errors = self.format_grammar_errors(gr_errors, lxc_errors, pnkt_errors)
+        if competence == CompetenceEnum.writing:
+            results['gr_Clear and correct grammar'] = gr_score
+        elif competence == CompetenceEnum.speaking:
+            results['gr_Most Sentences Are Mistake-Free'] = gr_score
+        advice_dict = self.nn_service.select_random_advice(results, competence)
+
+        if competence == CompetenceEnum.writing:
+            advice_dict['Grammatical Range']['Clear and correct grammar'] = GRAMMAR_AND_LEXICAL_ERRORS_ADVICE[gr_score]
+
+        result = self.format_advice(advice_dict, results, competence)
+        if premium:
+            grammar_errors = self.format_grammar_errors(gr_errors, lxc_errors, pnkt_errors, competence)
             result.append(grammar_errors)
         return result
 
@@ -91,9 +95,9 @@ class ResultService(ServiceFactory):
             await session.commit()
 
     @staticmethod
-    def format_advice(advice_dict, results, competence: CompetenceEnum, temp_score: int):
+    def format_advice(advice_dict, results, competence: CompetenceEnum):
         output_texts = []
-        all_category_min_scores = [temp_score, ]
+        all_category_min_scores = []
         for category, subcategories in advice_dict.items():
             sorted_advice = sorted(
                 ((results.get(key, 0), advice) for subcategory, advice in subcategories.items() for key in results if
@@ -120,11 +124,21 @@ class ResultService(ServiceFactory):
         return examples
 
     @staticmethod
-    def format_grammar_errors(grammar_errors: T.List, lexical_errors: T.List, punctuation_errors: T.List) -> str:
+    def format_grammar_errors(
+        grammar_errors: T.List,
+        lexical_errors: T.List,
+        punctuation_errors: T.List,
+        competence: CompetenceEnum = CompetenceEnum.writing
+    ) -> str:
+        mistakes_text = ''
+        if competence == CompetenceEnum.writing:
+            mistakes_text = (f'<b>{len(grammar_errors)} grammar mistakes, {len(lexical_errors)} lexical mistakes </b> '
+                             f'and <b>{len(punctuation_errors)} punctuation mistakes</b>. ')
+        elif competence == CompetenceEnum.speaking:
+            mistakes_text = f'<b>{len(grammar_errors)} grammar mistakes and {len(lexical_errors)} lexical mistakes </b>'
         output = [
             "<b>Grammar and lexical errors:</b>\n\n",
-            f"During the review of your text, we identified a total of <b>{len(grammar_errors)} grammar mistakes, "
-            f"{len(lexical_errors)} lexical mistakes </b> and <b>{len(punctuation_errors)} punctuation mistakes</b>. "
+            f"During the review of your text, we identified a total of {mistakes_text}"
         ]
         if len(grammar_errors + lexical_errors + punctuation_errors) > 0:
             output.append("Below are some examples of each type of error:\n\n")
@@ -132,7 +146,8 @@ class ResultService(ServiceFactory):
             output.append("\n")
             output.extend(ResultService.format_error_examples(lexical_errors, "Lexical"))
             output.append("\n")
-            output.extend(ResultService.format_error_examples(punctuation_errors, "Punctuation"))
+            if competence == CompetenceEnum.writing:
+                output.extend(ResultService.format_error_examples(punctuation_errors, "Punctuation"))
             output.append("\nIt is important to address these mistakes to enhance the clarity "
                           "and professionalism of your writing.\n")
         final_output = "".join(output)

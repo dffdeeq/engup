@@ -1,7 +1,6 @@
 import logging
 import typing as T  # noqa
 from collections import defaultdict
-from pathlib import Path
 
 from aio_pika.abc import AbstractRobustConnection
 from sqlalchemy import update, and_, select
@@ -80,11 +79,3 @@ class ApiHostWorker(RabbitMQWorkerFactory):
 
     async def send_files_to_transcription_and_clear(self, filepaths: T.Dict[str, T.List[str]]) -> None:
         await self.apihost_service.send_to_transcription(filepaths['files'])
-        # self._clear_temp_files(filepaths['files'])
-
-    @staticmethod
-    def _clear_temp_files(filepaths: T.List[str]) -> None:
-        for file in filepaths:
-            path = Path(file)
-            if path.exists():
-                path.unlink()

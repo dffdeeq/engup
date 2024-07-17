@@ -19,7 +19,7 @@ class TAAppropriateWordCount(NeuralNetworkBase):
         super().load()
 
     @staticmethod
-    def ta_appropriate_word_count(text: str) -> float:
+    def ta_appropriate_word_count(text: str, **kwargs) -> float:
         words = word_tokenize(text)
         words_count = len([w for w in words if w.isalpha()])
         return 9.0 if words_count >= 250 else 4.0

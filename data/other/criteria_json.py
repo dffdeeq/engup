@@ -6,7 +6,7 @@ GRAMMAR_AND_LEXICAL_ERRORS_ADVICE = {
     5: "Uses only a limited range of structures. Attempts complex sentences but these tend to be less accurate than simple sentences. May make frequent grammatical errors and punctuation may be faulty; errors can cause some difficulty for the reader.",
 }
 
-ACHIEVEMENT_JSON = {
+ACHIEVEMENT_JSON_WRITING = {
     "Grammatical Range": {
         "Clear and correct grammar": [
             "Your essay demonstrates excellent grammar usage, with minimal errors and clear sentence construction, making it easy to read and understand."],
@@ -42,19 +42,10 @@ ACHIEVEMENT_JSON = {
             "You have used a variety of linking words, which enhances the coherence and flow of your essay."],
         "Accurate linking words": [
             "Your use of linking words is accurate and appropriate, contributing to the clarity and cohesion of your essay."]
-    },
-    "Pronunciation": {
-        "Pronunciation general": [
-            "Excellent Work! Your pronunciation is clear and natural. Keep up the great work!",
-            "Great Job! Your pronunciation is very good, with clear and accurate articulation. Well done!",
-            "Fantastic! Your pronunciation is excellent, making your speech easy to understand. Keep it up!",
-            "Impressive! Your pronunciation is spot on, with clear sounds and good intonation. Excellent work!",
-            "Well Done! Your pronunciation is very strong, demonstrating clear and accurate speech. Keep up the great effort!",
-        ]
     }
 }
 
-CRITERIA_JSON = {
+CRITERIA_JSON_WRITING = {
     'Grammatical Range': {
         'Clear and correct grammar': [
             'Regularly practice writing essays and short paragraphs to hone your grammatical accuracy.',
@@ -196,14 +187,192 @@ CRITERIA_JSON = {
             'Use linking words to enhance coherence, ensuring that ideas flow smoothly from one to the next.',
             'Avoid overusing linking words, which can disrupt the natural flow of your writing.',
             'Practice writing essays with a focus on accurate and appropriate use of linking words.']
+    }
+}
+
+ACHIEVEMENT_JSON_SPEAKING = {
+    "Grammatical Range": {
+        "Wide Range of Grammar Used": [
+            "Demonstrates a strong command of various tenses, conditionals, and complex sentence structures.",
+            "Effectively uses passive and active voices to convey different nuances in meaning.",
+            "Employs a range of clauses (relative, noun, and adverbial) accurately and appropriately."
+        ],
+        "Flexible Use of Complex Structures": [
+            "Integrates complex structures naturally into speech and writing without hesitation.",
+            "Uses a variety of sentence forms (simple, compound, and complex) effectively.",
+            "Demonstrates the ability to manipulate grammatical forms to express precise meanings."
+        ],
+        "Most Sentences Are Mistake-Free": [
+            "Produces written and spoken language with minimal grammatical errors.",
+            "Demonstrates strong proofreading skills, catching and correcting minor mistakes.",
+            "Uses appropriate grammar consistently across different topics and contexts."
+        ],
+        "Produces Natural Language": [
+            "Communicates ideas fluently and coherently with native-like expression.",
+            "Uses idiomatic language and expressions appropriately.",
+            "Demonstrates a good understanding of natural phrasing and collocations."
+        ]
+    },
+    "Lexical resources": {
+        "Wide Range of Vocabulary": [
+            "Uses a broad vocabulary effectively to convey precise meanings.",
+            "Demonstrates the ability to use synonyms and paraphrases to avoid repetition.",
+            "Appropriately employs less common and more sophisticated vocabulary."
+        ],
+        "Academic Vocabulary": [
+            "Effectively uses academic vocabulary to discuss complex topics.",
+            "Demonstrates an understanding of subject-specific terminology.",
+            "Incorporates academic phrases and expressions appropriately."
+        ],
+        "Flexible Use of Vocabulary": [
+            "Adapts vocabulary usage to suit different contexts and audiences.",
+            "Demonstrates versatility in word choice to avoid redundancy.",
+            "Uses both formal and informal language appropriately as required."
+        ],
+        "Idiomatic Vocabulary or Expressions": [
+            "Uses idiomatic expressions and phrasal verbs naturally and accurately.",
+            "Demonstrates a good understanding of the meaning and usage of idioms.",
+            "Integrates idiomatic language to enhance the fluency and richness of communication."
+        ],
+        "Paraphrases Effectively": [
+            "Consistently paraphrases questions and prompts accurately in speaking and writing.",
+            "Demonstrates the ability to rephrase sentences while retaining the original meaning.",
+            "Uses synonyms and different grammatical structures to avoid repetition."
+        ]
+    },
+    "Fluency and coherence": {
+        "Minimal Repetition": [
+            "Uses a variety of vocabulary and sentence structures to avoid redundancy.",
+            "Demonstrates the ability to discuss topics in-depth without repeating ideas.",
+            "Shows skill in rephrasing and using synonyms effectively."
+        ],
+        "Minimal Hesitation": [
+            "Speaks fluently with minimal pauses and hesitations.",
+            "Demonstrates confidence and clarity in communication.",
+            "Uses fillers and discourse markers effectively to maintain fluency."
+        ],
+        "Minimal Self-Correction": [
+            "Produces accurate language with minimal need for self-correction.",
+            "Demonstrates confidence in grammar and vocabulary usage.",
+            "Corrects errors seamlessly without disrupting the flow of communication."
+        ],
+        "Topics Developed Logically": [
+            "Presents ideas in a clear, logical, and coherent manner.",
+            "Uses well-structured paragraphs to develop and support arguments.",
+            "Demonstrates strong organizational skills in both writing and speaking."
+        ],
+        "Range of Linking Words and Discourse Markers": [
+            "Uses a variety of linking words and discourse markers to connect ideas smoothly.",
+            "Demonstrates the ability to signal transitions and relationships between ideas effectively.",
+            "Employs a range of cohesive devices appropriately."
+        ]
     },
     "Pronunciation": {
-        "Pronunciation general": [
-            "<b>Improve Clarity:</b> Practice pronouncing words clearly by speaking slowly and enunciating each sound. This will help improve your overall clarity.",
-            "<b>Focus on Intonation:</b> Pay attention to the natural rise and fall of English intonation. Try to mimic the intonation patterns of native speakers.",
-            "<b>Work on Vowel Sounds:</b> Practice the different vowel sounds in English, as they can significantly impact your pronunciation. Use resources like online vowel charts or pronunciation guides.",
-            "<b>Use Tongue Twisters:</b> Tongue twisters are a fun and effective way to improve your pronunciation. Practice them regularly to improve your articulation and speed.",
-            "<b>Record and Listen:</b> Record yourself speaking and listen to the playback. Identify areas where your pronunciation could be improved and practice those specific sounds or words.",
+        "Pronunciation": [
+            "Pronounces words clearly with accurate intonation and stress patterns.",
+            "Demonstrates minimal pronunciation errors that do not affect communication.",
+            "Uses natural rhythm and intonation in speech."
+        ]
+    }
+}
+
+CRITERIA_JSON_SPEAKING = {
+    "Grammatical Range": {
+        "Wide Range of Grammar Used": [
+            "Practice using a wider variety of tenses to improve grammatical range.",
+            "Focus on incorporating more complex sentences into your writing and speaking.",
+            "Study and practice different types of clauses to enhance sentence complexity.",
+            "Use grammar exercises and resources to reinforce your understanding of advanced structures."
+        ],
+        "Flexible Use of Complex Structures": [
+            "Practice forming and using complex sentences in both written and spoken tasks.",
+            "Review sentence structures and experiment with different forms in practice essays.",
+            "Seek feedback on your use of complex structures to identify areas for improvement.",
+            "Engage in exercises that focus on combining sentences and using subordination."
+        ],
+        "Most Sentences Are Mistake-Free": [
+            "Focus on proofreading your work to catch and correct common errors.",
+            "Practice writing and speaking regularly to develop a habit of producing error-free sentences.",
+            "Use language learning apps or tools to identify and correct mistakes in real-time.",
+            "Study common grammatical mistakes and how to avoid them."
+        ],
+        "Produces Natural Language": [
+            "Listen to and imitate native speakers to improve the natural flow of your language.",
+            "Practice using idiomatic expressions and collocations in your speech and writing.",
+            "Engage in conversations with fluent speakers to get feedback on your naturalness.",
+            "Read extensively to familiarize yourself with natural language patterns."
+        ]
+    },
+    "Lexical resources": {
+        "Wide Range of Vocabulary": [
+            "Expand your vocabulary by learning new words and their usage daily.",
+            "Use vocabulary lists and practice incorporating new words into sentences.",
+            "Read a variety of texts to encounter and learn new vocabulary in context.",
+            "Engage in vocabulary exercises focusing on synonyms and antonyms."
+        ],
+        "Academic Vocabulary": [
+            "Study academic word lists and practice using these words in context.",
+            "Read academic articles and note the vocabulary used to discuss various topics.",
+            "Practice writing essays and reports using academic language.",
+            "Use flashcards and vocabulary apps to reinforce your learning of academic terms."
+        ],
+        "Flexible Use of Vocabulary": [
+            "Practice switching between different registers of language (formal and informal).",
+            "Engage in writing tasks that require different styles and tones.",
+            "Experiment with synonyms to expand your word choice flexibility.",
+            "Seek feedback on your vocabulary usage to identify areas for improvement."
+        ],
+        "Idiomatic Vocabulary or Expressions": [
+            "Learn and practice common idiomatic expressions and their meanings.",
+            "Listen to native speakers and note how they use idioms in conversation.",
+            "Use idioms in your speech and writing to become more comfortable with them.",
+            "Study the cultural context of idioms to use them more appropriately."
+        ],
+        "Paraphrases Effectively": [
+            "Practice paraphrasing sentences and passages to improve your skills.",
+            "Use synonym dictionaries to find alternative ways to express the same ideas.",
+            "Work on understanding the core meaning of sentences before attempting to paraphrase.",
+            "Engage in exercises that focus specifically on paraphrasing techniques."
+        ]
+    },
+    "Fluency and coherence": {
+        "Minimal Repetition": [
+            "Focus on expanding your vocabulary to reduce the need for repetition.",
+            "Practice writing and speaking about topics in different ways to avoid redundancy.",
+            "Use feedback from others to identify and eliminate repetitive language.",
+            "Engage in exercises that encourage you to express the same idea differently."
+        ],
+        "Minimal Hesitation": [
+            "Practice speaking regularly to build confidence and reduce hesitation.",
+            "Record yourself speaking and review to identify and address pauses.",
+            "Engage in timed speaking exercises to improve your fluency.",
+            "Participate in discussions and debates to practice speaking spontaneously."
+        ],
+        "Minimal Self-Correction": [
+            "Focus on accuracy in your initial attempts rather than correcting yourself frequently.",
+            "Practice speaking and writing exercises with a focus on reducing errors.",
+            "Review and edit your work carefully to identify common mistakes.",
+            "Seek feedback from others to understand and avoid frequent errors."
+        ],
+        "Topics Developed Logically": [
+            "Practice outlining your ideas before writing or speaking to ensure logical flow.",
+            "Focus on using clear topic sentences and supporting details in paragraphs.",
+            "Engage in exercises that emphasize the logical organization of ideas.",
+            "Review examples of well-structured essays and speeches to understand effective organization."
+        ],
+        "Range of Linking Words and Discourse Markers": [
+            "Study and practice using different linking words and discourse markers.",
+            "Incorporate a variety of cohesive devices in your writing and speaking tasks.",
+            "Review examples of effective use of linking words to understand their application.",
+            "Engage in exercises that focus on connecting ideas and maintaining coherence."
+        ]
+    },
+    "Pronunciation": {
+        "Pronunciation": [
+            "Practice pronunciation regularly using language learning apps or tools.",
+            "Listen to and imitate native speakers to improve your intonation and stress patterns.",
+            "Focus on difficult sounds and words to reduce pronunciation errors.",
+            "Engage in exercises that emphasize rhythm and natural intonation in speech."
         ]
     }
 }

@@ -31,13 +31,15 @@ class PrPronunciation(NeuralNetworkBase):
             self.voice_model.eval()
         super().load()
 
-    def get_pronunciation_score(self, ogg_file_paths: T.List[str]) -> float:
+    def get_pronunciation_score(self, **kwargs) -> float:
+        ogg_file_paths: T.Optional[T.List[str]] = kwargs.get('file_paths', None)
+        if ogg_file_paths is None:
+            print('ogg file paths is None')
+            return 4
         final_scores = []
         for ogg_file_path in ogg_file_paths:
-            ogg_file_path = ogg_file_path.replace('.ogg', '')
             embs = self._get_embs_by_ogg(ogg_file_path)
             scores = [self._get_raw_score(emb) for emb in embs]
-            self._clear_temp_files([f"{ogg_file_path}.wav"])
             average = sum(scores) / len(scores)
             converted_average = ((average - 1) / (10 - 1)) * (9 - 1) + 1
             score = math.floor(converted_average * 2) / 2
@@ -62,6 +64,7 @@ class PrPronunciation(NeuralNetworkBase):
         return int(int_to_label[predicted.item()])
 
     def _get_embs_by_ogg(self, file_path) -> T.List[np.ndarray]:
+        file_path = file_path.replace('.ogg', '')
         model = Model.from_pretrained(
             "pyannote/embedding", use_auth_token=self.settings.pyannotate_auth_token).to(self.device)
         emb_list = [

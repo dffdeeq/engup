@@ -6,7 +6,6 @@ from functools import wraps
 from aio_pika.abc import AbstractRobustConnection
 from sqlalchemy.ext.asyncio import async_sessionmaker
 
-from src.bot.utils import generate_section
 from src.libs.factories.gpt.models.result import Result
 from src.libs.factories.gpt.models.suggestion import Suggestion
 from src.postgres.enums import CompetenceEnum
@@ -70,21 +69,19 @@ class GPTWorker(RabbitMQWorkerFactory):
                 result.extend(formatted_premium_results)
 
         elif competence == CompetenceEnum.speaking:
-            request_text = await self.format_user_qa_to_answers_only(instance.user_answer_json)
+            request_text = await self.format_user_qa_to_full_text(instance.user_answer_json)
+            print(request_text)
             filepaths = await self.answer_process_service.get_temp_data_filepaths(instance.id)
 
             additional_request_text = await self.format_user_qa_to_text(instance.user_answer_json)
             additional_result = await self.result_service.adapter.gpt_client.generate_result(
                 additional_request_text, competence=competence)
-            fluency_coherence = additional_result.competence_results.fluency_coherence
 
             result = await self.result_service.generate_result(
-                request_text, competence, premium=data['priority'],
-                voice_filepaths=filepaths, temp_score=fluency_coherence.score)
+                request_text, competence, premium=data['priority'], file_paths=filepaths)
 
-            section = await generate_section(
-                'Fluency and Coherence', fluency_coherence.score, fluency_coherence.enhancements)
-            result.append(section)
+            # TODO: Add common recommendations
+            # TODO: Check if can transfer this code to ResultService or anywhere
 
             if data['priority']:
                 formatted_premium_results = self.format_premium_result(additional_result)
@@ -111,7 +108,7 @@ class GPTWorker(RabbitMQWorkerFactory):
                 )
             return formatted_text.strip()
 
-        premium_texts = ['<b>Recommendations</b>', ]
+        premium_texts = ['<b>Advanced Recommendations (Premium)</b>', ]
         competence_results = result.competence_results
         suggestion_names = [
             ("Task Achievement", competence_results.task_achievement),
@@ -123,7 +120,7 @@ class GPTWorker(RabbitMQWorkerFactory):
                                  suggestion is not None]
 
         premium_texts.extend(formatted_suggestions)
-        vocabulary = '<b>Vocabulary:</b>\n' + '\n'.join(f'- {word}' for word in result.vocabulary)
+        vocabulary = '<b>Vocabulary (Premium):</b>\n' + '\n'.join(f'- {word}' for word in result.vocabulary)
         premium_texts.append(vocabulary)
         return premium_texts
 
@@ -140,4 +137,9 @@ class GPTWorker(RabbitMQWorkerFactory):
 
     @staticmethod
     async def format_user_qa_to_answers_only(user_answer_json: T.Dict) -> str:
-        return ' '.join(q['user_answer'] for questions in user_answer_json.values() for q in questions)
+        return ' '.join(q['user_answer'] for part in user_answer_json.values() for q in part)
+
+    @staticmethod
+    async def format_user_qa_to_full_text(user_answer_json: T.Dict) -> str:
+        return ' '.join(f'question: {q["card_text"]}, answer: {q["user_answer"]}.'
+                        for part in user_answer_json.values() for q in part)
