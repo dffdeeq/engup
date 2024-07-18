@@ -34,7 +34,6 @@ class PrPronunciation(NeuralNetworkBase):
     def get_pronunciation_score(self, **kwargs) -> float:
         ogg_file_paths: T.Optional[T.List[str]] = kwargs.get('file_paths', None)
         if ogg_file_paths is None:
-            print('ogg file paths is None')
             return 4
         final_scores = []
         for ogg_file_path in ogg_file_paths:

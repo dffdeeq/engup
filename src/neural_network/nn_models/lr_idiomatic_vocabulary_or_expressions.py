@@ -22,4 +22,4 @@ class LrIdiomaticVocabulary(NeuralNetworkBase):
                 found_idioms.append(idiom)
         found_idioms = list(set(found_idioms))
 
-        return 9 if len(found_idioms) >= 2 else 6
+        return 9.0 if len(found_idioms) >= 2 else 6.0

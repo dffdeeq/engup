@@ -39,7 +39,6 @@ class RabbitMQWorkerFactory:
                 queue = await channel.declare_queue(queue_name, auto_delete=True)
                 await queue.bind(exchange=exchange, routing_key=routing_key)
                 logger.info(f'{queue_name}:{routing_key} --> Worker is healthy')
-                print(f'{queue_name}:{routing_key} --> Worker is healthy')
                 task = self.process_queue(queue, async_funcs)
                 queues.append(task)
 
@@ -56,7 +55,6 @@ class RabbitMQWorkerFactory:
         payload['priority'] = message.priority
         routing_key = message.routing_key
         logger.info(f'Received message with routing_key {routing_key}: {payload}')
-        print(f'Received message with routing_key {routing_key}: {payload}')
 
         if routing_key in async_funcs:
             await asyncio.create_task(async_funcs[routing_key](payload))

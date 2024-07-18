@@ -1,8 +1,14 @@
 import asyncio
 import logging
 
-import aio_pika
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+logger = logging.getLogger(__name__)
+logging.getLogger('aio_pika').setLevel(logging.WARNING)
+logging.getLogger('sqlalchemy').setLevel(logging.WARNING)
+logging.getLogger('torch').setLevel(logging.WARNING)
+logging.getLogger('pyannote').setLevel(logging.WARNING)
 
+import aio_pika
 from src.libs.adapter import Adapter
 from src.neural_network import ScoreGeneratorNNModel
 from src.postgres.factory import initialize_postgres_pool
@@ -17,12 +23,6 @@ from src.repos.factories.user_question import TgUserQuestionRepo
 from src.services.factories.answer_process import AnswerProcessService
 from src.services.factories.result import ResultService
 from src.settings import Settings
-
-
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(levelname)s - %(message)s'
-)
 
 
 async def main():

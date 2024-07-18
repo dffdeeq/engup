@@ -25,7 +25,7 @@ class FluencyCoherence(NeuralNetworkBase):
 
     def fc_self_corrections(self, text, **kwargs):
         _, corrections_len = self.identify_self_corrections(self.preprocess_text(text))
-        return 9 if corrections_len < 4 else 6
+        return 9.0 if corrections_len < 4 else 6.0
 
     @staticmethod
     def preprocess_text(text):

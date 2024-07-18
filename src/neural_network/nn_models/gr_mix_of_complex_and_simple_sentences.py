@@ -43,21 +43,21 @@ class MixOfComplexAndSimpleSentences(NeuralNetworkBase):
 
         total_sentences = len(sentences)
         if total_sentences == 0:
-            return 0
+            return 0.0
 
         complex_ratio = (counts["Complex Sentence"] + counts["Compound-Complex Sentence"]) / total_sentences
         simple_ratio = counts["Simple Sentence"] / total_sentences
         compound_ratio = counts["Compound Sentence"] / total_sentences
 
         bands = [
-            (9, 0.6, 0.2, 0.3),
-            (8, 0.5, 0.3, 0.4),
-            (7, 0.4, 0.4, 0.5),
-            (6, 0.3, 0.5, 0.6),
-            (5, 0.2, 0.6, 0.7),
-            (4, 0.1, 0.7, 0.8),
+            (9.0, 0.6, 0.2, 0.3),
+            (8.0, 0.5, 0.3, 0.4),
+            (7.0, 0.4, 0.4, 0.5),
+            (6.0, 0.3, 0.5, 0.6),
+            (5.0, 0.2, 0.6, 0.7),
+            (4.0, 0.1, 0.7, 0.8),
         ]
         for band, c_ratio, s_ratio, cmp_ratio in bands:
             if complex_ratio >= c_ratio and simple_ratio <= s_ratio and compound_ratio <= cmp_ratio:
                 return band
-        return 3
+        return 3.0

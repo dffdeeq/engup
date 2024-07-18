@@ -16,5 +16,4 @@ class GenerateResultMixin(BaseGPTClient):
             data={'text': text},
             params=questions_generate.dict(),
         )
-        print(response.body)
         return Result(**response.body.get('response'))
