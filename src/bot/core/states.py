@@ -9,3 +9,7 @@ class SpeakingState(StatesGroup):
 
 class WritingState(StatesGroup):
     get_user_answer = State()
+
+
+class AdminState(StatesGroup):
+    get_uq_id = State()
