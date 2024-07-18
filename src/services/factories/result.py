@@ -50,10 +50,11 @@ class ResultService(ServiceFactory):
         premium: bool = False,
         **kwargs
     ) -> T.List[str]:
+        extended_output = kwargs.get('extended_output', False)
+
         predict_params = NNConstants.predict_params[competence]
-        file_paths: T.Optional[T.List] = kwargs.get('file_paths', None)
         results = self.nn_service.predict_all(
-            text=text, model_names=predict_params, competence=competence, file_paths=file_paths)
+            text=text, model_names=predict_params, competence=competence, **kwargs)
 
         gr_score, gr_errors, lxc_errors, pnkt_errors = results.pop('clear_grammar_result')
         if gr_score < 5:
@@ -71,7 +72,9 @@ class ResultService(ServiceFactory):
         result = self.format_advice(advice_dict, results, competence)
         if premium:
             grammar_errors = self.format_grammar_errors(gr_errors, lxc_errors, pnkt_errors, competence)
-            result.append(grammar_errors)
+            result.extend(grammar_errors)
+        if extended_output:
+            result.insert(0, self.dict_to_string(results))
         return result
 
     async def update_uq(self, instance: TgUserQuestion, user_result_json):
@@ -93,6 +96,10 @@ class ResultService(ServiceFactory):
                     referrer.pts += 5
                     session.add(referrer)
             await session.commit()
+
+    @staticmethod
+    def dict_to_string(d):
+        return '\n'.join([f"{key}: {value}" for key, value in d.items()])
 
     @staticmethod
     def format_advice(advice_dict, results, competence: CompetenceEnum):
@@ -129,26 +136,36 @@ class ResultService(ServiceFactory):
         lexical_errors: T.List,
         punctuation_errors: T.List,
         competence: CompetenceEnum = CompetenceEnum.writing
-    ) -> str:
+    ) -> T.List[str]:
         mistakes_text = ''
         if competence == CompetenceEnum.writing:
             mistakes_text = (f'<b>{len(grammar_errors)} grammar mistakes, {len(lexical_errors)} lexical mistakes </b> '
                              f'and <b>{len(punctuation_errors)} punctuation mistakes</b>. ')
         elif competence == CompetenceEnum.speaking:
             mistakes_text = f'<b>{len(grammar_errors)} grammar mistakes and {len(lexical_errors)} lexical mistakes </b>'
-        output = [
-            "<b>Grammar and lexical errors:</b>\n\n",
+        output = [[
+            "<b>Grammar and lexical errors (Premium):</b>\n\n",
             f"During the review of your text, we identified a total of {mistakes_text}"
-        ]
+        ]]
         if len(grammar_errors + lexical_errors + punctuation_errors) > 0:
-            output.append("Below are some examples of each type of error:\n\n")
-            output.extend(ResultService.format_error_examples(grammar_errors, "Grammar"))
-            output.append("\n")
-            output.extend(ResultService.format_error_examples(lexical_errors, "Lexical"))
-            output.append("\n")
-            if competence == CompetenceEnum.writing:
-                output.extend(ResultService.format_error_examples(punctuation_errors, "Punctuation"))
-            output.append("\nIt is important to address these mistakes to enhance the clarity "
-                          "and professionalism of your writing.\n")
-        final_output = "".join(output)
+            output[0].append("Below are some examples of each type of error:\n\n")
+
+            if len(grammar_errors) > 0:
+                grammar_output = ResultService.format_error_examples(grammar_errors, "Grammar")
+                grammar_output = [grammar_output[i:i + 5] for i in range(0, len(grammar_output), 5)]
+                output.extend(grammar_output)
+
+            if len(lexical_errors) > 0:
+                lexical_output = ResultService.format_error_examples(lexical_errors, "Lexical")
+                lexical_output = [lexical_output[i:i + 5] for i in range(0, len(lexical_output), 5)]
+                output.extend(lexical_output)
+
+            if len(punctuation_errors) > 0:
+                punctuation_output = ResultService.format_error_examples(punctuation_errors, "Punctuation")
+                punctuation_output = [punctuation_output[i:i + 5] for i in range(0, len(punctuation_output), 5)]
+                output.extend(punctuation_output)
+
+        final_output = []
+        for part in output:
+            final_output.append(''.join(part))
         return final_output

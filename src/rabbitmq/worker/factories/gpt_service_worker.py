@@ -57,11 +57,15 @@ class GPTWorker(RabbitMQWorkerFactory):
         instance, user, question = await self.uq_repo.get_uq_with_relations(uq_id=data['uq_id'])
         competence = question.competence
 
+        extended_output = True if str(user.id) in self.result_service.settings.bot.admin_ids else False
+
         if competence == CompetenceEnum.writing:
             request_text = await UserQuestionService.format_question_answer_to_text(
                 instance.user_answer_json['card_text'], instance.user_answer_json['user_answer']
             )
-            result = await self.result_service.generate_result(request_text, competence, premium=data['priority'])
+            result = await self.result_service.generate_result(
+                request_text, competence, premium=data['priority'], extended_output=extended_output
+            )
             if data['priority']:
                 premium_result = await self.result_service.adapter.gpt_client.generate_result(
                     request_text, competence=competence)
@@ -70,7 +74,7 @@ class GPTWorker(RabbitMQWorkerFactory):
 
         elif competence == CompetenceEnum.speaking:
             request_text = await self.format_user_qa_to_full_text(instance.user_answer_json)
-            print(request_text)
+            answers_text_only = await self.format_user_qa_to_answers_only(instance.user_answer_json)
             filepaths = await self.answer_process_service.get_temp_data_filepaths(instance.id)
 
             additional_request_text = await self.format_user_qa_to_text(instance.user_answer_json)
@@ -78,9 +82,11 @@ class GPTWorker(RabbitMQWorkerFactory):
                 additional_request_text, competence=competence)
 
             result = await self.result_service.generate_result(
-                request_text, competence, premium=data['priority'], file_paths=filepaths)
+                request_text, competence, premium=data['priority'],
+                file_paths=filepaths, extended_output=extended_output, answers_text_only=answers_text_only)
 
             # TODO: Add common recommendations
+            # TODO: Clear temp files
             # TODO: Check if can transfer this code to ResultService or anywhere
 
             if data['priority']:

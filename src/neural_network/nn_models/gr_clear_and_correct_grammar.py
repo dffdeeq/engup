@@ -19,6 +19,7 @@ class GRClearAndCorrectGrammar(NeuralNetworkBase):
         super().load()
 
     def gr_clear_and_correct_grammar(self, text, **kwargs) -> T.Tuple[float, T.List, T.List, T.List]:
+        text = kwargs.get('answers_text_only', text)
         grammar_score, grammar_errors, lexical_errors, punctuation_errors = self.get_grammar_score_and_grammar_errors(
             text=text, tool=self.language_tool, competence=kwargs.get('competence', CompetenceEnum.writing))
         return grammar_score, grammar_errors, lexical_errors, punctuation_errors
@@ -44,11 +45,11 @@ class GRClearAndCorrectGrammar(NeuralNetworkBase):
             else:
                 grammar_errors.append(match)
         grammar_errors_len = len(grammar_errors)
-        return self.get_grammar_score(grammar_errors_len, competence), grammar_errors, lexical_errors, punctuation_errors
+        return (float(self.get_grammar_score(grammar_errors_len, competence)),
+                grammar_errors, lexical_errors, punctuation_errors)
 
     @staticmethod
     def get_grammar_score(grammar_errors_num, competence: CompetenceEnum = CompetenceEnum.writing):
-        print(f'CoMpEtEnCe: {competence.value}')
         if competence == CompetenceEnum.writing:
             bands = {
                 range(0, 2): 9,
