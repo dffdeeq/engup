@@ -42,12 +42,18 @@ class TgUserQuestionRepo(RepoFactory):
         result_json: T.Optional[dict] = None,
         status: bool = False,
         premium_queue: bool = False,
+        current_result_status: str = None
     ):
+        values = {
+            'user_answer_json': answer_json,
+            'user_result_json': result_json,
+            'status': status,
+            'premium_queue': premium_queue,
+        }
+        if current_result_status:
+            values['current_result_status'] = current_result_status
+
         await self.update(
             conditions={'id': uq_id},
-            values={
-                'user_answer_json': answer_json,
-                'user_result_json': result_json,
-                'status': status,
-                'premium_queue': premium_queue},
+            values=values
         )
