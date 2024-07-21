@@ -28,7 +28,7 @@ class ApiHostWorker(RabbitMQWorkerFactory):
 
     async def process_answers(self, updates: T.Dict[str, T.Any]):
         logging.info(f'---------- Start of Task {self.process_answers.__name__} ----------')
-        uq_id = await self.update_multiple_temp_data_answers(updates['filenames'])
+        uq_id = await self.update_multiple_temp_data_answers(updates['file_names'])
         if uq_id:
             logging.info('apihost --> update_multiple_temp_data_answers == OK')
             all_user_qa = await self.get_all_user_qa(uq_id)
@@ -74,4 +74,4 @@ class ApiHostWorker(RabbitMQWorkerFactory):
             return collected_data
 
     async def send_files_to_transcription_and_clear(self, filepaths: T.Dict[str, T.List[str]]) -> None:
-        await self.apihost_service.send_to_transcription(filepaths['filenames'])
+        await self.apihost_service.send_to_transcription(filepaths['file_names'])
