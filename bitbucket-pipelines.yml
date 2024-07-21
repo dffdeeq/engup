@@ -1,22 +1,48 @@
 image: python:3.8
 
 pipelines:
+  branches:
+    dev:
+      - parallel:
+        - step:
+            name: Lint code
+            script:
+              - pip install flake8
+              - flake8 . --show-source --statistics
+        - step:
+            name: Deploy to Server
+            deployment: production
+            script:
+              - pipe: atlassian/ssh-run:0.8.0
+                variables:
+                  SSH_USER: $SSH_USER
+                  SERVER: $SERVER
+                  COMMAND: |
+                    cd /opt/engup
+                    git pull
+                    docker-compose up -d --build
+    main:
+      - parallel:
+        - step:
+            name: Lint code
+            script:
+              - pip install flake8
+              - flake8 . --show-source --statistics
+        - step:
+            name: Deploy to Server
+            deployment: production
+            script:
+              - pipe: atlassian/ssh-run:0.8.0
+                variables:
+                  SSH_USER: $SSH_USER
+                  SERVER: $SERVER
+                  COMMAND: |
+                    cd /opt/engup
+                    git pull
+                    docker-compose up -d --build
   default:
-    - parallel:
-      - step:
-          name: Lint code
-          script:
-            - pip install flake8
-            - flake8 . --show-source --statistics
-      - step:
-          name: Deploy to Server
-          deployment: production
-          script:
-            - pipe: atlassian/ssh-run:0.8.0
-              variables:
-                SSH_USER: $SSH_USER
-                SERVER: $SERVER
-                COMMAND: |
-                  cd /opt/engup
-                  git pull
-                  docker-compose up -d --build
+    - step:
+        name: Lint code
+        script:
+          - pip install flake8
+          - flake8 . --show-source --statistics
