@@ -1,7 +1,7 @@
 import os.path
 import typing as T  # noqa
 
-from sqlalchemy import select
+from sqlalchemy import select, and_
 from sqlalchemy.ext.asyncio import async_sessionmaker
 
 from src.libs.adapter import Adapter
@@ -48,14 +48,16 @@ class AnswerProcessService(ServiceFactory):
         instance = await self.repo.get_temp_data({'tg_user_question_id': uq_id, 'question_text': question_text})
         return instance
 
-    async def get_temp_data_filepaths(self, uq_id: int) -> T.List[str]:
-        instances = await self.get_many_temp_data(uq_id=uq_id)
-        filenames = await self._get_filenames_from_temp_data_instances(instances)
+    @staticmethod
+    async def get_temp_data_filepaths(session, uq_id: int) -> T.List[str]:
+        instances = await AnswerProcessService.get_many_temp_data(session, uq_id=uq_id)
+        filenames = await AnswerProcessService._get_filenames_from_temp_data_instances(instances)
         return [os.path.join(TEMP_FILES_DIR, f) for f in filenames]
 
-    async def get_many_temp_data(self, uq_id: int) -> T.List[TempData]:
-        async with self.session() as session:
-            query = select(self.repo.model).where(self.repo.model.tg_user_question_id == uq_id)
+    @staticmethod
+    async def get_many_temp_data(session, uq_id: int) -> T.List[TempData]:
+        async with session() as session:
+            query = select(TempData).where(and_(TempData.tg_user_question_id == uq_id))
             results = await session.execute(query)
             return list(results.scalars().all())
 

@@ -147,7 +147,7 @@ async def speaking_third_part(
         await message.answer(text=next_question)
     else:
         await answer_process.update_user_qa_premium_queue(state_data['uq_id'], state_data['premium_queue'])
-        filepaths = await answer_process.get_temp_data_filepaths(state_data['uq_id'])
+        filepaths = await answer_process.get_temp_data_filepaths(answer_process.session, state_data['uq_id'])
         await apihost_producer.create_task_send_to_transcription(filepaths, premium_queue=state_data['premium_queue'])
         await state.clear()
         await message.answer(text=DefaultMessages.CALCULATING_RESULT)

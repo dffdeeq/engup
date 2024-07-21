@@ -1,18 +1,11 @@
-import typing as T  # noqa
-import asyncio
 import json
+import typing as T  # noqa
 import logging
 
-from aio_pika import IncomingMessage
-from aio_pika.abc import AbstractRobustConnection, ExchangeType
+from aio_pika import connect_robust, ExchangeType, Message
 
 from src.repos.factory import RepoFactory
 
-
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(levelname)s - %(message)s'
-)
 logger = logging.getLogger(__name__)
 
 
@@ -20,45 +13,48 @@ class RabbitMQWorkerFactory:
     def __init__(
         self,
         repo: RepoFactory,
-        connection_pool: AbstractRobustConnection,
-        queues_info: T.List[T.Tuple[str, str]],
+        dsn_string: str,
+        queue_name: str,
         exchange_name: str = 'direct',
     ):
-        self.temp_data_repo = repo
-        self.connection_pool = connection_pool
+        self.repo = repo
+        self.dsn_string = dsn_string
         self.exchange_name = exchange_name
-        self.queues_info = queues_info
+        self.queue_name = queue_name
 
-    async def start_listening(self, async_funcs: T.Dict[str, T.Callable[..., T.Awaitable[None]]]):
-        logger.info('start listening')
-        async with self.connection_pool, self.connection_pool.channel() as channel:
-            exchange = await channel.declare_exchange(self.exchange_name, type=ExchangeType.DIRECT, auto_delete=True)
-            queues = []
+        self.exchange = None
 
-            for queue_name, routing_key in self.queues_info:
-                queue = await channel.declare_queue(queue_name, auto_delete=True)
-                await queue.bind(exchange=exchange, routing_key=routing_key)
-                logger.info(f'{queue_name}:{routing_key} --> Worker is healthy')
-                task = self.process_queue(queue, async_funcs)
-                queues.append(task)
+    async def start_listening(self, routing_key: str, func: T.Callable):
+        logger.info('Starting listening')
+        connection = await connect_robust(self.dsn_string)
+        channel = await connection.channel()
+        self.exchange = await channel.declare_exchange(self.exchange_name, ExchangeType.DIRECT)
+        queue = await channel.declare_queue(self.queue_name)
+        await queue.bind(self.exchange, routing_key=routing_key)
 
-            await asyncio.gather(*queues)
-
-    async def process_queue(self, queue, async_funcs):
+        logger.info('Ready for incoming messages')
         async with queue.iterator() as queue_iter:
             async for message in queue_iter:
-                await self.handle_message(message, async_funcs)
+                async with message.process():  # noqa
+                    payload = json.loads(message.body)  # noqa
+                    payload['priority'] = message.priority  # noqa
+                    logger.info(f'Received {str(payload)[:50]}')
+                    await func(payload)
+
+    async def publish(
+        self,
+        json_serializable_dict: T.Dict,
+        routing_key: str,
+        priority: int = 0
+    ):
+        message = Message(
+            body=bytes(json.dumps(json_serializable_dict), 'utf-8'),
+            content_type='json',
+        )
+        message.priority = priority
+        await self.exchange.publish(message, routing_key=routing_key)
+        logger.info(f"Message published to {routing_key} with priority {priority}")
 
     @staticmethod
-    async def handle_message(message: IncomingMessage, async_funcs: T.Dict[str, T.Callable[..., T.Awaitable[None]]]):
-        payload = json.loads(message.body)
-        payload['priority'] = message.priority
-        routing_key = message.routing_key
-        logger.info(f'Received message with routing_key {routing_key}: {payload}')
-
-        if routing_key in async_funcs:
-            await asyncio.create_task(async_funcs[routing_key](payload))
-        else:
-            logger.warning(f'No handler for routing_key {routing_key}')
-
-        await message.ack()
+    def get_priority(priority: bool) -> int:
+        return 5 if priority else 0

@@ -13,6 +13,7 @@ from pyannote.audio import Model
 
 from src.neural_network.base import NeuralNetworkBase
 from src.neural_network.nn_models.utils.simple_nn_model import SimpleNN
+from src.neural_network.nn_models.utils.timeit import timeit
 from src.settings import NNModelsSettings
 from src.settings.static import NN_MODELS_DIR
 
@@ -31,6 +32,7 @@ class PrPronunciation(NeuralNetworkBase):
             self.voice_model.eval()
         super().load()
 
+    @timeit
     def get_pronunciation_score(self, **kwargs) -> float:
         ogg_file_paths: T.Optional[T.List[str]] = kwargs.get('file_paths', None)
         if ogg_file_paths is None:

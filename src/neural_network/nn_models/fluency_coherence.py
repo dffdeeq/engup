@@ -7,9 +7,11 @@ from pydub import AudioSegment
 
 from data.other.self_correction_patterns import SELF_CORRECTION_PATTERNS
 from src.neural_network.base import NeuralNetworkBase
+from src.neural_network.nn_models.utils.timeit import timeit
 
 
 class FluencyCoherence(NeuralNetworkBase):
+    @timeit
     def fc_minimal_hesitations(self, text: str, **kwargs) -> float:
         file_paths: T.Optional[T.List] = kwargs.get('file_paths', None)
         if file_paths is None:
@@ -21,8 +23,9 @@ class FluencyCoherence(NeuralNetworkBase):
             score = words_len / audio_duration
             scores.append(score)
         score = sum(scores) / len(scores)
-        return self.get_score_and_description(score)
+        return self.get_fc_minimal_hesitations_score(score)
 
+    @timeit
     def fc_self_corrections(self, text, **kwargs):
         _, corrections_len = self.identify_self_corrections(self.preprocess_text(text))
         return 9.0 if corrections_len < 4 else 6.0
@@ -59,7 +62,7 @@ class FluencyCoherence(NeuralNetworkBase):
         return len(pauses), len(bad_pauses), audio_duration
 
     @staticmethod
-    def get_score_and_description(value) -> float:
+    def get_fc_minimal_hesitations_score(value) -> float:
         ranges = [
             (0, 0.4, 4.0),
             (0.4, 0.6, 6.0),

@@ -1,6 +1,7 @@
 import language_tool_python
 
 from src.neural_network.base import NeuralNetworkBase
+from src.neural_network.nn_models.utils.timeit import timeit
 from src.settings import NNModelsSettings
 
 
@@ -14,6 +15,7 @@ class AccurateSpellingAndWordFormation(NeuralNetworkBase):
             self.language_tool = language_tool_python.LanguageTool('en-US')
         super().load()
 
+    @timeit
     def lr_accurate_spelling_and_word_formation(self, text, **kwargs) -> float:
         matches = self.language_tool.check(text)
         lexical_errors = [match for match in matches if 'spelling' in match.ruleIssueType.lower()]
