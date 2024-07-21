@@ -3,6 +3,7 @@ import typing as T  # noqa
 import spacy
 
 from src.neural_network.base import NeuralNetworkBase
+from src.neural_network.nn_models.utils.timeit import timeit
 from src.settings import NNModelsSettings
 from src.settings.static import NN_MODELS_DIR
 
@@ -17,7 +18,8 @@ class MixOfComplexAndSimpleSentences(NeuralNetworkBase):
             self.nlp = spacy.load(os.path.join(NN_MODELS_DIR, 'en_core_web_sm-3.7.1'))
         super().load()
 
-    def gr_mix_of_complex_and_simple_sentences(self, text, **kwargs) -> int:
+    @timeit
+    def gr_mix_of_complex_and_simple_sentences(self, text, **kwargs) -> float:
         doc = self.nlp(text)
         sentences = list(doc.sents)
         return self.score_sentence_mix(sentences)

@@ -4,6 +4,7 @@ import pandas as pd
 from lexicalrichness import LexicalRichness
 
 from src.neural_network.base import NeuralNetworkBase
+from src.neural_network.nn_models.utils.timeit import timeit
 from src.settings import NNModelsSettings
 from src.settings.static import OTHER_DATA_DIR
 
@@ -19,6 +20,7 @@ class LRVariedVocabulary(NeuralNetworkBase):
                 os.path.join(OTHER_DATA_DIR, 'ielts_academic_vocabulary.csv'))
         super().load()
 
+    @timeit
     def lr_varied_vocabulary(self, text, **kwargs) -> float:
         lex = LexicalRichness(text)
         cttr = lex.cttr

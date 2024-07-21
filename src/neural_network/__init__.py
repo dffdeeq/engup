@@ -15,6 +15,7 @@ from src.neural_network.nn_models.gr_mix_of_complex_and_simple_sentences import 
 from src.neural_network.nn_models.ta_appropriate_word_count import TAAppropriateWordCount
 from src.neural_network.nn_models.lr_varied_vocabulary import LRVariedVocabulary
 from src.neural_network.nn_models.pr_pronunciation import PrPronunciation
+from src.neural_network.nn_models.utils.timeit import timeit
 from src.postgres.enums import CompetenceEnum
 from src.settings import NNModelsSettings
 from src.settings.static import NN_MODELS_DIR
@@ -57,6 +58,7 @@ class ScoreGeneratorNNModel(
             }
         }
 
+    @timeit
     def load(self):
         super().load()
 
@@ -68,7 +70,7 @@ class ScoreGeneratorNNModel(
         competence = kwargs.get('competence', CompetenceEnum.writing)
         if model_name in self.func_models[competence]:
             return self.func_models[competence][model_name](text=text, **kwargs)  # noqa
-        return self._predict(text, self.models[model_name])
+        return self._predict(text=text, model_info=self.models[model_name])
 
     def predict_all(self, text: str, model_names: T.List[str], **kwargs):
         scores = {}

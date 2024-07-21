@@ -1,18 +1,21 @@
+import logging
 import math
 import typing as T  # noqa
 
-from sqlalchemy import select, and_
 from sqlalchemy.ext.asyncio import async_sessionmaker
 
 from data.other.criteria_json import GRAMMAR_AND_LEXICAL_ERRORS_ADVICE
 from src.libs.adapter import Adapter
-from src.neural_network import ScoreGeneratorNNModel
+from src.libs.factories.gpt.models.result import Result
+from src.libs.factories.gpt.models.suggestion import Suggestion
+from src.neural_network import ScoreGeneratorNNModel, timeit
 from src.postgres.enums import CompetenceEnum
-from src.postgres.models.tg_user import TgUser
 from src.postgres.models.tg_user_question import TgUserQuestion
 from src.repos.factories.question import QuestionRepo
 from src.services.constants import NeuralNetworkConstants as NNConstants
+from src.services.factories.answer_process import AnswerProcessService
 from src.services.factory import ServiceFactory
+from src.services.factories.user_question import UserQuestionService as UQService
 from src.settings import Settings
 
 
@@ -29,19 +32,54 @@ class ResultService(ServiceFactory):
         self.repo = repo
         self.nn_service = nn_service
 
+    @timeit
     def check_or_load_models(self):
         if not self.nn_service.models:
             self.nn_service.load_models(NNConstants.predict_params['to_load'])
 
     async def generate_result(
         self,
-        text: str,
+        instance: TgUserQuestion,
         competence: CompetenceEnum,
         premium: bool = False,
         **kwargs
     ) -> T.List:
         self.check_or_load_models()
-        return self._generate_result_local_model(text, competence, premium, **kwargs)
+        request_text = await UQService.format_user_qa_to_full_text(instance.user_answer_json, competence)
+        if competence == CompetenceEnum.speaking:
+            answers_text_only = await UQService.format_user_qa_to_answers_only(instance.user_answer_json)
+            file_paths = await AnswerProcessService.get_temp_data_filepaths(self.session, instance.id)
+        else:
+            answers_text_only = None
+            file_paths = None
+        result = self._generate_result_local_model(
+            request_text, competence, premium, **kwargs, answers_text_only=answers_text_only, file_paths=file_paths)
+
+        if premium:
+            additional_result = await self.generate_gpt_result_and_format(instance.user_answer_json, competence)
+            result.extend(additional_result)
+
+        # TODO: Add common recommendations
+        # TODO: Clear temp files
+
+        return result
+
+    async def generate_gpt_result_and_format(self, user_answer_json: T.Dict, competence: CompetenceEnum) -> T.List[str]:
+        additional_request_text = await UQService.format_user_qa_to_text_for_gpt(user_answer_json, competence)
+        for attempt in range(1, 5):
+            try:
+                additional_result = await self.adapter.gpt_client.generate_gpt_result(
+                    additional_request_text, competence=competence)
+                break
+            except Exception as e:
+                logging.info(e)
+                pass
+        else:
+            logging.error('GPT generation failed 5/5 (ValidationError)')
+            return ['Gpt service error 5/5']
+
+        formatted_premium_results = self.format_premium_result(additional_result)
+        return formatted_premium_results
 
     def _generate_result_local_model(
         self,
@@ -54,7 +92,7 @@ class ResultService(ServiceFactory):
 
         predict_params = NNConstants.predict_params[competence]
         results = self.nn_service.predict_all(
-            text=text, model_names=predict_params, competence=competence, **kwargs)
+            text, predict_params, competence=competence, **kwargs)
 
         gr_score, gr_errors, lxc_errors, pnkt_errors = results.pop('clear_grammar_result')
         if gr_score < 5:
@@ -77,25 +115,35 @@ class ResultService(ServiceFactory):
             result.insert(0, self.dict_to_string(results))
         return result
 
-    async def update_uq(self, instance: TgUserQuestion, user_result_json):
-        async with self.session() as session:
-            instance.user_result_json = user_result_json
-            instance.status = True
-            session.add(instance)
-
-            user_query = await session.execute(select(TgUser).where(and_(TgUser.id == instance.user_id)))
-            user = user_query.scalar_one_or_none()
-            user.completed_questions += 1
-            session.add(user)
-            if user.completed_questions == 3 and user.referrer_id:
-                referrer_query = await session.execute(
-                    select(TgUser).where(and_(TgUser.id == user.referrer_id))
+    @staticmethod
+    def format_premium_result(result: Result) -> T.List[str]:
+        def format_suggestion(suggestion_name: str, suggestion: T.Optional[Suggestion]) -> T.Optional[str]:
+            if suggestion is None:
+                return None
+            formatted_text = f"{suggestion_name}:\n"
+            for enhancement in suggestion.enhancements:
+                formatted_text += (
+                    f"\n{enhancement.basic_suggestion}\n"
+                    f"<b>Your answer:</b> {enhancement.source_text}\n"
+                    f"<b>Enhanced answer:</b> {enhancement.enhanced_text}\n"
                 )
-                referrer = referrer_query.scalar_one_or_none()
-                if referrer:
-                    referrer.pts += 5
-                    session.add(referrer)
-            await session.commit()
+            return formatted_text.strip()
+
+        premium_texts = ['<b>Advanced Recommendations (Premium)</b>', ]
+        competence_results = result.competence_results
+        suggestion_names = [
+            ("Task Achievement", competence_results.task_achievement),
+            ("Fluency Coherence", competence_results.fluency_coherence),
+            ("Lexical Resources", competence_results.lexical_resources),
+            ("Grammatical Range", competence_results.grammatical_range)
+        ]
+        formatted_suggestions = [format_suggestion(name, suggestion) for name, suggestion in suggestion_names if
+                                 suggestion is not None]
+
+        premium_texts.extend(formatted_suggestions)
+        vocabulary = '<b>Vocabulary (Premium):</b>\n' + '\n'.join(f'- {word}' for word in result.vocabulary)
+        premium_texts.append(vocabulary)
+        return premium_texts
 
     @staticmethod
     def dict_to_string(d):

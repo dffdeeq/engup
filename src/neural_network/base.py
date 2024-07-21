@@ -1,3 +1,4 @@
+import logging
 import typing as T  # noqa
 import json
 import os
@@ -17,6 +18,7 @@ class NeuralNetworkBase:
         pass
 
     def _load_model(self, model_path: T.Union[str, Path]) -> T.Dict[str, T.Any]:
+        logging.info('Loading model from %s', model_path)
         model = BertForSequenceClassification.from_pretrained(os.path.join(model_path, 'model'))
         tokenizer = BertTokenizer.from_pretrained(os.path.join(model_path, 'tokenizer'))
         label_to_int = self.load_json(os.path.join(model_path, 'label_to_int.json'))
