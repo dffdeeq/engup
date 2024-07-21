@@ -4,9 +4,11 @@ from collections import Counter
 from data.other.gr_variety_of_grammar_constants import GR_VARIETY_OF_GRAMMAR_CONJUNCTIONS, GR_VARIETY_OF_GRAMMAR_TENSES, \
     GR_VARIETY_OF_GRAMMAR_WEIGHTS
 from src.neural_network.base import NeuralNetworkBase
+from src.neural_network.nn_models.utils.timeit import timeit
 
 
 class GrVarietyOfGrammarUsed(NeuralNetworkBase):
+    @timeit
     def gr_variety_of_grammar_used(self, text: str, **kwargs) -> float:
         tense_counts, conjunction_count = self.analyze_grammar(text)
         diversity_score = self.calculate_diversity_score(tense_counts)

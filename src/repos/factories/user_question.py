@@ -22,8 +22,9 @@ class TgUserQuestionRepo(RepoFactory):
                 .where(and_(TgUserQuestion.id == uq_id))
             )
             result = await session.execute(query)
-            instance, user, question = result.first()
-            return instance, user, question
+            if result:
+                instance, user, question = result.first()
+                return instance, user, question
 
     async def create_user_question(self, user_id, question_id) -> T.Optional[TgUserQuestion]:
         return await self.insert_one(user_id=user_id, question_id=question_id)

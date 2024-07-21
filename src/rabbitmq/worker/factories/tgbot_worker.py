@@ -1,9 +1,10 @@
+import json
 import logging
 import typing as T  # noqa
 import asyncio
 from functools import wraps
 
-from aio_pika.abc import AbstractRobustConnection
+from aio_pika import connect_robust, ExchangeType
 from sqlalchemy.ext.asyncio import async_sessionmaker
 
 from src.bot.core.bot import get_bot
@@ -16,7 +17,6 @@ from src.rabbitmq.worker.factory import RabbitMQWorkerFactory
 from src.repos.factories.temp_data import TempDataRepo
 
 
-logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
@@ -35,13 +35,30 @@ class TgBotWorker(RabbitMQWorkerFactory):
         self,
         session: async_sessionmaker,
         repo: TempDataRepo,
-        connection_pool: AbstractRobustConnection,
-        queues_info: T.List[T.Tuple[str, str]],
+        dsn_string: str,
+        queue_name: str,
     ):
-        super().__init__(repo, connection_pool, queues_info)
+        super().__init__(repo, dsn_string, queue_name)
         self.repo = repo
         self.session = session
         self.bot = get_bot(INJECTOR.settings)
+
+    async def start_listening(self, routing_key: str, func: T.Callable):
+        logger.info('Starting listening')
+        connection = await connect_robust(self.dsn_string)
+        channel = await connection.channel()
+        self.exchange = await channel.declare_exchange(self.exchange_name, ExchangeType.DIRECT)
+        queue = await channel.declare_queue(self.queue_name)
+        await queue.bind(self.exchange, routing_key=routing_key)
+
+        logger.info('Ready for incoming messages')
+        async with queue.iterator() as queue_iter:
+            async for message in queue_iter:
+                async with message.process():  # noqa
+                    payload = json.loads(message.body)  # noqa
+                    payload['priority'] = message.priority  # noqa
+                    logger.info(f'Received {str(payload)[:50]}')
+                    await asyncio.create_task(func(payload))
 
     @async_log
     async def process_return_simple_result_task(self, data: T.Dict[str, T.Any]):

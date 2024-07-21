@@ -15,7 +15,7 @@ class ApiHostProducer(RabbitMQProducerFactory):
 
     async def create_task_send_to_transcription(self, filenames: T.List[str], premium_queue: bool = False):
         message = Message(
-            body=bytes(json.dumps({'files': [os.path.join(TEMP_FILES_DIR, f) for f in filenames]}), 'utf-8'),
+            body=bytes(json.dumps({'file_names': [os.path.join(TEMP_FILES_DIR, f) for f in filenames]}), 'utf-8'),
             content_type='json',
         )
         await self._publish(message, 'apihost_to_transcription', priority=self.get_priority(premium_queue))
@@ -26,7 +26,7 @@ class ApiHostProducer(RabbitMQProducerFactory):
         premium_queue: bool = False
     ):
         message = Message(
-            body=bytes(json.dumps({'filenames': answers_and_filenames}), 'utf-8'),
+            body=bytes(json.dumps({'file_names': answers_and_filenames}), 'utf-8'),
             content_type='json',
         )
         await self._publish(message, 'apihost_update_answers', priority=self.get_priority(premium_queue))

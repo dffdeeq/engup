@@ -4,6 +4,7 @@ import nltk
 from nltk import word_tokenize
 
 from src.neural_network.base import NeuralNetworkBase
+from src.neural_network.nn_models.utils.timeit import timeit
 from src.settings import NNModelsSettings
 
 
@@ -19,6 +20,7 @@ class TAAppropriateWordCount(NeuralNetworkBase):
         super().load()
 
     @staticmethod
+    @timeit
     def ta_appropriate_word_count(text: str, **kwargs) -> float:
         words = word_tokenize(text)
         words_count = len([w for w in words if w.isalpha()])

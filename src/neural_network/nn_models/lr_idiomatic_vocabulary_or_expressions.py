@@ -2,6 +2,7 @@ from fuzzywuzzy import process, fuzz
 
 from data.other.idioms import IDIOMS_LIST
 from src.neural_network.base import NeuralNetworkBase
+from src.neural_network.nn_models.utils.timeit import timeit
 from src.settings import NNModelsSettings
 
 
@@ -15,6 +16,7 @@ class LrIdiomaticVocabulary(NeuralNetworkBase):
             self.idioms = IDIOMS_LIST
         super().load()
 
+    @timeit
     def lr_idiomatic_vocabulary_or_expressions(self, text, threshold=65, **kwargs):
         found_idioms = []
         for idiom in self.idioms:

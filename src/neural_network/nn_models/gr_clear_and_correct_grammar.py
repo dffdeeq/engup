@@ -4,6 +4,7 @@ import language_tool_python
 from language_tool_python import Match
 
 from src.neural_network.base import NeuralNetworkBase
+from src.neural_network.nn_models.utils.timeit import timeit
 from src.postgres.enums import CompetenceEnum
 from src.settings import NNModelsSettings
 
@@ -18,10 +19,13 @@ class GRClearAndCorrectGrammar(NeuralNetworkBase):
             self.language_tool = language_tool_python.LanguageTool('en-US')
         super().load()
 
+    @timeit
     def gr_clear_and_correct_grammar(self, text, **kwargs) -> T.Tuple[float, T.List, T.List, T.List]:
-        text = kwargs.get('answers_text_only', text)
+        text_ = kwargs.get('answers_text_only', None)
+        if text_ is None:
+            text_ = text
         grammar_score, grammar_errors, lexical_errors, punctuation_errors = self.get_grammar_score_and_grammar_errors(
-            text=text, tool=self.language_tool, competence=kwargs.get('competence', CompetenceEnum.writing))
+            text=text_, tool=self.language_tool, competence=kwargs.get('competence', CompetenceEnum.writing))
         return grammar_score, grammar_errors, lexical_errors, punctuation_errors
 
     def get_grammar_score_and_grammar_errors(
