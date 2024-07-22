@@ -41,7 +41,11 @@ class ApiHostWorker(RabbitMQWorkerFactory):
                 )).scalar_one_or_none()
                 await session.commit()
                 logging.info('apihost --> update_user_answer_json == OK')
-            await self.publish({'uq_id': uq_id}, 'gpt_generate_result_use_local_model', premium_queue)
+            await self.publish(
+                json_serializable_dict={'uq_id': uq_id},
+                routing_key='gpt_generate_result_use_local_model',
+                priority=self.get_priority(premium_queue)
+            )
             logging.info('apihost --> gpt (create_task_generate_result) == OK')
         logging.info(f'---------- End of Task {self.process_answers.__name__} ----------')
 

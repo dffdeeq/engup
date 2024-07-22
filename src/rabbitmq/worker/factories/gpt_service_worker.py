@@ -1,3 +1,4 @@
+import asyncio
 import json
 import logging
 import typing as T  # noqa
@@ -35,10 +36,11 @@ class GPTWorker(RabbitMQWorkerFactory):
         uq_repo: TgUserQuestionRepo,
         dsn_string: str,
         queue_name: str,
+        heartbeat: int,
         result_service: ResultService,
         answer_process_service: AnswerProcessService,
     ):
-        super().__init__(temp_data_repo, dsn_string, queue_name)
+        super().__init__(temp_data_repo, dsn_string, queue_name, heartbeat=heartbeat)
         self.temp_data_repo = temp_data_repo
         self.uq_repo = uq_repo
         self.session = session
