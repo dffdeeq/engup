@@ -8,8 +8,9 @@ async def get_admin_menu() -> T.Tuple[str, InlineKeyboardBuilder]:
     text = 'Admin Menu\n----------'
     builder = InlineKeyboardBuilder([
         [
-            InlineKeyboardButton(text='Run task processing', callback_data='admin_run_task_processing'),
-         ],
+            InlineKeyboardButton(text='Run task', callback_data='admin_run_task_processing default'),
+            InlineKeyboardButton(text='Run task premium', callback_data='admin_run_task_processing premium'),
+        ],
     ])
     return text, builder
 
