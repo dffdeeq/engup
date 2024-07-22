@@ -48,7 +48,7 @@ class TgBotWorker(RabbitMQWorkerFactory):
         connection = await connect_robust(self.dsn_string)
         channel = await connection.channel()
         self.exchange = await channel.declare_exchange(self.exchange_name, ExchangeType.DIRECT)
-        queue = await channel.declare_queue(self.queue_name)
+        queue = await channel.declare_queue(self.queue_name, arguments={'x-max-priority': 10})
         await queue.bind(self.exchange, routing_key=routing_key)
 
         logger.info('Ready for incoming messages')

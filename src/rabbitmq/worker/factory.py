@@ -31,7 +31,7 @@ class RabbitMQWorkerFactory:
         connection = await connect_robust(self.dsn_string + f'?heartbeat={self.heartbeat}')
         channel = await connection.channel()
         self.exchange = await channel.declare_exchange(self.exchange_name, ExchangeType.DIRECT)
-        queue = await channel.declare_queue(self.queue_name)
+        queue = await channel.declare_queue(self.queue_name, arguments={'x-max-priority': 10})
         await queue.bind(self.exchange, routing_key=routing_key)
 
         logger.info('Ready for incoming messages')
@@ -52,8 +52,8 @@ class RabbitMQWorkerFactory:
         message = Message(
             body=bytes(json.dumps(json_serializable_dict), 'utf-8'),
             content_type='json',
+            priority=priority
         )
-        message.priority = priority
         await self.exchange.publish(message, routing_key=routing_key)
         logger.info(f"Message published to {routing_key} with priority {priority}")
 
