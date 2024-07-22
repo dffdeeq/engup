@@ -3,6 +3,7 @@ import typing as T  # noqa
 import logging
 
 from aio_pika import connect_robust, ExchangeType, Message
+from aiormq import ChannelInvalidStateError
 
 from src.repos.factory import RepoFactory
 
@@ -28,6 +29,7 @@ class RabbitMQWorkerFactory:
         logger.info('Starting listening')
         connection = await connect_robust(self.dsn_string)
         channel = await connection.channel()
+        await channel.set_qos(prefetch_count=1)
         self.exchange = await channel.declare_exchange(self.exchange_name, ExchangeType.DIRECT)
         queue = await channel.declare_queue(self.queue_name)
         await queue.bind(self.exchange, routing_key=routing_key)
@@ -35,11 +37,18 @@ class RabbitMQWorkerFactory:
         logger.info('Ready for incoming messages')
         async with queue.iterator() as queue_iter:
             async for message in queue_iter:
-                async with message.process():  # noqa
+                try:
                     payload = json.loads(message.body)  # noqa
                     payload['priority'] = message.priority  # noqa
                     logger.info(f'Received {str(payload)[:50]}')
                     await func(payload)
+                    await message.ack()  # noqa
+                except ChannelInvalidStateError:
+                    logger.error("Channel state invalid, could not process the message.")
+                    await message.nack(requeue=True)  # noqa
+                except Exception as e:
+                    logger.error(f"Unexpected error: {e}")
+                    await message.nack(requeue=True)  # noqa
 
     async def publish(
         self,
