@@ -5,6 +5,8 @@ import json
 
 from aiogram import Router, types, F
 from aiogram.fsm.context import FSMContext
+from aiogram.types import InlineKeyboardButton
+from aiogram.utils.keyboard import InlineKeyboardBuilder
 
 from src.bot.core.filters.voicemail_filter import VoicemailFilter
 from src.bot.core.states import SpeakingState
@@ -13,6 +15,7 @@ from src.postgres.enums import CompetenceEnum, PartEnum
 from src.rabbitmq.producer.factories.apihost import ApiHostProducer
 from src.services.factories.answer_process import AnswerProcessService
 from src.services.factories.question import QuestionService
+from src.services.factories.status_service import StatusService
 from src.services.factories.user_question import UserQuestionService
 from src.services.factories.voice import VoiceService
 
@@ -122,14 +125,17 @@ async def speaking_second_part(
     VoicemailFilter(),
     INJECTOR.inject_voice,
     INJECTOR.inject_apihost_producer,
-    INJECTOR.inject_answer_process
+    INJECTOR.inject_answer_process,
+    INJECTOR.inject_status
 )
 async def speaking_third_part(
     message: types.Message,
     state: FSMContext,
     voice_service: VoiceService,
     apihost_producer: ApiHostProducer,
-    answer_process: AnswerProcessService
+    answer_process: AnswerProcessService,
+    status_service: StatusService,
+
 ):
     state_data = await state.get_data()
     filename = os.path.basename(await voice_service.save_user_voicemail(message.voice, message.bot))
@@ -149,5 +155,10 @@ async def speaking_third_part(
         await answer_process.update_user_qa_premium_queue(state_data['uq_id'], state_data['premium_queue'])
         filepaths = await answer_process.get_temp_data_filepaths(answer_process.session, state_data['uq_id'])
         await apihost_producer.create_task_send_to_transcription(filepaths, premium_queue=state_data['premium_queue'])
+        await status_service.change_qa_status(state_data['uq_id'], status='Sent for transcription.')
         await state.clear()
-        await message.answer(text=DefaultMessages.CALCULATING_RESULT)
+
+        builder = InlineKeyboardBuilder([
+            [InlineKeyboardButton(text='Result status', callback_data=f'result_status {state_data["uq_id"]}')]
+        ])
+        await message.answer(text=DefaultMessages.CALCULATING_RESULT, reply_markup=builder.as_markup())

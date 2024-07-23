@@ -10,6 +10,7 @@ from src.postgres.models.tg_user_question import TgUserQuestion
 from src.rabbitmq.worker.factory import RabbitMQWorkerFactory
 from src.repos.factories.temp_data import TempDataRepo
 from src.services.factories.apihost import ApiHostService
+from src.services.factories.status_service import StatusService
 
 
 class ApiHostWorker(RabbitMQWorkerFactory):
@@ -20,15 +21,18 @@ class ApiHostWorker(RabbitMQWorkerFactory):
         dsn_string: str,
         queue_name: str,
         apihost_service: ApiHostService,
+        status_service: StatusService
     ):
         super().__init__(repo, dsn_string, queue_name)
         self.session = session
         self.repo = repo
         self.apihost_service = apihost_service
+        self.status_service = status_service
 
     async def process_answers(self, updates: T.Dict[str, T.Any]):
         logging.info(f'---------- Start of Task {self.process_answers.__name__} ----------')
         uq_id = await self.update_multiple_temp_data_answers(updates['file_names'])
+        await self.status_service.change_qa_status(uq_id, 'Processing transcription.')
         if uq_id:
             logging.info('apihost --> update_multiple_temp_data_answers == OK')
             all_user_qa = await self.get_all_user_qa(uq_id)
@@ -36,7 +40,7 @@ class ApiHostWorker(RabbitMQWorkerFactory):
                 premium_queue = (await session.execute(
                     update(TgUserQuestion)
                     .where(and_(TgUserQuestion.id == uq_id))
-                    .values(user_answer_json=all_user_qa, status=True)
+                    .values(user_answer_json=all_user_qa, status=True, current_result_status='Processing transcription')
                     .returning(TgUserQuestion.premium_queue)
                 )).scalar_one_or_none()
                 await session.commit()
