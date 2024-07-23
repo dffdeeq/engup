@@ -1,6 +1,5 @@
 import asyncio
 import logging
-import time
 
 from src.libs.adapter import Adapter
 from src.neural_network import ScoreGeneratorNNModel
@@ -30,13 +29,9 @@ logging.getLogger('pytorch_lightning').setLevel(logging.WARNING)
 
 
 async def main():
-    start_time = time.time()
-    logger.info("Starting the main function")
-
     settings = Settings.new()
     session = initialize_postgres_pool(settings.postgres)
     adapter = Adapter(settings)
-    logger.info(f"Adapter initialized: {time.time() - start_time:.2f} seconds elapsed")
     repo = TempDataRepo(TempData, session)
     uq_repo = TgUserQuestionRepo(TgUserQuestion, session)
 
@@ -47,8 +42,6 @@ async def main():
         settings=settings,
         nn_service=ScoreGeneratorNNModel(settings.nn_models)
     )
-    logger.info(f"ResultService initialized: {time.time() - start_time:.2f} seconds elapsed")
-
     answer_process_service = AnswerProcessService(
         repo=repo,
         adapter=adapter,
@@ -56,15 +49,12 @@ async def main():
         settings=settings,
         user_qa_repo=uq_repo
     )
-    logger.info(f"AnswerProcessService initialized: {time.time() - start_time:.2f} seconds elapsed")
-
     status_service = StatusService(
-        uq_repo,
-        adapter,
-        session,
-        settings
+        TgUserQuestionRepo(TgUserQuestion, session),
+        adapter=adapter,
+        session=session,
+        settings=settings,
     )
-
     gpt_worker = GPTWorker(
         temp_data_repo=repo,
         uq_repo=uq_repo,
@@ -72,13 +62,12 @@ async def main():
         result_service=result_service,
         dsn_string=settings.rabbitmq.dsn,
         queue_name='gpt',
+        heartbeat=600,
         answer_process_service=answer_process_service,
         status_service=status_service,
     )
-    logger.info(f"GPTWorker initialized: {time.time() - start_time:.2f} seconds elapsed")
     await gpt_worker.start_listening(
         'gpt_generate_result_use_local_model', gpt_worker.process_result_local_model_task)
-    logger.info(f"Started listening: {time.time() - start_time:.2f} seconds elapsed")
 
 
 if __name__ == '__main__':

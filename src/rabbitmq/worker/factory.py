@@ -16,18 +16,20 @@ class RabbitMQWorkerFactory:
         repo: RepoFactory,
         dsn_string: str,
         queue_name: str,
+        heartbeat: int = 60,
         exchange_name: str = 'direct',
     ):
         self.repo = repo
         self.dsn_string = dsn_string
         self.exchange_name = exchange_name
         self.queue_name = queue_name
+        self.heartbeat = heartbeat
 
         self.exchange = None
 
     async def start_listening(self, routing_key: str, func: T.Callable):
         logger.info('Starting listening')
-        connection = await connect_robust(self.dsn_string)
+        connection = await connect_robust(self.dsn_string + f'?heartbeat={self.heartbeat}')
         channel = await connection.channel()
         await channel.set_qos(prefetch_count=1)
         self.exchange = await channel.declare_exchange(self.exchange_name, ExchangeType.DIRECT)
