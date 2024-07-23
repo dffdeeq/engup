@@ -14,6 +14,7 @@ from src.repos.factories.temp_data import TempDataRepo
 from src.repos.factories.user_question import TgUserQuestionRepo
 from src.services.factories.answer_process import AnswerProcessService
 from src.services.factories.result import ResultService
+from src.services.factories.status_service import StatusService
 from src.settings import Settings
 
 for handler in logging.root.handlers[:]:
@@ -57,6 +58,13 @@ async def main():
     )
     logger.info(f"AnswerProcessService initialized: {time.time() - start_time:.2f} seconds elapsed")
 
+    status_service = StatusService(
+        uq_repo,
+        adapter,
+        session,
+        settings
+    )
+
     gpt_worker = GPTWorker(
         temp_data_repo=repo,
         uq_repo=uq_repo,
@@ -65,6 +73,7 @@ async def main():
         dsn_string=settings.rabbitmq.dsn,
         queue_name='gpt',
         answer_process_service=answer_process_service,
+        status_service=status_service,
     )
     logger.info(f"GPTWorker initialized: {time.time() - start_time:.2f} seconds elapsed")
     await gpt_worker.start_listening(

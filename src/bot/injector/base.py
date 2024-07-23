@@ -14,6 +14,7 @@ from src.repos.factories.user import TgUserRepo
 from src.repos.factories.user_question import TgUserQuestionRepo
 from src.services.factories.answer_process import AnswerProcessService
 from src.services.factories.question import QuestionService
+from src.services.factories.status_service import StatusService
 from src.services.factories.tg_user import TgUserService
 from src.services.factories.user_question import UserQuestionService
 from src.services.factories.voice import VoiceService
@@ -71,4 +72,10 @@ class BaseInjector:
             session=self.session,
             settings=self.settings,
             user_qa_repo=tg_user_question_repo
+        )
+        self.status_service = StatusService(
+            user_qa_repo=tg_user_question_repo,
+            adapter=self.adapter,
+            session=self.session,
+            settings=self.settings,
         )
