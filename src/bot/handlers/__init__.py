@@ -10,6 +10,7 @@ from .message_handler.writing import router as writing_router
 from .message_handler.pricing import router as pricing_router
 from .message_handler.balance import router as balance_router
 from .message_handler.admin import router as admin_router
+from .message_handler.result_status import router as result_status_router
 
 
 def register_handlers(dp: Dispatcher):
@@ -23,3 +24,4 @@ def register_handlers(dp: Dispatcher):
     dp.include_router(pricing_router)
     dp.include_router(balance_router)
     dp.include_router(admin_router)
+    dp.include_router(result_status_router)

@@ -13,6 +13,7 @@ from src.repos.factories.temp_data import TempDataRepo
 from src.repos.factories.user_question import TgUserQuestionRepo
 from src.services.factories.answer_process import AnswerProcessService
 from src.services.factories.result import ResultService
+from src.services.factories.status_service import StatusService
 from src.settings import Settings
 
 for handler in logging.root.handlers[:]:
@@ -33,6 +34,7 @@ async def main():
     adapter = Adapter(settings)
     repo = TempDataRepo(TempData, session)
     uq_repo = TgUserQuestionRepo(TgUserQuestion, session)
+
     result_service = ResultService(
         repo=QuestionRepo(Question, session),
         adapter=adapter,
@@ -47,6 +49,12 @@ async def main():
         settings=settings,
         user_qa_repo=uq_repo
     )
+    status_service = StatusService(
+        TgUserQuestionRepo(TgUserQuestion, session),
+        adapter=adapter,
+        session=session,
+        settings=settings,
+    )
     gpt_worker = GPTWorker(
         temp_data_repo=repo,
         uq_repo=uq_repo,
@@ -56,6 +64,7 @@ async def main():
         queue_name='gpt',
         heartbeat=600,
         answer_process_service=answer_process_service,
+        status_service=status_service,
     )
     await gpt_worker.start_listening(
         'gpt_generate_result_use_local_model', gpt_worker.process_result_local_model_task)
