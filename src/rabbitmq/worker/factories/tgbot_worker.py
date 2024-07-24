@@ -4,7 +4,7 @@ import typing as T  # noqa
 import asyncio
 from functools import wraps
 
-from aio_pika import connect_robust, ExchangeType
+from aio_pika import Message
 from sqlalchemy.ext.asyncio import async_sessionmaker
 
 from src.bot.core.bot import get_bot
@@ -41,22 +41,12 @@ class TgBotWorker(RabbitMQWorkerFactory):
         self.bot = get_bot(INJECTOR.settings)
         self.status_service = status_service
 
-    async def start_listening(self, routing_key: str, func: T.Callable):
-        logger.info('Starting listening')
-        connection = await connect_robust(self.dsn_string)
-        channel = await connection.channel()
-        self.exchange = await channel.declare_exchange(self.exchange_name, ExchangeType.DIRECT)
-        queue = await channel.declare_queue(self.queue_name)
-        await queue.bind(self.exchange, routing_key=routing_key)
-
-        logger.info('Ready for incoming messages')
-        async with queue.iterator() as queue_iter:
-            async for message in queue_iter:
-                async with message.process():  # noqa
-                    payload = json.loads(message.body)  # noqa
-                    payload['priority'] = message.priority  # noqa
-                    logger.info(f'Received {str(payload)[:50]}')
-                    await asyncio.create_task(func(payload))
+    @staticmethod
+    async def handle_message(message: Message, func: T.Callable):
+        payload = json.loads(message.body)  # noqa
+        payload['priority'] = message.priority  # noqa
+        logger.info(f'Received {str(payload)[:50]}')
+        await asyncio.create_task(func(payload))
 
     @async_log
     async def process_return_simple_result_task(self, data: T.Dict[str, T.Any]):
