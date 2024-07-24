@@ -1,5 +1,5 @@
-from sqlalchemy import ForeignKey, Column, Integer, DateTime, Boolean, JSON, func, BigInteger, UniqueConstraint, Index, \
-    String
+from sqlalchemy import ForeignKey, Column, Integer, DateTime, Boolean, JSON, func, BigInteger, UniqueConstraint, \
+    Index, String
 
 from src.postgres.base import Base
 

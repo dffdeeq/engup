@@ -11,7 +11,13 @@ from src.settings import Settings
 
 
 class ApiHostService(ServiceFactory):
-    def __init__(self, repo: TgUserRepo, adapter: Adapter, session: async_sessionmaker, settings: Settings) -> None:
+    def __init__(
+        self,
+        repo: TgUserRepo,
+        adapter: Adapter,
+        session: async_sessionmaker,
+        settings: Settings,
+    ) -> None:
         super().__init__(repo, adapter, session, settings)
         self.repo = repo
 
