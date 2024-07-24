@@ -9,6 +9,8 @@ router = Router(name=__name__)
 
 @router.callback_query(F.data == 'balance', INJECTOR.inject_tg_user)
 async def balance_callback(callback: types.CallbackQuery, tg_user_service: TgUserService):
+    await tg_user_service.mark_user_activity(callback.from_user.id, 'go to balance')
+
     user = await tg_user_service.get_or_create_tg_user(callback.from_user.id)
     await callback.answer()
     await answer_balance(callback, user.pts)

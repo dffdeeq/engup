@@ -16,6 +16,7 @@ from src.rabbitmq.producer.factories.apihost import ApiHostProducer
 from src.services.factories.answer_process import AnswerProcessService
 from src.services.factories.question import QuestionService
 from src.services.factories.status_service import StatusService
+from src.services.factories.tg_user import TgUserService
 from src.services.factories.user_question import UserQuestionService
 from src.services.factories.voice import VoiceService
 
@@ -26,6 +27,7 @@ router = Router(name=__name__)
 
 @router.callback_query(
     F.data.startswith('speaking'),
+    INJECTOR.inject_tg_user,
     INJECTOR.inject_question,
     INJECTOR.inject_uq,
     INJECTOR.inject_answer_process,
@@ -33,12 +35,17 @@ router = Router(name=__name__)
 async def speaking_start(
     callback: types.CallbackQuery,
     state: FSMContext,
+    tg_user_service: TgUserService,
     question_service: QuestionService,
     uq_service: UserQuestionService,
 ):
+    await tg_user_service.mark_user_activity(callback.from_user.id, 'start speaking')
     await callback.answer()
+
     question = await question_service.get_or_generate_question_for_user(callback.from_user.id, CompetenceEnum.speaking)
-    uq_instance = await uq_service.get_or_create_user_question(callback.from_user.id, question.id)
+    uq_instance, spent_pts = await uq_service.get_or_create_user_question(callback.from_user.id, question.id)
+    if spent_pts:
+        await tg_user_service.mark_user_activity(callback.from_user.id, 'spent point')
     question_json: T.Dict = json.loads(question.question_json)
 
     await state.set_state(SpeakingState.first_part)
@@ -123,6 +130,7 @@ async def speaking_second_part(
 @router.message(
     SpeakingState.third_part,
     VoicemailFilter(),
+    INJECTOR.inject_tg_user,
     INJECTOR.inject_voice,
     INJECTOR.inject_apihost_producer,
     INJECTOR.inject_answer_process,
@@ -131,6 +139,7 @@ async def speaking_second_part(
 async def speaking_third_part(
     message: types.Message,
     state: FSMContext,
+    tg_user_service: TgUserService,
     voice_service: VoiceService,
     apihost_producer: ApiHostProducer,
     answer_process: AnswerProcessService,
@@ -152,12 +161,12 @@ async def speaking_third_part(
         })
         await message.answer(text=next_question)
     else:
+        await tg_user_service.mark_user_activity(message.from_user.id, 'end speaking')
         await answer_process.update_user_qa_premium_queue(state_data['uq_id'], state_data['premium_queue'])
         filepaths = await answer_process.get_temp_data_filepaths(answer_process.session, state_data['uq_id'])
         await apihost_producer.create_task_send_to_transcription(filepaths, premium_queue=state_data['premium_queue'])
         await status_service.change_qa_status(state_data['uq_id'], status='Sent for transcription.')
         await state.clear()
-
         builder = InlineKeyboardBuilder([
             [InlineKeyboardButton(text='Result status', callback_data=f'result_status {state_data["uq_id"]}')]
         ])

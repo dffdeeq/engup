@@ -10,6 +10,7 @@ router = Router(name=__name__)
 @router.callback_query(F.data == 'pricing', INJECTOR.inject_tg_user)
 async def pricing_callback(callback: types.CallbackQuery, tg_user_service: TgUserService):
     await callback.answer()
+    await tg_user_service.mark_user_activity(callback.from_user.id, 'go to pricing')
 
     user = await tg_user_service.get_or_create_tg_user(callback.from_user.id)
     await answer_pricing(callback, user)

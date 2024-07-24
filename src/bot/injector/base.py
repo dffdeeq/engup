@@ -5,9 +5,11 @@ from src.postgres.factory import initialize_postgres_pool
 from src.postgres.models.question import Question
 from src.postgres.models.temp_data import TempData
 from src.postgres.models.tg_user import TgUser
+from src.postgres.models.tg_user_activity import TgUserActivity
 from src.postgres.models.tg_user_question import TgUserQuestion
 from src.rabbitmq.producer.factories.apihost import ApiHostProducer
 from src.rabbitmq.producer.factories.gpt import GPTProducer
+from src.repos.factories.activity import ActivityRepo
 from src.repos.factories.question import QuestionRepo
 from src.repos.factories.temp_data import TempDataRepo
 from src.repos.factories.user import TgUserRepo
@@ -46,9 +48,10 @@ class BaseInjector:
         )
         self.tg_user_service = TgUserService(
             repo=tg_user_repo,
+            activity_repo=ActivityRepo(TgUserActivity, self.session),
             adapter=self.adapter,
             session=self.session,
-            settings=self.settings
+            settings=self.settings,
         )
         self.voice_service = VoiceService(
             repo=QuestionRepo(Question, self.session),

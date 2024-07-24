@@ -14,6 +14,7 @@ from src.postgres.models.tg_user_question import TgUserQuestion
 from src.repos.factories.question import QuestionRepo
 from src.services.constants import NeuralNetworkConstants as NNConstants
 from src.services.factories.answer_process import AnswerProcessService
+from src.services.factories.tg_user import TgUserService
 from src.services.factory import ServiceFactory
 from src.services.factories.user_question import UserQuestionService as UQService
 from src.settings import Settings
@@ -26,11 +27,13 @@ class ResultService(ServiceFactory):
         adapter: Adapter,
         session: async_sessionmaker,
         settings: Settings,
-        nn_service: ScoreGeneratorNNModel
+        nn_service: ScoreGeneratorNNModel,
+        user_service: TgUserService
     ) -> None:
         super().__init__(repo, adapter, session, settings)
         self.repo = repo
         self.nn_service = nn_service
+        self.user_service = user_service
 
     @timeit
     def check_or_load_models(self):
@@ -57,6 +60,7 @@ class ResultService(ServiceFactory):
 
         if premium:
             additional_result = await self.generate_gpt_result_and_format(instance.user_answer_json, competence)
+            await self.user_service.mark_user_activity(instance.user_id, 'use gpt request')
             result.extend(additional_result)
 
         # TODO: Add common recommendations

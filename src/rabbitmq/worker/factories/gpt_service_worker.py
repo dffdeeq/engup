@@ -12,6 +12,7 @@ from src.repos.factories.user_question import TgUserQuestionRepo
 from src.services.factories.answer_process import AnswerProcessService
 from src.services.factories.result import ResultService
 from src.services.factories.status_service import StatusService
+from src.services.factories.tg_user import TgUserService
 from src.services.factories.user_question import UserQuestionService
 
 logging.basicConfig(level=logging.INFO)
@@ -40,6 +41,7 @@ class GPTWorker(RabbitMQWorkerFactory):
         result_service: ResultService,
         answer_process_service: AnswerProcessService,
         status_service: StatusService,
+        user_service: TgUserService,
     ):
         super().__init__(temp_data_repo, dsn_string, queue_name, heartbeat=heartbeat)
         self.temp_data_repo = temp_data_repo
@@ -48,6 +50,7 @@ class GPTWorker(RabbitMQWorkerFactory):
         self.result_service = result_service
         self.answer_process_service = answer_process_service
         self.status_service = status_service
+        self.user_service = user_service
 
     async def start_listening(self, routing_key, func):
         self.result_service.check_or_load_models()
@@ -66,6 +69,7 @@ class GPTWorker(RabbitMQWorkerFactory):
             )
 
         elif competence == CompetenceEnum.speaking:
+            await self.user_service.mark_user_activity(user.id, 'use voice request')
             result = await self.result_service.generate_result(
                 instance, competence, premium=data['priority'], extended_output=extended_output)
 
@@ -75,6 +79,7 @@ class GPTWorker(RabbitMQWorkerFactory):
         if result:
             await UserQuestionService.update_uq(self.session, instance, json.dumps(result))
             await self.status_service.change_qa_status(data['uq_id'], 'Sending results for processing.')
+            await self.user_service.mark_user_activity(user.id, 'response generated')
             await self.publish(
                 {'user_id': user.id, 'result': result, 'uq_id': data['uq_id']},
                 'tg_bot_return_simple_result_to_user',

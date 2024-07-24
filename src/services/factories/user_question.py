@@ -26,8 +26,9 @@ class UserQuestionService(ServiceFactory):
         self.repo = repo
         self.user_repo = user_repo
 
-    async def get_or_create_user_question(self, user_id, question_id) -> TgUserQuestion:
+    async def get_or_create_user_question(self, user_id, question_id) -> T.Tuple[TgUserQuestion, bool]:
         instance = await self.repo.get_user_question(user_id, question_id)
+        spent_pts = False
         if not instance:
             instance = await self.repo.create_user_question(user_id, question_id)
         if not instance.premium_queue and await self.user_repo.deduct_point(user_id):
@@ -36,7 +37,9 @@ class UserQuestionService(ServiceFactory):
                 session.add(instance)
                 await session.commit()
                 await session.refresh(instance)
-        return instance
+                if instance.premium_queue:
+                    spent_pts = True
+        return instance, spent_pts
 
     async def simple_update_uq(
         self,

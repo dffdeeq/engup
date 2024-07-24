@@ -11,6 +11,8 @@ router = Router(name=__name__)
 
 @router.message(CommandStart(), INJECTOR.inject_tg_user)
 async def command_start_handler(message: Message, command: CommandObject, tg_user_service: TgUserService) -> None:
+    await tg_user_service.mark_user_activity(message.from_user.id, 'go to menu')
+
     user_referrer_id = None
     referrer_id = command.args
     if referrer_id:
