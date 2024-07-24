@@ -16,3 +16,6 @@ class TgUser(Base):
     completed_questions = Column(Integer, server_default='0')
     referrer_id = Column(BigInteger, ForeignKey('tg_user.id'), nullable=True)
     referrer = relationship('TgUser', remote_side='TgUser.id', backref=backref('referrals', lazy='dynamic'))
+
+    adv_title_utm = Column(String, nullable=True)
+    adv_channel = Column(String, nullable=True)
