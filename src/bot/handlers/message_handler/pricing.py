@@ -4,6 +4,7 @@ import logging
 from aiogram import Router, F, types
 from aiogram.types import LabeledPrice
 
+from src.bot.handlers.defaults.menu_default import answer_menu
 from src.bot.handlers.defaults.pricing_default import answer_pricing
 from src.bot.injector import INJECTOR
 from src.services.factories.tg_user import TgUserService
@@ -24,9 +25,9 @@ async def buy_pts_by_tg_start(callback: types.CallbackQuery):
     await callback.answer()
 
     price = {
-        3: [LabeledPrice(label="3 PTs", amount=150)],
-        10: [LabeledPrice(label="10 PTs", amount=450)],
-        100: [LabeledPrice(label="100 PTs", amount=4000)]
+        3: [LabeledPrice(label="3 PTs", amount=1)],
+        10: [LabeledPrice(label="10 PTs", amount=2)],
+        100: [LabeledPrice(label="100 PTs", amount=3)]
     }
 
     try:
@@ -73,3 +74,4 @@ async def successful_payment_handler(message: types.Message, tg_user_service: Tg
                          f'(user_id_from_payload != message.from_user.id)')
 
     await message.answer("Thank you for your purchase! Your payment was successful.")
+    await answer_menu(message)
