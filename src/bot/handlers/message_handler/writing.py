@@ -45,6 +45,7 @@ async def writing_start(
         user_id=callback.from_user.id, question_id=question.id)
     if spent_point:
         await tg_user_service.mark_user_activity(callback.from_user.id, 'spent point')
+        await tg_user_service.mark_user_pts(callback.from_user.id, 'spent', -1)
     await state.set_data({
         'question_id': question.id,
         'card_body': card_body,

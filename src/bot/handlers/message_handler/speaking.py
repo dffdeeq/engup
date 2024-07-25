@@ -46,6 +46,7 @@ async def speaking_start(
     uq_instance, spent_pts = await uq_service.get_or_create_user_question(callback.from_user.id, question.id)
     if spent_pts:
         await tg_user_service.mark_user_activity(callback.from_user.id, 'spent point')
+        await tg_user_service.mark_user_pts(callback.from_user.id, 'spent', -1)
     question_json: T.Dict = json.loads(question.question_json)
 
     await state.set_state(SpeakingState.first_part)

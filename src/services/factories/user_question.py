@@ -69,6 +69,7 @@ class UserQuestionService(ServiceFactory):
                 if referrer:
                     referrer.pts += 5
                     session.add(referrer)
+                    # TODO: mark referrer pts movement
             await session.commit()
 
     @staticmethod
