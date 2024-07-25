@@ -11,10 +11,10 @@ async def get_pricing(user: TgUser) -> T.Tuple[str, InlineKeyboardBuilder]:
             f'You have: {user.pts} points\n\n'
             'Choose how many points to buy')
     builder = InlineKeyboardBuilder([
-        [
-            InlineKeyboardButton(text='10 - 300р.', callback_data='not implemented'),
-            InlineKeyboardButton(text='50 - 1400р.', callback_data='not implemented'),
-         ],
+            [InlineKeyboardButton(text='💸 Package of 3 tests – 150 ⭐', callback_data='buy_pts_by_tg_stars 3'),],
+            [InlineKeyboardButton(text='💸 Package of 10 tests – 450 ⭐', callback_data='buy_pts_by_tg_stars 10'),],
+            [InlineKeyboardButton(text='💸 Package of 100 tests – 4000 ⭐', callback_data='buy_pts_by_tg_stars 100'),],
+            [InlineKeyboardButton(text='🔙 Back', callback_data='menu'),]
     ])
     return text, builder
 
