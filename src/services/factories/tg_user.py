@@ -1,4 +1,8 @@
+import logging
 import typing as T  # noqa
+
+from sqlalchemy import select, and_
+from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import async_sessionmaker
 
 from src.libs.adapter import Adapter
@@ -37,3 +41,24 @@ class TgUserService(ServiceFactory):
         activity = await self.activity_repo.get_activity(activity_name)
         if activity is not None:
             await self.activity_repo.create_user_activity(user_id, activity.id)
+
+    async def add_points(self, user_id: int, points: int) -> T.Optional[TgUser]:
+        async with self.session() as session:
+            try:
+                async with session.begin():
+                    user_query = await session.execute(
+                        select(TgUser)
+                        .where(and_(TgUser.id == user_id)).with_for_update()
+                    )
+                    user = user_query.scalars().first()
+                    if user is None:
+                        return
+                    user.pts += points
+                    session.add(user)
+                    await session.commit()
+                    await session.refresh(user)
+                    return user
+            except SQLAlchemyError as e:
+                await session.rollback()
+                logging.critical(e)
+                return
