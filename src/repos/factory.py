@@ -16,17 +16,20 @@ class RepoFactory:
         self.session = session
 
     async def insert_one(self, **kwargs: T.Any) -> Model:
+        model = kwargs.pop("model", None)
+        if model is None:
+            model = self.model
         async with self.session() as session:
             async with session.begin():
                 try:
-                    instance = self.model(**kwargs)
+                    instance = model(**kwargs)
                     session.add(instance)
                     await session.flush()
                     await session.refresh(instance)
                     return instance
                 except SQLAlchemyError as e:
                     await session.rollback()
-                    logging.error(f"Error inserting {self.model.__name__}: {e}")
+                    logging.error(f"Error inserting {model.__name__}: {e}")
                     raise
 
     async def insert_many(self, *args: T.Any) -> T.List[Model]:
