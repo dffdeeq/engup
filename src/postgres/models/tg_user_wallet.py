@@ -3,14 +3,6 @@ from sqlalchemy import Integer, Column, ForeignKey, func, BigInteger, DateTime, 
 from src.postgres.base import Base
 
 
-class Currency(Base):
-    __tablename__ = 'currency'
-
-    id = Column(Integer, primary_key=True)
-    code = Column(String, unique=True, nullable=False)
-    name = Column(String, nullable=False)
-
-
 class TgUserWallet(Base):
     __tablename__ = 'tg_user_wallet'
 
@@ -20,6 +12,6 @@ class TgUserWallet(Base):
     channel = Column(String)
 
     amount = Column(Integer)
-    currency_id = Column(Integer, ForeignKey('currency.id'))
+    currency = Column(String)
 
     timestamp = Column(DateTime, default=func.now())

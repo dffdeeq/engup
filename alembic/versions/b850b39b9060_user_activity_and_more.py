@@ -1,8 +1,8 @@
 """user_activity_and_more
 
-Revision ID: a189737c493e
+Revision ID: b850b39b9060
 Revises: 1ba486c9ee16
-Create Date: 2024-07-24 16:27:02.904787
+Create Date: 2024-07-25 19:32:51.890800
 
 """
 from typing import Sequence, Union
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 from sqlalchemy import table, column
 
 # revision identifiers, used by Alembic.
-revision: str = 'a189737c493e'
+revision: str = 'b850b39b9060'
 down_revision: Union[str, None] = '1ba486c9ee16'
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -23,19 +23,6 @@ def upgrade() -> None:
     op.create_table('activity',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('name', sa.String(), nullable=True),
-    sa.PrimaryKeyConstraint('id')
-    )
-    op.create_table('currency',
-    sa.Column('id', sa.Integer(), nullable=False),
-    sa.Column('code', sa.String(), nullable=False),
-    sa.Column('name', sa.String(), nullable=False),
-    sa.PrimaryKeyConstraint('id'),
-    sa.UniqueConstraint('code')
-    )
-    op.create_table('pts_channel',
-    sa.Column('id', sa.Integer(), nullable=False),
-    sa.Column('name', sa.String(), nullable=True),
-    sa.Column('description', sa.String(), nullable=True),
     sa.PrimaryKeyConstraint('id')
     )
     op.create_table('tg_user_activity',
@@ -50,10 +37,9 @@ def upgrade() -> None:
     op.create_table('tg_user_pts',
     sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),
     sa.Column('user_id', sa.BigInteger(), nullable=True),
-    sa.Column('pts_channel_id', sa.Integer(), nullable=True),
+    sa.Column('pts_channel', sa.String(), nullable=True),
     sa.Column('balance_movement', sa.Integer(), nullable=True),
     sa.Column('timestamp', sa.DateTime(), nullable=True),
-    sa.ForeignKeyConstraint(['pts_channel_id'], ['pts_channel.id'], ),
     sa.ForeignKeyConstraint(['user_id'], ['tg_user.id'], ),
     sa.PrimaryKeyConstraint('id')
     )
@@ -75,47 +61,19 @@ def upgrade() -> None:
     sa.Column('user_id', sa.BigInteger(), nullable=True),
     sa.Column('channel', sa.String(), nullable=True),
     sa.Column('amount', sa.Integer(), nullable=True),
-    sa.Column('currency_id', sa.Integer(), nullable=True),
+    sa.Column('currency', sa.String(), nullable=True),
     sa.Column('timestamp', sa.DateTime(), nullable=True),
-    sa.ForeignKeyConstraint(['currency_id'], ['currency.id'], ),
     sa.ForeignKeyConstraint(['user_id'], ['tg_user.id'], ),
     sa.PrimaryKeyConstraint('id')
     )
     op.add_column('tg_user', sa.Column('adv_title_utm', sa.String(), nullable=True))
     op.add_column('tg_user', sa.Column('adv_channel', sa.String(), nullable=True))
 
-    pts_channel_table = table(
-        'pts_channel',
-        column('id', sa.Integer),
-        column('name', sa.String),
-        column('description', sa.String)
-    )
-    currency_table = table(
-        'currency',
-        column('id', sa.Integer),
-        column('code', sa.String),
-        column('name', sa.String)
-    )
     activity_table = table(
         'activity',
         column('id', sa.Integer),
         column('name', sa.String)
     )
-
-    op.bulk_insert(pts_channel_table, [
-        {'id': 1, 'name': 'start', 'description': 'Free points on start'},
-        {'id': 2, 'name': 'buy', 'description': 'Purchased points'},
-        {'id': 3, 'name': 'spent', 'description': 'Spent points'},
-        {'id': 4, 'name': 'ref', 'description': 'Referral program points'},
-    ])
-
-    op.bulk_insert(currency_table, [
-        {'id': 1, 'code': 'USD', 'name': 'US Dollar'},
-        {'id': 2, 'code': 'EUR', 'name': 'Euro'},
-        {'id': 3, 'code': 'RUB', 'name': 'Ruble'},
-        {'id': 4, 'code': 'TGS', 'name': 'Telegram Stars'},
-
-    ])
 
     op.bulk_insert(activity_table, [
         {'id': 100000, 'name': 'go to menu'},
@@ -144,7 +102,5 @@ def downgrade() -> None:
     op.drop_table('tg_user_status')
     op.drop_table('tg_user_pts')
     op.drop_table('tg_user_activity')
-    op.drop_table('pts_channel')
-    op.drop_table('currency')
     op.drop_table('activity')
     # ### end Alembic commands ###
