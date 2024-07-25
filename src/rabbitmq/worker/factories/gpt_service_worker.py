@@ -5,6 +5,7 @@ from functools import wraps
 
 from sqlalchemy.ext.asyncio import async_sessionmaker
 
+from src.bot.constants import DefaultMessages
 from src.postgres.enums import CompetenceEnum
 from src.rabbitmq.worker.factory import RabbitMQWorkerFactory
 from src.repos.factories.temp_data import TempDataRepo
@@ -75,6 +76,9 @@ class GPTWorker(RabbitMQWorkerFactory):
 
         else:
             return
+
+        if user.pts < 3:
+            result.append(DefaultMessages.LOW_POINTS_BALANCE_ALERT)
 
         if result:
             await UserQuestionService.update_uq(self.session, instance, json.dumps(result))

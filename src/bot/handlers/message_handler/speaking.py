@@ -42,6 +42,8 @@ async def speaking_start(
     await tg_user_service.mark_user_activity(callback.from_user.id, 'start speaking')
     await callback.answer()
 
+    await callback.message.edit_text(text=Messages.DEFAULT_MESSAGE)
+
     question = await question_service.get_or_generate_question_for_user(callback.from_user.id, CompetenceEnum.speaking)
     uq_instance, spent_pts = await uq_service.get_or_create_user_question(callback.from_user.id, question.id)
     if spent_pts:
@@ -62,7 +64,7 @@ async def speaking_start(
         await callback.message.answer(text=DefaultMessages.DONT_HAVE_POINTS)
         await asyncio.sleep(2)
 
-    for msg in [Messages.FIRST_PART_MESSAGE_1, Messages.FIRST_PART_MESSAGE_2, question_json['part_1'][0]]:
+    for msg in [Messages.FIRST_PART_MESSAGE_1, question_json['part_1'][0]]:
         await callback.message.answer(msg, disable_web_page_preview=True)
 
 
@@ -126,6 +128,10 @@ async def speaking_second_part(
     await state.set_state(SpeakingState.third_part)
     await message.answer(text=Messages.THIRD_PART_MESSAGE)
     await message.answer(text=current_question)
+
+    await asyncio.sleep(60)
+    # TODO: Check if user already sent voicemail
+    await message.answer(text='Your time is out. Please start your speech.')
 
 
 @router.message(
