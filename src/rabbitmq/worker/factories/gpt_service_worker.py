@@ -61,25 +61,30 @@ class GPTWorker(RabbitMQWorkerFactory):
         await self.status_service.change_qa_status(data['uq_id'], 'Results generation in progress.')
         instance, user, question = await self.uq_repo.get_uq_with_relations(uq_id=data['uq_id'])
         competence = question.competence
-        extended_output = True if str(user.id) in self.result_service.settings.bot.admin_ids else False
+        is_admin = True if str(user.id) in self.result_service.settings.bot.admin_ids else False
 
         if competence == CompetenceEnum.writing:
-            result = await self.result_service.generate_result(
-                instance, competence, premium=data['priority'], extended_output=extended_output
+            result, extended_output = await self.result_service.generate_result(
+                instance, competence, premium=data['priority'], extended_output=True
             )
 
         elif competence == CompetenceEnum.speaking:
             await self.user_service.mark_user_activity(user.id, 'use voice request')
-            result = await self.result_service.generate_result(
-                instance, competence, premium=data['priority'], extended_output=extended_output)
-
+            result, extended_output = await self.result_service.generate_result(
+                instance, competence, premium=data['priority'], extended_output=True
+            )
         else:
             return
 
         less_than_three_points = True if user.pts < 3 else False
 
         if result:
-            await UserQuestionService.update_uq(self.session, instance, json.dumps(result))
+            uq_result = result.copy()
+            if extended_output:
+                uq_result.insert(0, extended_output)
+                if is_admin:
+                    result.insert(0, extended_output)
+            await UserQuestionService.update_uq(self.session, instance, json.dumps(uq_result))
             await self.status_service.change_qa_status(data['uq_id'], 'Sending results for processing.')
             await self.user_service.mark_user_activity(user.id, 'response generated')
             await self.publish(

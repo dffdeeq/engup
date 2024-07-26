@@ -46,7 +46,7 @@ class ResultService(ServiceFactory):
         competence: CompetenceEnum,
         premium: bool = False,
         **kwargs
-    ) -> T.List:
+    ) -> T.Tuple[T.List, str]:
         self.check_or_load_models()
         request_text = await UQService.format_user_qa_to_full_text(instance.user_answer_json, competence)
         if competence == CompetenceEnum.speaking:
@@ -55,7 +55,7 @@ class ResultService(ServiceFactory):
         else:
             answers_text_only = None
             file_paths = None
-        result = self._generate_result_local_model(
+        result, extended_output = self._generate_result_local_model(
             request_text, competence, premium, **kwargs, answers_text_only=answers_text_only, file_paths=file_paths)
 
         if premium:
@@ -66,7 +66,7 @@ class ResultService(ServiceFactory):
         # TODO: Add common recommendations
         # TODO: Clear temp files
 
-        return result
+        return result, extended_output
 
     async def generate_gpt_result_and_format(self, user_answer_json: T.Dict, competence: CompetenceEnum) -> T.List[str]:
         additional_request_text = await UQService.format_user_qa_to_text_for_gpt(user_answer_json, competence)
@@ -74,7 +74,8 @@ class ResultService(ServiceFactory):
             try:
                 additional_result = await self.adapter.gpt_client.generate_gpt_result(
                     additional_request_text, competence=competence)
-                break
+                if additional_result:
+                    break
             except Exception as e:
                 logging.info(e)
                 pass
@@ -91,9 +92,7 @@ class ResultService(ServiceFactory):
         competence: CompetenceEnum,
         premium: bool = False,
         **kwargs
-    ) -> T.List[str]:
-        extended_output = kwargs.get('extended_output', False)
-
+    ) -> T.Tuple[T.List[str], str]:
         predict_params = NNConstants.predict_params[competence]
         results = self.nn_service.predict_all(
             text, predict_params, competence=competence, **kwargs)
@@ -115,9 +114,8 @@ class ResultService(ServiceFactory):
         if premium:
             grammar_errors = self.format_grammar_errors(gr_errors, lxc_errors, pnkt_errors, competence)
             result.extend(grammar_errors)
-        if extended_output:
-            result.insert(0, self.dict_to_string(results))
-        return result
+        extended_output = self.dict_to_string(results)
+        return result, extended_output
 
     @staticmethod
     def format_premium_result(result: Result) -> T.List[str]:
