@@ -11,6 +11,7 @@ from src.rabbitmq.worker.factory import RabbitMQWorkerFactory
 from src.repos.factories.temp_data import TempDataRepo
 from src.services.factories.apihost import ApiHostService
 from src.services.factories.status_service import StatusService
+from src.services.factories.tg_user import TgUserService
 
 
 class ApiHostWorker(RabbitMQWorkerFactory):
@@ -21,17 +22,20 @@ class ApiHostWorker(RabbitMQWorkerFactory):
         dsn_string: str,
         queue_name: str,
         apihost_service: ApiHostService,
-        status_service: StatusService
+        status_service: StatusService,
+        user_service: TgUserService
     ):
         super().__init__(repo, dsn_string, queue_name)
         self.session = session
         self.repo = repo
         self.apihost_service = apihost_service
         self.status_service = status_service
+        self.user_service = user_service
 
     async def process_answers(self, updates: T.Dict[str, T.Any]):
         logging.info(f'---------- Start of Task {self.process_answers.__name__} ----------')
         uq_id = await self.update_multiple_temp_data_answers(updates['file_names'])
+
         await self.status_service.change_qa_status(uq_id, 'Processing transcription.')
         if uq_id:
             logging.info('apihost --> update_multiple_temp_data_answers == OK')

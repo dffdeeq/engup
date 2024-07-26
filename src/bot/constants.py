@@ -17,17 +17,66 @@ class DefaultMessages:
     CALCULATING_RESULT = ("Your result is being calculated and may take a couple of minutes.\n"
                           "We'll send it to you as soon as it's ready.")
 
+    LOW_POINTS_BALANCE_ALERT = """
+<b>Low Points Balance Alert</b>
+It looks like you have less than 3 points remaining in your balance. To continue using our IELTS Speaking Practice service, you have three options to refill your points:
+
+    1. <b>Buy Points:</b> Purchase additional points to keep practicing without interruption.
+
+    2. <b>Recommend/Share Our Service:</b> Share our service with friends or on social media to earn extra points.
+
+    3. <b>Leave Feedback:</b> Provide feedback on your experience to help us improve and earn points as a thank you.
+
+Choose the option that works best for you and continue your IELTS Speaking journey without any delays. Thank you for being a part of our community!
+    """
+
 
 class SpeakingMessages:
-    FIRST_PART_MESSAGE_1 = ("Great! I will ask you some questions.\nPlease record audio to answer them\n"
-                            "<u><a href='https://telegra.ph/How-to-Record-an-Audio-File-in-Telegram-07-04'>"
-                            "How to Record an Audio File in Telegram</a></u>")
-    FIRST_PART_MESSAGE_2 = "Let's start with part 1"
-    COULDNT_FIND_AUDIO = 'Sorry, I couldn\'t find the audio.\n\nPlease, send me an voice message'
-    SECOND_PART_MESSAGE = ("Ok! Let's proceed to <b>part 2</b>. Here is your card:\n\n<b>{question}</b>\n\n"
-                           "You have 1 minute to prepare. Then record an audio up to 2 minutes")
+    DEFAULT_MESSAGE = """
+<b>Welcome to IELTS Speaking Practice!</b>
+Let's get you ready for the IELTS Speaking exam. Here’s a brief overview of what to expect in the test:
 
-    THIRD_PART_MESSAGE = "Great! Let's continue to the part 3"
+<b>IELTS Speaking Exam Overview</b>
+The IELTS Speaking test is designed to assess your spoken English skills and is divided into three parts. The entire test lasts between 11 and 14 minutes.
+
+<b>Part 1: Introduction and Interview (4-5 minutes)</b>
+In this part, the examiner will introduce themselves and ask you to do the same. You’ll be asked general questions about yourself, your home, family, work, studies, and interests. This part aims to relax you and get you comfortable with speaking English.
+
+<b>Part 2: Long Turn (3-4 minutes)</b>
+You will be given a task card with a topic and have 1 minute to prepare your answer. You’ll then speak for 1-2 minutes on the topic without interruption. This part tests your ability to speak at length on a given topic.
+
+<b>Part 3: Discussion (4-5 minutes)</b>
+The examiner will ask further questions related to the topic in Part 2. This is an opportunity to discuss more abstract ideas and issues. This part assesses your ability to express and justify opinions, analyze, discuss, and speculate about issues.
+    """
+
+    FIRST_PART_MESSAGE_1 = """
+Welcome to Part 1 of the IELTS Speaking test. This part lasts 4-5 minutes. You will be asked general questions about yourself, your home, family, work, studies, and interests. The goal is to get you comfortable and speaking freely
+
+Please note that if your recording exceeds 1.5 minutes, it will be cut off at the 1.5-minute mark, and any additional content will not be counted. 
+
+This part tests your ability to speak at length on a given topic.
+
+
+Let's begin!“
+    """
+    COULDNT_FIND_AUDIO = 'Sorry, I couldn\'t find the audio.\n\nPlease, send me an voice message'
+    SECOND_PART_MESSAGE = """
+Welcome to Part 2 of the IELTS Speaking test. This part lasts 3-4 minutes. You will be given a task card with a topic and have 1 minute to prepare your answer. You’ll then speak for 1-2 minutes on the topic without interruption. This part tests your ability to speak at length on a given topic.
+
+Please note that if your recording exceeds 2 minutes, it will be cut off at the 2-minute mark, and any additional content will not be counted. This part tests your ability to speak at length on a given topic.
+
+Here’s your topic. Take a minute to prepare.”
+    """
+
+    THIRD_PART_MESSAGE = """
+Welcome to Part 3 of the IELTS Speaking test. This part lasts 4-5 minutes. You will be asked  further questions related to the topic in Part 2. This is an opportunity to discuss more abstract ideas and issues. 
+
+Please note that if your recording exceeds 1.5 minutes, it will be cut off at the 1.5-minute mark, and any additional content will not be counted. 
+
+This part assesses your ability to express and justify opinions, analyze, discuss, and speculate about issues.
+
+Let’s dive into the discussion!
+    """
 
     HOW_TO_RECORD_AUDIO = ("How to Record an Audio File in Telegram:\n\n"
                            "1. Tap on the microphone icon at the bottom right corner of the chat screen. "

@@ -5,4 +5,5 @@ extend-exclude =
     build,
     alembic,
     requirements,
-    data
+    data,
+    src/bot/constants.py

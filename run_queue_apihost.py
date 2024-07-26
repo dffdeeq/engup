@@ -5,13 +5,16 @@ from src.libs.adapter import Adapter
 from src.postgres.factory import initialize_postgres_pool
 from src.postgres.models.temp_data import TempData
 from src.postgres.models.tg_user import TgUser
+from src.postgres.models.tg_user_activity import TgUserActivity
 from src.postgres.models.tg_user_question import TgUserQuestion
 from src.rabbitmq.worker.factories.apihost_service_worker import ApiHostWorker
+from src.repos.factories.activity import ActivityRepo
 from src.repos.factories.temp_data import TempDataRepo
 from src.repos.factories.user import TgUserRepo
 from src.repos.factories.user_question import TgUserQuestionRepo
 from src.services.factories.apihost import ApiHostService
 from src.services.factories.status_service import StatusService
+from src.services.factories.tg_user import TgUserService
 from src.settings import Settings
 
 logging.basicConfig(
@@ -32,6 +35,14 @@ async def main():
         settings
     )
 
+    user_service = TgUserService(
+        TgUserRepo(TgUser, session),
+        ActivityRepo(TgUserActivity, session),
+        adapter,
+        session,
+        settings
+    )
+
     apihost_transcription_worker = ApiHostWorker(
         repo=TempDataRepo(TempData, session),
         session=session,
@@ -43,7 +54,8 @@ async def main():
             session=session,
             settings=settings
         ),
-        status_service=status_service
+        status_service=status_service,
+        user_service=user_service
     )
     apihost_process_answers_worker = ApiHostWorker(
         repo=TempDataRepo(TempData, session),
@@ -56,7 +68,8 @@ async def main():
             session=session,
             settings=settings
         ),
-        status_service=status_service
+        status_service=status_service,
+        user_service=user_service
     )
     await asyncio.gather(
         apihost_transcription_worker.start_listening(

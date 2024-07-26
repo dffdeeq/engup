@@ -5,8 +5,11 @@ import asyncio
 from functools import wraps
 
 from aio_pika import Message
+from aiogram.types import InlineKeyboardButton
+from aiogram.utils.keyboard import InlineKeyboardBuilder
 from sqlalchemy.ext.asyncio import async_sessionmaker
 
+from src.bot.constants import DefaultMessages
 from src.bot.core.bot import get_bot
 from src.bot.injector import INJECTOR
 from src.rabbitmq.worker.factory import RabbitMQWorkerFactory
@@ -54,8 +57,23 @@ class TgBotWorker(RabbitMQWorkerFactory):
         for msg in data['result']:
             await asyncio.sleep(2)
             await self.send_messages([data['user_id']], msg)
+
+        if data['less_than_three_points']:
+            msg, builder = self.get_less_than_three_points_msg_and_keyboard()
+            await self.bot.send_message(data['user_id'], msg, reply_markup=builder.as_markup())
+
         await self.status_service.change_qa_status(data['uq_id'], status='Finished.')
 
     async def send_messages(self, user_ids: T.List[int], message: str) -> None:
         for user_id in user_ids:
             await self.bot.send_message(user_id, message)
+
+    @staticmethod
+    def get_less_than_three_points_msg_and_keyboard() -> T.Tuple[str, InlineKeyboardBuilder]:
+        text = DefaultMessages.LOW_POINTS_BALANCE_ALERT
+        builder = InlineKeyboardBuilder([
+                [InlineKeyboardButton(text='Buy points', callback_data='pricing'),],
+                [InlineKeyboardButton(text='Recommend/Share', callback_data='not_implemented'),],
+                [InlineKeyboardButton(text='Leave Feedback', callback_data='not_implemented')]
+        ])
+        return text, builder
