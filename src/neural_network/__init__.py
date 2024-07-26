@@ -50,7 +50,7 @@ class ScoreGeneratorNNModel(
                 'gr_Flexible Use of Complex Structures': self.gr_mix_of_complex_and_simple_sentences,
                 'lr_Wide Range of Vocabulary': self.lr_varied_vocabulary,
                 'lr_Idiomatic Vocabulary or Expressions': self.lr_idiomatic_vocabulary_or_expressions,
-                'fc_Minimal Hesitation': self.fc_minimal_hesitations,
+                'fc_Speech speed': self.fc_speech_speed,
                 'fc_Minimal Self-Correction': self.fc_self_corrections,
                 'fc_Topics Developed Logically': self.fc_topics_developed_logically,
                 'fc_Range of Linking Words and Discourse Markers': self.range_of_linking_words_and_discourse_markers,

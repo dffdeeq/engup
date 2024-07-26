@@ -20,7 +20,7 @@ class NeuralNetworkConstants:
             'gr_Flexible Use of Complex Structures',
             'lr_Wide Range of Vocabulary',
             'lr_Idiomatic Vocabulary or Expressions',
-            'fc_Minimal Hesitation',
+            'fc_Speech speed',
             'fc_Minimal Self-Correction',
             'fc_Topics Developed Logically',
             'fc_Range of Linking Words and Discourse Markers',

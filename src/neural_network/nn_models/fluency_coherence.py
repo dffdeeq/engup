@@ -12,7 +12,7 @@ from src.neural_network.nn_models.utils.timeit import timeit
 
 class FluencyCoherence(NeuralNetworkBase):
     @timeit
-    def fc_minimal_hesitations(self, text: str, **kwargs) -> float:
+    def fc_speech_speed(self, text: str, **kwargs) -> float:
         file_paths: T.Optional[T.List] = kwargs.get('file_paths', None)
         if file_paths is None:
             return 4

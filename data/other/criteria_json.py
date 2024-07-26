@@ -265,6 +265,10 @@ ACHIEVEMENT_JSON_SPEAKING = {
             "Uses a variety of linking words and discourse markers to connect ideas smoothly.",
             "Demonstrates the ability to signal transitions and relationships between ideas effectively.",
             "Employs a range of cohesive devices appropriately."
+        ],
+        "Speech speed": [
+            "Your voice speed is just right, making your speech clear and easy to understand. Keep up the great work "
+            "and continue practicing to maintain this ideal pace."
         ]
     },
     "Pronunciation": {
@@ -365,6 +369,11 @@ CRITERIA_JSON_SPEAKING = {
             "Incorporate a variety of cohesive devices in your writing and speaking tasks.",
             "Review examples of effective use of linking words to understand their application.",
             "Engage in exercises that focus on connecting ideas and maintaining coherence."
+        ],
+        "Speech speed": [
+            "Your voice speed is either too fast or too slow. It's important to practice speaking at a normal, "
+            "conversational pace to ensure your speech is clear and comprehensible. Try recording yourself and "
+            "listening to identify areas where you can adjust your speed for better clarity."
         ]
     },
     "Pronunciation": {
