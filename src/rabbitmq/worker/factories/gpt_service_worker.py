@@ -5,7 +5,6 @@ from functools import wraps
 
 from sqlalchemy.ext.asyncio import async_sessionmaker
 
-from src.bot.constants import DefaultMessages
 from src.postgres.enums import CompetenceEnum
 from src.rabbitmq.worker.factory import RabbitMQWorkerFactory
 from src.repos.factories.temp_data import TempDataRepo
@@ -77,15 +76,19 @@ class GPTWorker(RabbitMQWorkerFactory):
         else:
             return
 
-        if user.pts < 3:
-            result.append(DefaultMessages.LOW_POINTS_BALANCE_ALERT)
+        less_than_three_points = True if user.pts < 3 else False
 
         if result:
             await UserQuestionService.update_uq(self.session, instance, json.dumps(result))
             await self.status_service.change_qa_status(data['uq_id'], 'Sending results for processing.')
             await self.user_service.mark_user_activity(user.id, 'response generated')
             await self.publish(
-                {'user_id': user.id, 'result': result, 'uq_id': data['uq_id']},
+                {
+                    'user_id': user.id,
+                    'result': result,
+                    'uq_id': data['uq_id'],
+                    'less_than_three_points': less_than_three_points
+                },
                 'tg_bot_return_simple_result_to_user',
                 self.get_priority(data['priority'])
             )

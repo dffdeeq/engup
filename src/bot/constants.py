@@ -21,11 +21,11 @@ class DefaultMessages:
 <b>Low Points Balance Alert</b>
 It looks like you have less than 3 points remaining in your balance. To continue using our IELTS Speaking Practice service, you have three options to refill your points:
 
-    1. <b>Buy Points:</b> Purchase additional points to keep practicing without interruption. <ссылка на покупку>
+    1. <b>Buy Points:</b> Purchase additional points to keep practicing without interruption.
 
-    2. <b>Recommend/Share Our Service:</b> Share our service with friends or on social media to earn extra points. <ссылка на рекомендацию>
+    2. <b>Recommend/Share Our Service:</b> Share our service with friends or on social media to earn extra points.
 
-    3. <b>Leave Feedback:</b> Provide feedback on your experience to help us improve and earn points as a thank you. <ссылка на обратную связь>
+    3. <b>Leave Feedback:</b> Provide feedback on your experience to help us improve and earn points as a thank you.
 
 Choose the option that works best for you and continue your IELTS Speaking journey without any delays. Thank you for being a part of our community!
     """

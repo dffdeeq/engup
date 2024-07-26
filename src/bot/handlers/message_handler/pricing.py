@@ -13,6 +13,11 @@ from src.services.factories.tg_user import TgUserService
 router = Router(name=__name__)
 
 
+@router.callback_query(F.data == 'not_implemented', INJECTOR.inject_tg_user)
+async def not_implemented(callback: types.CallbackQuery):
+    await callback.answer(text='Not implemented yet.', show_alert=True)
+
+
 @router.callback_query(F.data == 'pricing', INJECTOR.inject_tg_user)
 async def pricing_callback(callback: types.CallbackQuery, tg_user_service: TgUserService, state: FSMContext):
     await callback.answer()
