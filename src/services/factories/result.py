@@ -212,7 +212,7 @@ class ResultService(ServiceFactory):
                 lexical_output = [lexical_output[i:i + 5] for i in range(0, len(lexical_output), 5)]
                 output.extend(lexical_output)
 
-            if len(punctuation_errors) > 0:
+            if competence == CompetenceEnum.writing and len(punctuation_errors) > 0:
                 punctuation_output = ResultService.format_error_examples(punctuation_errors, "Punctuation")
                 punctuation_output = [punctuation_output[i:i + 5] for i in range(0, len(punctuation_output), 5)]
                 output.extend(punctuation_output)
