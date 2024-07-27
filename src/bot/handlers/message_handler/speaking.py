@@ -60,12 +60,18 @@ async def speaking_start(
         'uq_id': uq_instance.id,
         'premium_queue': uq_instance.premium_queue,
     })
+
+    await asyncio.sleep(2)
+    await callback.message.answer(Messages.FIRST_PART_MESSAGE_1, disable_web_page_preview=True)
+    await asyncio.sleep(2)
     if not uq_instance.premium_queue:
         await callback.message.answer(text=DefaultMessages.DONT_HAVE_POINTS)
-        await asyncio.sleep(2)
+        await asyncio.sleep(1)
 
-    for msg in [Messages.FIRST_PART_MESSAGE_1, question_json['part_1'][0]]:
-        await callback.message.answer(msg, disable_web_page_preview=True)
+    builder = InlineKeyboardBuilder([[InlineKeyboardButton(text='🔙 Back', callback_data='ielts_menu')]])
+
+    await callback.message.answer(
+        question_json['part_1'][0], disable_web_page_preview=True, reply_markup=builder.as_markup())
 
 
 @router.message(

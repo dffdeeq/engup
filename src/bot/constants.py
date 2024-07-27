@@ -56,8 +56,9 @@ Please note that if your recording exceeds 1.5 minutes, it will be cut off at th
 
 This part tests your ability to speak at length on a given topic.
 
+<u><a href='https://telegra.ph/How-to-Record-an-Audio-File-in-Telegram-07-04'>How to Record an Audio File in Telegram</a></u>
 
-Let's begin!“
+Let's begin!
     """
     COULDNT_FIND_AUDIO = 'Sorry, I couldn\'t find the audio.\n\nPlease, send me an voice message'
     SECOND_PART_MESSAGE = """

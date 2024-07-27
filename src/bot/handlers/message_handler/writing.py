@@ -55,10 +55,10 @@ async def writing_start(
 
     if not uq_instance.premium_queue:
         await callback.message.edit_text(text=DefaultMessages.DONT_HAVE_POINTS)
-        await asyncio.sleep(2)
+        await asyncio.sleep(1)
 
     text = MessageTemplates.CARD_TEXT_TEMPLATE.format(card_title=card_title, card_body=card_body)
-    builder = InlineKeyboardBuilder([[InlineKeyboardButton(text='Назад', callback_data='menu')]])
+    builder = InlineKeyboardBuilder([[InlineKeyboardButton(text='🔙 Back', callback_data='ielts_menu')]])
     await callback.message.answer(text=text, reply_markup=builder.as_markup())
 
 
