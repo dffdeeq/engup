@@ -33,9 +33,9 @@ async def buy_pts_by_tg_start(callback: types.CallbackQuery):
     await callback.answer()
 
     price = {
-        3: [LabeledPrice(label="3 PTs", amount=1)],
-        10: [LabeledPrice(label="10 PTs", amount=2)],
-        100: [LabeledPrice(label="100 PTs", amount=3)]
+        3: [LabeledPrice(label="3 PTs", amount=150)],
+        10: [LabeledPrice(label="10 PTs", amount=450)],
+        100: [LabeledPrice(label="100 PTs", amount=4000)]
     }
 
     try:
