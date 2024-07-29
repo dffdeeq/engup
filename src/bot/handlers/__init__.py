@@ -13,6 +13,7 @@ from .message_handler.admin import router as admin_router
 from .message_handler.result_status import router as result_status_router
 from .message_handler.menu_ielts import router as menu_ielts_router
 from .message_handler.menu_support import router as support_router
+from .message_handler.feedback import router as feedback_router
 
 
 def register_handlers(dp: Dispatcher):
@@ -29,3 +30,4 @@ def register_handlers(dp: Dispatcher):
     dp.include_router(result_status_router)
     dp.include_router(menu_ielts_router)
     dp.include_router(support_router)
+    dp.include_router(feedback_router)
