@@ -1,6 +1,6 @@
 from aiogram import Router, F, types
 
-from src.bot.handlers.defaults.ielts_menu_default import answer_ielts_menu
+from src.bot.handlers.defaults.menu_ielts_default import answer_ielts_menu
 from src.bot.injector import INJECTOR
 from src.services.factories.tg_user import TgUserService
 
