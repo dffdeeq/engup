@@ -61,12 +61,14 @@ This part tests your ability to speak at length on a given topic.
 Let's begin!
     """
     COULDNT_FIND_AUDIO = 'Sorry, I couldn\'t find the audio.\n\nPlease, send me an voice message'
+
     SECOND_PART_MESSAGE = """
 Welcome to Part 2 of the IELTS Speaking test. This part lasts 3-4 minutes. You will be given a task card with a topic and have 1 minute to prepare your answer. You’ll then speak for 1-2 minutes on the topic without interruption. This part tests your ability to speak at length on a given topic.
 
 Please note that if your recording exceeds 2 minutes, it will be cut off at the 2-minute mark, and any additional content will not be counted. This part tests your ability to speak at length on a given topic.
 
-Here’s your topic. Take a minute to prepare.”
+<b>Here’s your topic. Take a minute to prepare.</b>
+{question}
     """
 
     THIRD_PART_MESSAGE = """
