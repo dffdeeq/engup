@@ -1,0 +1,10 @@
+FROM python:3.11-slim
+
+WORKDIR /app
+
+COPY ./requirements/weekly_status_updater.txt ./requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt && rm -rf /root/.cache/pip
+
+COPY ./src/postgres ./src/postgres
+COPY ./src/settings ./src/settings
+COPY ./run_weekly_status_updater.py ./run_weekly_status_updater.py
