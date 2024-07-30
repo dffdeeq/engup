@@ -135,10 +135,6 @@ async def speaking_second_part(
     await message.answer(text=Messages.THIRD_PART_MESSAGE)
     await message.answer(text=current_question)
 
-    await asyncio.sleep(60)
-    # TODO: Check if user already sent voicemail
-    await message.answer(text='Your time is out. Please start your speech.')
-
 
 @router.message(
     SpeakingState.third_part,
