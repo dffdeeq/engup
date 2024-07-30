@@ -23,7 +23,7 @@ class FluencyCoherence(NeuralNetworkBase):
             score = words_len / audio_duration
             scores.append(score)
         score = sum(scores) / len(scores)
-        return self.get_fc_minimal_hesitations_score(score)
+        return self.get_speech_speed_score(score)
 
     @timeit
     def fc_self_corrections(self, text, **kwargs):
@@ -62,13 +62,12 @@ class FluencyCoherence(NeuralNetworkBase):
         return len(pauses), len(bad_pauses), audio_duration
 
     @staticmethod
-    def get_fc_minimal_hesitations_score(value) -> float:
+    def get_speech_speed_score(value) -> float:
         ranges = [
             (0, 0.4, 4.0),
             (0.4, 0.6, 6.0),
             (0.6, 0.7, 7.0),
-            (0.7, 1.5, 9.0),
-            (1.5, float('inf'), 6.0)
+            (0.7, float('inf'), 9.0),
         ]
         for min_val, max_val, score in ranges:
             if min_val <= value < max_val:
