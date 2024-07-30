@@ -105,3 +105,18 @@ services:
     depends_on:
       engup_rabbitmq:
         condition: service_healthy
+
+  engup_weekly_status_updater:
+    container_name: engup_weekly_status_updater
+    volumes:
+      - ./data:/app/data
+    env_file:
+      - .env
+    build:
+      dockerfile: Dockerfile.weekly_status
+    command: python run_weekly_status_updater.py
+    environment:
+      POSTGRES_SETTINGS_PORT: 5432
+    depends_on:
+      engup_postgres:
+        condition: service_healthy
