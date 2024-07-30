@@ -17,14 +17,14 @@ class NeuralNetworkConstants:
         CompetenceEnum.speaking: [
             'clear_grammar_result',
             'gr_Wide Range of Grammar Used',
-            'gr_Flexible Use of Complex Structures',
+            # 'gr_Flexible Use of Complex Structures',
             'lr_Wide Range of Vocabulary',
-            'lr_Idiomatic Vocabulary or Expressions',
+            # 'lr_Idiomatic Vocabulary or Expressions',
             'fc_Speech speed',
             'fc_Minimal Self-Correction',
             'fc_Topics Developed Logically',
             'fc_Range of Linking Words and Discourse Markers',
-            'pr_Pronunciation'
+            'pr_Pronunciation',
         ],
         CompetenceEnum.writing: [
             'clear_grammar_result',
