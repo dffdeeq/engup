@@ -53,7 +53,6 @@ class PrPronunciation(NeuralNetworkBase):
             final_scores.append(score)
         return math.floor(sum(final_scores) / len(final_scores) * 2) / 2
 
-    @timeit
     def _get_raw_score(self, emb) -> int:
         with open(os.path.join(self.voice_model_dir, 'scaler.pkl'), 'rb') as f:
             scaler = pickle.load(f)
@@ -71,7 +70,6 @@ class PrPronunciation(NeuralNetworkBase):
 
         return int(int_to_label[predicted.item()])
 
-    @timeit
     def _get_embs_by_ogg(self, file_path) -> T.List[np.ndarray]:
         file_path = file_path.replace('.ogg', '')
 
@@ -108,7 +106,6 @@ class PrPronunciation(NeuralNetworkBase):
         return emb_list
 
     @staticmethod
-    @timeit
     def convert_ogg_to_wav(file_path, target_bitrate=16):
         ogg_audio = AudioSegment.from_file(f"{file_path}.ogg", format="ogg")
         audio_zipped_mp3_io = io.BytesIO()
@@ -117,7 +114,6 @@ class PrPronunciation(NeuralNetworkBase):
         audio_mp3.export(f"{file_path}.wav", format="wav")
         return True
 
-    @timeit
     def transform_wav_to_emb(self, wav_path, model) -> np.ndarray:
         inference = Inference(model, window="whole", device=self.device)
         embedding = inference(wav_path)
