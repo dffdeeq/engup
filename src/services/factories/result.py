@@ -56,7 +56,9 @@ class ResultService(ServiceFactory):
             answers_text_only = None
             file_paths = None
         result, extended_output = self._generate_result_local_model(
-            request_text, competence, premium, **kwargs, answers_text_only=answers_text_only, file_paths=file_paths)
+            request_text, competence, premium, **kwargs,
+            answers_text_only=answers_text_only, file_paths=file_paths, user_qa=instance.user_answer_json
+        )
 
         if premium:
             additional_result = await self.generate_gpt_result_and_format(instance.user_answer_json, competence)
@@ -104,7 +106,13 @@ class ResultService(ServiceFactory):
         if competence == CompetenceEnum.writing:
             results['gr_Clear and correct grammar'] = gr_score
         elif competence == CompetenceEnum.speaking:
-            results['gr_Most Sentences Are Mistake-Free'] = gr_score
+            results['gr_Error density'] = gr_score
+            user_qa = kwargs.get('user_qa')
+            user_p1_p3_qa = user_qa['part_1']
+            user_p1_p3_qa.extend(user_qa['part_3'])
+            lr_paraphrase_score, lr_premium_result = self.nn_service.lr_paraphrase_effectively(
+                questions_and_answers=user_p1_p3_qa, premium=premium)
+            results['lr_Paraphrases Effectively'] = lr_paraphrase_score
         advice_dict = self.nn_service.select_random_advice(results, competence)
 
         if competence == CompetenceEnum.writing:
@@ -112,6 +120,8 @@ class ResultService(ServiceFactory):
 
         result = self.format_advice(advice_dict, results, competence)
         if premium:
+            if competence == CompetenceEnum.speaking:
+                result.extend(lr_premium_result)  # noqa
             grammar_errors = self.format_grammar_errors(gr_errors, lxc_errors, pnkt_errors, competence)
             result.extend(grammar_errors)
         extended_output = self.dict_to_string(results)

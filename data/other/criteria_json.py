@@ -202,7 +202,7 @@ ACHIEVEMENT_JSON_SPEAKING = {
             "Uses a variety of sentence forms (simple, compound, and complex) effectively.",
             "Demonstrates the ability to manipulate grammatical forms to express precise meanings."
         ],
-        "Most Sentences Are Mistake-Free": [
+        "Error density": [
             "Produces written and spoken language with minimal grammatical errors.",
             "Demonstrates strong proofreading skills, catching and correcting minor mistakes.",
             "Uses appropriate grammar consistently across different topics and contexts."
@@ -294,7 +294,7 @@ CRITERIA_JSON_SPEAKING = {
             "Seek feedback on your use of complex structures to identify areas for improvement.",
             "Engage in exercises that focus on combining sentences and using subordination."
         ],
-        "Most Sentences Are Mistake-Free": [
+        "Error density": [
             "Focus on proofreading your work to catch and correct common errors.",
             "Practice writing and speaking regularly to develop a habit of producing error-free sentences.",
             "Use language learning apps or tools to identify and correct mistakes in real-time.",

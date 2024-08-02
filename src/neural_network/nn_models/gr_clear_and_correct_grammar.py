@@ -47,36 +47,49 @@ class GRClearAndCorrectGrammar(NeuralNetworkBase):
             elif 'spelling' in issue_type:
                 lexical_errors.append(match)
             else:
-                grammar_errors.append(match)
+                if match.category != "PUNCTUATION":
+                    grammar_errors.append(match)
         grammar_errors_len = len(grammar_errors)
-        return (float(self.get_grammar_score(grammar_errors_len, competence)),
+        total_words = len(text.split())
+        error_density = grammar_errors_len / total_words if total_words > 0 else 0
+        return (float(self.get_grammar_score(grammar_errors_len if competence == CompetenceEnum.writing
+                                             else error_density, competence)),
                 grammar_errors, lexical_errors, punctuation_errors)
 
     @staticmethod
-    def get_grammar_score(grammar_errors_num, competence: CompetenceEnum = CompetenceEnum.writing):
+    def get_grammar_score(value, competence: CompetenceEnum = CompetenceEnum.writing):
         if competence == CompetenceEnum.writing:
-            bands = {
-                range(0, 2): 9,
-                range(2, 4): 8,
-                range(4, 6): 7,
-                range(6, 11): 6,
-                range(11, 16): 5,
-                range(16, 21): 4,
-                range(21, 26): 3,
-                range(26, 31): 2
-            }
+            if value < 2:
+                return 9
+            elif value < 4:
+                return 8
+            elif value < 6:
+                return 7
+            elif value < 11:
+                return 6
+            elif value < 16:
+                return 5
+            elif value < 21:
+                return 4
+            elif value < 26:
+                return 3
+            elif value < 31:
+                return 2
         elif competence == CompetenceEnum.speaking:
-            bands = {
-                range(0, 4): 9,
-                range(4, 8): 8,
-                range(8, 11): 7,
-                range(11, 16): 6,
-                range(16, 21): 5,
-                range(21, 31): 4,
-                range(31, 41): 3,
-                range(41, 51): 2
-            }
-        else:
-            return
-
-        return next((band for error_range, band in bands.items() if grammar_errors_num in error_range), 1)
+            if value <= 0.02:
+                return 9
+            elif value <= 0.04:
+                return 8
+            elif value <= 0.06:
+                return 7
+            elif value <= 0.08:
+                return 6
+            elif value <= 0.10:
+                return 5
+            elif value <= 0.12:
+                return 4
+            elif value <= 0.14:
+                return 3
+            elif value <= 0.16:
+                return 2
+        return 1

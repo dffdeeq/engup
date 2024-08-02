@@ -12,6 +12,7 @@ from src.neural_network.nn_models.gr_clear_and_correct_grammar import GRClearAnd
 from src.neural_network.nn_models.gr_variety_of_grammar_used import GrVarietyOfGrammarUsed
 from src.neural_network.nn_models.lr_idiomatic_vocabulary_or_expressions import LrIdiomaticVocabulary
 from src.neural_network.nn_models.gr_mix_of_complex_and_simple_sentences import MixOfComplexAndSimpleSentences
+from src.neural_network.nn_models.lr_paraphrases_effectively import LrParaphraseEffectively
 from src.neural_network.nn_models.ta_appropriate_word_count import TAAppropriateWordCount
 from src.neural_network.nn_models.lr_varied_vocabulary import LRVariedVocabulary
 from src.neural_network.nn_models.pr_pronunciation import PrPronunciation
@@ -31,6 +32,7 @@ class ScoreGeneratorNNModel(
     LrIdiomaticVocabulary,
     FluencyCoherence,
     GrVarietyOfGrammarUsed,
+    LrParaphraseEffectively,
 ):
     def __init__(self, settings: NNModelsSettings, nn_models_dir: Path = NN_MODELS_DIR):
         self._nn_models_dir = nn_models_dir
@@ -46,6 +48,7 @@ class ScoreGeneratorNNModel(
             },
             CompetenceEnum.speaking: {
                 'clear_grammar_result': self.gr_clear_and_correct_grammar,
+                'lr_paraphrase_effectively': self.lr_paraphrase_effectively,
                 'gr_Wide Range of Grammar Used': self.gr_variety_of_grammar_used,
                 'gr_Flexible Use of Complex Structures': self.gr_mix_of_complex_and_simple_sentences,
                 'lr_Wide Range of Vocabulary': self.lr_varied_vocabulary,
