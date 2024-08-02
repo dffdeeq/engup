@@ -13,3 +13,7 @@ class WritingState(StatesGroup):
 
 class AdminState(StatesGroup):
     get_uq_id = State()
+
+
+class FeedbackState(StatesGroup):
+    get_other_option = State()
