@@ -1,11 +1,12 @@
 WEEKLY_UPDATE_SQL = """
-        WITH ActivityData AS (
+WITH ActivityData AS (
     SELECT
         a.user_id,
         MAX(CASE WHEN a.activity_timestamp >= current_date - INTERVAL '14 days' AND a.activity_timestamp < current_date - INTERVAL '7 days' THEN 1 ELSE 0 END) AS active_two_weeks_ago,
         MAX(CASE WHEN a.activity_timestamp >= current_date - INTERVAL '7 days' AND a.activity_timestamp < current_date THEN 1 ELSE 0 END) AS active_last_week,
         BOOL_OR(a.activity_id = 141000 AND a.activity_timestamp >= current_date - INTERVAL '7 days' AND a.activity_timestamp < current_date) AS is_pay_user,
-        COUNT(*) FILTER (WHERE a.activity_timestamp >= current_date - INTERVAL '7 days' AND a.activity_timestamp < current_date) > 0 AS is_active_user
+        COUNT(*) FILTER (WHERE a.activity_timestamp >= current_date - INTERVAL '7 days' AND a.activity_timestamp < current_date) > 0 AS is_active_user,
+        BOOL_OR(a.activity_timestamp < current_date - INTERVAL '14 days') AS was_active_before_two_weeks
     FROM
         tg_user_activity a
     GROUP BY
@@ -28,10 +29,10 @@ SELECT
     ad.is_pay_user,
     (ad.active_two_weeks_ago = 1 AND ad.active_last_week = 0) AS flag_churn_user,
     (ad.is_active_user AND un.is_premium_user) AS flag_premium_user,
-    (un.is_old_enough_for_return AND ad.active_two_weeks_ago = 0 AND ad.active_last_week = 1) AS flag_return_user,
+    (un.is_old_enough_for_return AND ad.active_two_weeks_ago = 0 AND ad.active_last_week = 1 AND ad.was_active_before_two_weeks) AS flag_return_user,
     current_date
 FROM
     ActivityData ad
 JOIN
     UserNewness un ON ad.user_id = un.user_id;
-        """
+"""
