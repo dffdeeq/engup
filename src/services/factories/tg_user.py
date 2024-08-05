@@ -1,7 +1,7 @@
 import logging
 import typing as T  # noqa
 
-from sqlalchemy import select, and_
+from sqlalchemy import select, and_, func
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import async_sessionmaker
 
@@ -27,6 +27,19 @@ class TgUserService(ServiceFactory):
         super().__init__(repo, adapter, session, settings)
         self.repo = repo
         self.activity_repo = activity_repo
+
+    async def get_user_referrals(self, user_id: int, count_only: bool = True) -> T.Union[int, T.List[TgUser]]:
+        async with self.session() as session:
+            if count_only:
+                query = select(func.count()).select_from(self.repo.model).where(self.repo.model.referrer_id == user_id)
+                result = await session.execute(query)
+                count = result.scalar_one()
+                return count
+            else:
+                query = select(self.repo.model).where(self.repo.model.referrer_id == user_id)
+                result = await session.execute(query)
+                referrals = result.scalars().all()
+                return referrals  # noqa
 
     async def get_or_create_tg_user(
         self,

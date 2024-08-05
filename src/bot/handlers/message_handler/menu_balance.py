@@ -7,15 +7,10 @@ from src.services.factories.tg_user import TgUserService
 router = Router(name=__name__)
 
 
-@router.callback_query(F.data == 'balance', INJECTOR.inject_tg_user)
+@router.callback_query(F.data == 'balance_menu', INJECTOR.inject_tg_user)
 async def balance_menu_callback(callback: types.CallbackQuery, tg_user_service: TgUserService):
     user = await tg_user_service.get_or_create_tg_user(callback.from_user.id, callback.from_user.username)
     await tg_user_service.mark_user_activity(callback.from_user.id, 'go to balance menu')
 
     await callback.answer()
     await answer_balance_menu(callback, user)
-
-
-@router.callback_query(F.data == 'free_tests', INJECTOR.inject_tg_user)
-async def free_tests_menu_callback(callback: types.CallbackQuery, tg_user_service: TgUserService):
-    await callback.answer(text='Not implemented yet.')
