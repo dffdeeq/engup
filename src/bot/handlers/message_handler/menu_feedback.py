@@ -12,13 +12,13 @@ router = Router(name=__name__)
 
 
 @router.callback_query(F.data == 'feedback_menu', INJECTOR.inject_tg_user)
-async def leave_feedback_callback(callback: types.CallbackQuery, state: FSMContext, tg_user_service: TgUserService):
+async def feedback_menu_callback(callback: types.CallbackQuery, tg_user_service: TgUserService):
     await tg_user_service.mark_user_activity(callback.from_user.id, 'go to feedback menu')
     await callback.answer()
 
     keyboard = InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton(text='Stars *****', callback_data=f"not_implemented")],
-        [InlineKeyboardButton(text='Take the survey', callback_data=f"leave_feedback")],
+        [InlineKeyboardButton(text='Stars *****', callback_data="not_implemented")],
+        [InlineKeyboardButton(text='Take the survey', callback_data="leave_feedback")],
         [InlineKeyboardButton(text='🔙 Back', callback_data='menu'), ],
     ])
     await callback.message.edit_text(text='Here you can leave a feedback', reply_markup=keyboard)
