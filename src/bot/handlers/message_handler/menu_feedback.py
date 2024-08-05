@@ -11,6 +11,19 @@ from src.services.factories.tg_user import TgUserService
 router = Router(name=__name__)
 
 
+@router.callback_query(F.data == 'feedback_menu', INJECTOR.inject_tg_user)
+async def feedback_menu_callback(callback: types.CallbackQuery, tg_user_service: TgUserService):
+    await tg_user_service.mark_user_activity(callback.from_user.id, 'go to feedback menu')
+    await callback.answer()
+
+    keyboard = InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(text='Stars *****', callback_data="not_implemented")],
+        [InlineKeyboardButton(text='Take the survey', callback_data="leave_feedback")],
+        [InlineKeyboardButton(text='🔙 Back', callback_data='menu'), ],
+    ])
+    await callback.message.edit_text(text='Here you can leave a feedback', reply_markup=keyboard)
+
+
 @router.callback_query(F.data == 'leave_feedback', INJECTOR.inject_tg_user)
 async def leave_feedback_callback(callback: types.CallbackQuery, state: FSMContext, tg_user_service: TgUserService):
     await tg_user_service.mark_user_activity(callback.from_user.id, 'go to leave feedback')
@@ -121,7 +134,7 @@ async def feedback_get_other_option(
         await message.answer(text=question, reply_markup=keyboard)
     else:
         keyboard = InlineKeyboardMarkup(inline_keyboard=[
-            [InlineKeyboardButton(text='🔙 Back', callback_data='support_menu')]
+            [InlineKeyboardButton(text='🔙 Menu', callback_data='menu')]
         ])
         if await feedback_service.user_can_get_free_points(message.from_user.id):
             await feedback_service.save_user_poll_feedback(message.from_user.id, results)

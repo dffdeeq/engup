@@ -8,8 +8,9 @@ async def get_menu() -> T.Tuple[str, InlineKeyboardBuilder]:
     text = 'Please select a test to practice'
     builder = InlineKeyboardBuilder([
         [InlineKeyboardButton(text='📚 Start preparing for IELTS', callback_data='ielts_menu')],
-        [InlineKeyboardButton(text='💎 Balance', callback_data='balance')],
+        [InlineKeyboardButton(text='💎 Balance', callback_data='balance_menu')],
         [InlineKeyboardButton(text='❓ Support', callback_data='support_menu')],
+        [InlineKeyboardButton(text='Feedback', callback_data='feedback_menu')],
     ])
     return text, builder
 
