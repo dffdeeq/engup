@@ -17,7 +17,7 @@ async def support_menu_callback(callback: types.CallbackQuery, tg_user_service: 
 
 
 @router.callback_query(F.data == 'user_agreement', INJECTOR.inject_tg_user)
-async def user_agreement_menu_callback(callback: types.CallbackQuery, tg_user_service: TgUserService):
+async def user_agreement_menu_callback(callback: types.CallbackQuery):
     text = 'Here you can view the user agreement:\nhttps://telegra.ph/User-Agreement-08-05'
     keyboard = InlineKeyboardMarkup(inline_keyboard=[
         [InlineKeyboardButton(text='🔙 Back', callback_data='menu'), ],
@@ -26,8 +26,18 @@ async def user_agreement_menu_callback(callback: types.CallbackQuery, tg_user_se
 
 
 @router.callback_query(F.data == 'contact_support', INJECTOR.inject_tg_user)
-async def contact_support_menu_callback(callback: types.CallbackQuery, tg_user_service: TgUserService):
+async def contact_support_menu_callback(callback: types.CallbackQuery):
     text = 'Support email: support@ielts-offical.com'
+    keyboard = InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(text='🔙 Back', callback_data='support_menu'), ],
+    ])
+    await callback.message.edit_text(text=text, reply_markup=keyboard)
+
+
+@router.callback_query(F.data == 'about_bot', INJECTOR.inject_tg_user)
+async def about_bot_callback(callback: types.CallbackQuery):
+    text = ('This chatbot helps you prepare for IELTS. It gives you tasks to do and checks how well you do. '
+            'The chatbot follows IELTS standards. If you do what the bot says, your score will be better.')
     keyboard = InlineKeyboardMarkup(inline_keyboard=[
         [InlineKeyboardButton(text='🔙 Back', callback_data='support_menu'), ],
     ])
