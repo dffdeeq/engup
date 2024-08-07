@@ -1,3 +1,4 @@
+import asyncio
 import os
 import typing as T  # noqa
 import pandas as pd
@@ -5,13 +6,14 @@ from lexicalrichness import LexicalRichness
 
 from src.neural_network.base import NeuralNetworkBase
 from src.neural_network.nn_models.utils.timeit import timeit
+from src.repos.factories.user_question_metric import TgUserQuestionMetricRepo
 from src.settings import NNModelsSettings
 from src.settings.static import OTHER_DATA_DIR
 
 
 class LRVariedVocabulary(NeuralNetworkBase):
-    def __init__(self, settings: NNModelsSettings):
-        super().__init__(settings)
+    def __init__(self, settings: NNModelsSettings, uq_metric_repo: TgUserQuestionMetricRepo):
+        super().__init__(settings, uq_metric_repo)
         self.ielts_academic_vocabulary: T.Optional[T.List[str]] = None
 
     def load(self):
@@ -37,8 +39,13 @@ class LRVariedVocabulary(NeuralNetworkBase):
             LRVariedVocabulary.calculate_metric_score(terms, thresholds['terms']),
             LRVariedVocabulary.calculate_metric_score(ielts_count, thresholds['ielts_count'])
         ]
-        final_score = round(sum(scores) / 3)
-        return float(final_score)
+        final_score = float(round(sum(scores) / 3))
+
+        uq_id: T.Optional[int] = kwargs.get('uq_id', None)
+        if uq_id is not None:
+            asyncio.create_task(self.save_metric_data(uq_id, 'lr_vowu', final_score))
+
+        return final_score
 
     @staticmethod
     def calculate_metric_score(value, thresholds):

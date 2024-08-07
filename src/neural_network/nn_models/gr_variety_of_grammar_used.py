@@ -1,3 +1,5 @@
+import typing as T  # noqa
+import asyncio
 import re
 from collections import Counter
 
@@ -13,6 +15,11 @@ class GrVarietyOfGrammarUsed(NeuralNetworkBase):
         tense_counts, conjunction_count = self.analyze_grammar(text)
         diversity_score = self.calculate_diversity_score(tense_counts)
         score = self.determine_band_gr(diversity_score, conjunction_count)
+
+        uq_id: T.Optional[int] = kwargs.get('uq_id', None)
+        if uq_id is not None:
+            asyncio.create_task(self.save_metric_data(uq_id, 'gr_r_covp', score))
+
         return score
 
     @staticmethod

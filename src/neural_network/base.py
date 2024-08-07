@@ -7,12 +7,17 @@ import torch
 from pathlib import Path
 from transformers import BertForSequenceClassification, BertTokenizer
 
+from src.repos.factories.user_question_metric import TgUserQuestionMetricRepo
 from src.settings import NNModelsSettings
 
 
 class NeuralNetworkBase:
-    def __init__(self, settings: NNModelsSettings) -> None:
+    def __init__(self, settings: NNModelsSettings, uq_metric_repo: TgUserQuestionMetricRepo) -> None:
         self.settings = settings
+        self.uq_metric_repo = uq_metric_repo
+
+    async def save_metric_data(self, uq_id: int, metric_id: str, value: float, details: str = None):
+        await self.uq_metric_repo.create(uq_id, metric_id, value, details)
 
     def load(self):
         pass
