@@ -1,11 +1,13 @@
+import logging
 import typing as T  # noqa
 
-from sqlalchemy import select, and_
+from sqlalchemy import select, and_, insert
 from sqlalchemy.ext.asyncio import async_sessionmaker
 
 from src.libs.adapter import Adapter
 from src.postgres.enums import CompetenceEnum
 from src.postgres.models.tg_user import TgUser
+from src.postgres.models.tg_user_pts import TgUserPts
 from src.postgres.models.tg_user_question import TgUserQuestion
 from src.repos.factories.user import TgUserRepo
 from src.repos.factories.user_question import TgUserQuestionRepo
@@ -69,7 +71,12 @@ class UserQuestionService(ServiceFactory):
                 if referrer:
                     referrer.pts += 5
                     session.add(referrer)
-                    # TODO: mark referrer pts movement
+                    try:
+                        await session.execute(
+                            insert(TgUserPts).values(user_id=referrer.id, pts_channel='referral', balance_movement=5)
+                        )
+                    except Exception as e:
+                        logging.exception(e)
             await session.commit()
 
     @staticmethod
