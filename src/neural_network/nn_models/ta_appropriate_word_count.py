@@ -5,13 +5,14 @@ from nltk import word_tokenize
 
 from src.neural_network.base import NeuralNetworkBase
 from src.neural_network.nn_models.utils.timeit import timeit
+from src.repos.factories.user_question_metric import TgUserQuestionMetricRepo
 from src.settings import NNModelsSettings
 
 
 class TAAppropriateWordCount(NeuralNetworkBase):
-    def __init__(self, settings: NNModelsSettings):
+    def __init__(self, settings: NNModelsSettings, uq_metric_repo: TgUserQuestionMetricRepo):
         self.nltk_dir = os.path.join(self._nn_models_dir, 'nltk')  # noqa
-        super().__init__(settings)
+        super().__init__(settings, uq_metric_repo)
 
     def load(self):
         if not os.path.exists(self.nltk_dir):

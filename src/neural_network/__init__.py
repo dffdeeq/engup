@@ -19,6 +19,7 @@ from src.neural_network.nn_models.lr_varied_vocabulary import LRVariedVocabulary
 from src.neural_network.nn_models.pr_pronunciation import PrPronunciation
 from src.neural_network.nn_models.utils.timeit import timeit
 from src.postgres.enums import CompetenceEnum
+from src.repos.factories.user_question_metric import TgUserQuestionMetricRepo
 from src.settings import NNModelsSettings
 from src.settings.static import NN_MODELS_DIR, OTHER_DATA_DIR
 
@@ -35,9 +36,14 @@ class ScoreGeneratorNNModel(
     GrVarietyOfGrammarUsed,
     LrParaphraseEffectively,
 ):
-    def __init__(self, settings: NNModelsSettings, nn_models_dir: Path = NN_MODELS_DIR):
+    def __init__(
+        self,
+        settings: NNModelsSettings,
+        uq_metric_repo: TgUserQuestionMetricRepo,
+        nn_models_dir: Path = NN_MODELS_DIR
+    ):
         self._nn_models_dir = nn_models_dir
-        super().__init__(settings)
+        super().__init__(settings, uq_metric_repo)
         self.advices_xlsx = join(nn_models_dir, 'advices.xlsx')
         self.lookup = None
         self.models = {}

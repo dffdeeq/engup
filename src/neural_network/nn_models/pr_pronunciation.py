@@ -16,13 +16,14 @@ from pyannote.audio import Model
 from src.neural_network.base import NeuralNetworkBase
 from src.neural_network.nn_models.utils.simple_nn_model import SimpleNN
 from src.neural_network.nn_models.utils.timeit import timeit
+from src.repos.factories.user_question_metric import TgUserQuestionMetricRepo
 from src.settings import NNModelsSettings
 from src.settings.static import NN_MODELS_DIR
 
 
 class PrPronunciation(NeuralNetworkBase):
-    def __init__(self, settings: NNModelsSettings) -> None:
-        super().__init__(settings)
+    def __init__(self, settings: NNModelsSettings, uq_metric_repo: TgUserQuestionMetricRepo) -> None:
+        super().__init__(settings, uq_metric_repo)
         self.voice_model_dir = os.path.join(NN_MODELS_DIR, 'pr_pronunciation_model')
         self.voice_model: T.Optional[SimpleNN] = None
         self.device = torch.device('cpu')

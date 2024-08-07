@@ -5,13 +5,14 @@ from lexicalrichness import LexicalRichness
 
 from src.neural_network.base import NeuralNetworkBase
 from src.neural_network.nn_models.utils.timeit import timeit
+from src.repos.factories.user_question_metric import TgUserQuestionMetricRepo
 from src.settings import NNModelsSettings
 from src.settings.static import OTHER_DATA_DIR
 
 
 class LRVariedVocabulary(NeuralNetworkBase):
-    def __init__(self, settings: NNModelsSettings):
-        super().__init__(settings)
+    def __init__(self, settings: NNModelsSettings, uq_metric_repo: TgUserQuestionMetricRepo):
+        super().__init__(settings, uq_metric_repo)
         self.ielts_academic_vocabulary: T.Optional[T.List[str]] = None
 
     def load(self):

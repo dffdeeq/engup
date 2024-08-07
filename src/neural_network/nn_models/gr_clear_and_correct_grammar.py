@@ -1,3 +1,4 @@
+import asyncio
 import typing as T  # noqa
 
 import language_tool_python
@@ -6,12 +7,13 @@ from language_tool_python import Match
 from src.neural_network.base import NeuralNetworkBase
 from src.neural_network.nn_models.utils.timeit import timeit
 from src.postgres.enums import CompetenceEnum
+from src.repos.factories.user_question_metric import TgUserQuestionMetricRepo
 from src.settings import NNModelsSettings
 
 
 class GRClearAndCorrectGrammar(NeuralNetworkBase):
-    def __init__(self, settings: NNModelsSettings):
-        super().__init__(settings)
+    def __init__(self, settings: NNModelsSettings, uq_metric_repo: TgUserQuestionMetricRepo):
+        super().__init__(settings, uq_metric_repo)
         self.language_tool: T.Optional[language_tool_python.LanguageTool] = None
 
     def load(self):
@@ -25,14 +27,15 @@ class GRClearAndCorrectGrammar(NeuralNetworkBase):
         if text_ is None:
             text_ = text
         grammar_score, grammar_errors, lexical_errors, punctuation_errors = self.get_grammar_score_and_grammar_errors(
-            text=text_, tool=self.language_tool, competence=kwargs.get('competence', CompetenceEnum.writing))
+            text=text_, tool=self.language_tool, **kwargs)
         return grammar_score, grammar_errors, lexical_errors, punctuation_errors
 
     def get_grammar_score_and_grammar_errors(
         self,
         text: str,
         tool: language_tool_python.LanguageTool,
-        competence: CompetenceEnum = CompetenceEnum.writing
+        competence: CompetenceEnum = CompetenceEnum.writing,
+        **kwargs
     ) -> T.Tuple[float, T.List[Match], T.List[Match], T.List[Match]]:
         matches = tool.check(text)
         grammar_errors = []
@@ -52,9 +55,16 @@ class GRClearAndCorrectGrammar(NeuralNetworkBase):
         grammar_errors_len = len(grammar_errors)
         total_words = len(text.split())
         error_density = grammar_errors_len / total_words if total_words > 0 else 0
-        return (float(self.get_grammar_score(grammar_errors_len if competence == CompetenceEnum.writing
-                                             else error_density, competence)),
-                grammar_errors, lexical_errors, punctuation_errors)
+
+        grammar_score, grammar_errors, lexical_errors, punctuation_errors = (float(self.get_grammar_score(
+            grammar_errors_len if competence == CompetenceEnum.writing else error_density,
+            competence)), grammar_errors, lexical_errors, punctuation_errors)
+
+        uq_id: T.Optional[int] = kwargs.get('uq_id', None)
+        if uq_id is not None:
+            asyncio.create_task(self.save_metric_data(uq_id, 'fc_f_ss', grammar_score, str(error_density)))
+
+        return grammar_score, grammar_errors, lexical_errors, punctuation_errors
 
     @staticmethod
     def get_grammar_score(value, competence: CompetenceEnum = CompetenceEnum.writing):

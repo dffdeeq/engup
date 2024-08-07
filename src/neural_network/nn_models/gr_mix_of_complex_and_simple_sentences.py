@@ -4,13 +4,14 @@ import spacy
 
 from src.neural_network.base import NeuralNetworkBase
 from src.neural_network.nn_models.utils.timeit import timeit
+from src.repos.factories.user_question_metric import TgUserQuestionMetricRepo
 from src.settings import NNModelsSettings
 from src.settings.static import NN_MODELS_DIR
 
 
 class MixOfComplexAndSimpleSentences(NeuralNetworkBase):
-    def __init__(self, settings: NNModelsSettings):
-        super().__init__(settings)
+    def __init__(self, settings: NNModelsSettings, uq_metric_repo: TgUserQuestionMetricRepo):
+        super().__init__(settings, uq_metric_repo)
         self.nlp: T.Optional[spacy.Language] = None
 
     def load(self):

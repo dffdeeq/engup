@@ -57,7 +57,8 @@ class ResultService(ServiceFactory):
             file_paths = None
         result, extended_output = self._generate_result_local_model(
             request_text, competence, premium, **kwargs,
-            answers_text_only=answers_text_only, file_paths=file_paths, user_qa=instance.user_answer_json
+            answers_text_only=answers_text_only, file_paths=file_paths,
+            user_qa=instance.user_answer_json, uq_id=instance.id
         )
 
         if premium:

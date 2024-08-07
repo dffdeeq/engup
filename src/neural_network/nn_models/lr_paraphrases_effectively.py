@@ -11,13 +11,14 @@ from transformers import AutoTokenizer
 
 from src.neural_network.nn_models.utils.timeit import timeit
 from src.neural_network.base import NeuralNetworkBase
+from src.repos.factories.user_question_metric import TgUserQuestionMetricRepo
 from src.settings import NNModelsSettings
 from src.settings.static import NN_MODELS_DIR
 
 
 class LrParaphraseEffectively(NeuralNetworkBase):
-    def __init__(self, settings: NNModelsSettings):
-        super().__init__(settings)
+    def __init__(self, settings: NNModelsSettings, uq_metric_repo: TgUserQuestionMetricRepo):
+        super().__init__(settings, uq_metric_repo)
         self.lr_paraphrase_model = None
         self.nltk_perceptron_dir = os.path.join(self._nn_models_dir, 'averaged_perceptron_tagger')  # noqa
 
