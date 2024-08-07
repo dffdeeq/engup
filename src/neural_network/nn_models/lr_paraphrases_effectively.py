@@ -1,3 +1,4 @@
+import asyncio
 import logging
 import typing as T  # noqa
 import os.path
@@ -11,13 +12,14 @@ from transformers import AutoTokenizer
 
 from src.neural_network.nn_models.utils.timeit import timeit
 from src.neural_network.base import NeuralNetworkBase
+from src.repos.factories.user_question_metric import TgUserQuestionMetricRepo
 from src.settings import NNModelsSettings
 from src.settings.static import NN_MODELS_DIR
 
 
 class LrParaphraseEffectively(NeuralNetworkBase):
-    def __init__(self, settings: NNModelsSettings):
-        super().__init__(settings)
+    def __init__(self, settings: NNModelsSettings, uq_metric_repo: TgUserQuestionMetricRepo):
+        super().__init__(settings, uq_metric_repo)
         self.lr_paraphrase_model = None
         self.nltk_perceptron_dir = os.path.join(self._nn_models_dir, 'averaged_perceptron_tagger')  # noqa
 
@@ -54,7 +56,7 @@ class LrParaphraseEffectively(NeuralNetworkBase):
         if premium:
             premium_result = self.format_premium_result(paraphrasing_results, good_paraphrasing_count)  # noqa
 
-        good_paraphrasing_percent = good_paraphrasing_count / len(questions_and_answers)
+        good_paraphrasing_percent = good_paraphrasing_count / len(paraphrasing_results) * 100
         bands = [
             (90, 9.0),
             (80, 8.0),
@@ -62,9 +64,18 @@ class LrParaphraseEffectively(NeuralNetworkBase):
             (40, 6.0),
             (0, 5.0)
         ]
+
+        ielts_score = 5
         for band_percent, grade in bands:
             if good_paraphrasing_percent >= band_percent:
-                return grade, premium_result
+                ielts_score = grade
+                break
+
+        uq_id: T.Optional[int] = kwargs.get('uq_id', None)
+        if uq_id is not None:
+            asyncio.create_task(self.save_metric_data(uq_id, 'lr_atup', ielts_score, str(good_paraphrasing_percent)))
+
+        return ielts_score, premium_result
 
     def check_paraphrasing(self, question: str, answer: str):
         question_preprocessed = question.lower()

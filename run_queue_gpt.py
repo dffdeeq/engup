@@ -8,13 +8,14 @@ from src.postgres.models.question import Question
 from src.postgres.models.temp_data import TempData
 from src.postgres.models.tg_user import TgUser
 from src.postgres.models.tg_user_activity import TgUserActivity
-from src.postgres.models.tg_user_question import TgUserQuestion
+from src.postgres.models.tg_user_question import TgUserQuestion, TgUserQuestionMetric
 from src.rabbitmq.worker.factories.gpt_service_worker import GPTWorker
 from src.repos.factories.activity import ActivityRepo
 from src.repos.factories.question import QuestionRepo
 from src.repos.factories.temp_data import TempDataRepo
 from src.repos.factories.user import TgUserRepo
 from src.repos.factories.user_question import TgUserQuestionRepo
+from src.repos.factories.user_question_metric import TgUserQuestionMetricRepo
 from src.services.factories.answer_process import AnswerProcessService
 from src.services.factories.result import ResultService
 from src.services.factories.status_service import StatusService
@@ -52,7 +53,7 @@ async def main():
         adapter=adapter,
         session=session,
         settings=settings,
-        nn_service=ScoreGeneratorNNModel(settings.nn_models),
+        nn_service=ScoreGeneratorNNModel(settings.nn_models, TgUserQuestionMetricRepo(TgUserQuestionMetric, session)),
         user_service=user_service
     )
     answer_process_service = AnswerProcessService(

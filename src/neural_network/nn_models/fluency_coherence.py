@@ -1,3 +1,4 @@
+import asyncio
 import typing as T  # noqa
 import re
 
@@ -23,12 +24,24 @@ class FluencyCoherence(NeuralNetworkBase):
             score = words_len / audio_duration
             scores.append(score)
         score = sum(scores) / len(scores)
-        return self.get_speech_speed_score(score)
+        result_score = self.get_speech_speed_score(score)
+
+        uq_id: T.Optional[int] = kwargs.get('uq_id', None)
+        if uq_id is not None:
+            asyncio.create_task(self.save_metric_data(uq_id, 'fc_f_ss', result_score, str(score)))
+
+        return result_score
 
     @timeit
     def fc_self_corrections(self, text, **kwargs):
         _, corrections_len = self.identify_self_corrections(self.preprocess_text(text))
-        return 9.0 if corrections_len < 4 else 6.0
+        score = 9.0 if corrections_len < 4 else 6.0
+
+        uq_id: T.Optional[int] = kwargs.get('uq_id', None)
+        if uq_id is not None:
+            asyncio.create_task(self.save_metric_data(uq_id, 'fc_f_sc_msc', score))
+
+        return score
 
     @staticmethod
     def preprocess_text(text):

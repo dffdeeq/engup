@@ -57,7 +57,8 @@ class ResultService(ServiceFactory):
             file_paths = None
         result, extended_output = self._generate_result_local_model(
             request_text, competence, premium, **kwargs,
-            answers_text_only=answers_text_only, file_paths=file_paths, user_qa=instance.user_answer_json
+            answers_text_only=answers_text_only, file_paths=file_paths,
+            user_qa=instance.user_answer_json, uq_id=instance.id
         )
 
         if premium:
@@ -111,7 +112,7 @@ class ResultService(ServiceFactory):
             user_p1_p3_qa = user_qa['part_1']
             user_p1_p3_qa.extend(user_qa['part_3'])
             lr_paraphrase_score, lr_premium_result = self.nn_service.lr_paraphrase_effectively(
-                questions_and_answers=user_p1_p3_qa, premium=premium)
+                questions_and_answers=user_p1_p3_qa, premium=premium, **kwargs)
             results['lr_Paraphrases Effectively'] = lr_paraphrase_score
         advice_dict = self.nn_service.select_random_advice(results, competence)
 
