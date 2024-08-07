@@ -55,7 +55,7 @@ class LrParaphraseEffectively(NeuralNetworkBase):
         if premium:
             premium_result = self.format_premium_result(paraphrasing_results, good_paraphrasing_count)  # noqa
 
-        good_paraphrasing_percent = good_paraphrasing_count / len(questions_and_answers)
+        good_paraphrasing_percent = good_paraphrasing_count / len(paraphrasing_results) * 100
         bands = [
             (90, 9.0),
             (80, 8.0),
