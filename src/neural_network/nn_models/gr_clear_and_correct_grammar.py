@@ -62,7 +62,7 @@ class GRClearAndCorrectGrammar(NeuralNetworkBase):
 
         uq_id: T.Optional[int] = kwargs.get('uq_id', None)
         if uq_id is not None:
-            asyncio.create_task(self.save_metric_data(uq_id, 'fc_f_ss', grammar_score, str(error_density)))
+            asyncio.create_task(self.save_metric_data(uq_id, 'gr_a_ed', grammar_score, str(error_density)))
 
         return grammar_score, grammar_errors, lexical_errors, punctuation_errors
 

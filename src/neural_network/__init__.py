@@ -1,3 +1,4 @@
+import asyncio
 import math
 import os.path
 import random
@@ -98,13 +99,20 @@ class ScoreGeneratorNNModel(
                   'cc_Supported main points', 'cc_Logical structure']
         scores = [self.predict(text, model_name) for model_name in models]
         average = sum(scores) / len(scores)
+        score = math.floor(average * 2) / 2
+
+        uq_id: T.Optional[int] = kwargs.get('uq_id', None)
+        if uq_id is not None:
+            asyncio.create_task(self.save_metric_data(uq_id, 'fc_c_ross', score))
+
         return math.floor(average * 2) / 2
 
     def range_of_linking_words_and_discourse_markers(self, text: str, **kwargs) -> float:
         models = ['cc_Variety in linking words', 'cc_Accurate linking words']
         scores = [self.predict(text, model_name) for model_name in models]
         average = sum(scores) / len(scores)
-        return math.floor(average * 2) / 2
+        score = math.floor(average * 2) / 2
+        return score
 
     def select_random_advice(self, results, competence: CompetenceEnum):
         selected_advice = {}
@@ -117,6 +125,14 @@ class ScoreGeneratorNNModel(
                 selected_advice[category] = {}
             selected_advice[category][subcategory] = record['Achivement text']
         return selected_advice
+
+    def find_random_lookup_record(self, test_type: str, criteria, score):
+        type_ = 'Achievement' if score >= 7 else 'Suggestion'
+        key = (test_type, type_, criteria)
+        records = self.lookup.get(key, [])
+        if records:
+            return random.choice(records)
+        return None
 
     @staticmethod
     def xlsx_to_dict(advices_xlsx=os.path.join(OTHER_DATA_DIR, 'advices.xlsx')) -> T.List[T.Dict[str, T.Any]]:
@@ -138,11 +154,3 @@ class ScoreGeneratorNNModel(
                 lookup[key] = []
             lookup[key].append(record)
         return lookup
-
-    def find_random_lookup_record(self, test_type: str, criteria, score):
-        type_ = 'Achievement' if score >= 7 else 'Suggestion'
-        key = (test_type, type_, criteria)
-        records = self.lookup.get(key, [])
-        if records:
-            return random.choice(records)
-        return None

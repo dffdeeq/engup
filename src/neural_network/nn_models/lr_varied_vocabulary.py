@@ -1,3 +1,4 @@
+import asyncio
 import os
 import typing as T  # noqa
 import pandas as pd
@@ -38,8 +39,13 @@ class LRVariedVocabulary(NeuralNetworkBase):
             LRVariedVocabulary.calculate_metric_score(terms, thresholds['terms']),
             LRVariedVocabulary.calculate_metric_score(ielts_count, thresholds['ielts_count'])
         ]
-        final_score = round(sum(scores) / 3)
-        return float(final_score)
+        final_score = float(round(sum(scores) / 3))
+
+        uq_id: T.Optional[int] = kwargs.get('uq_id', None)
+        if uq_id is not None:
+            asyncio.create_task(self.save_metric_data(uq_id, 'lr_vowu', final_score))
+
+        return final_score
 
     @staticmethod
     def calculate_metric_score(value, thresholds):

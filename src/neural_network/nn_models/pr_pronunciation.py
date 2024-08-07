@@ -1,3 +1,4 @@
+import asyncio
 import logging
 import typing as T  # noqa
 import io
@@ -52,7 +53,14 @@ class PrPronunciation(NeuralNetworkBase):
             converted_average = ((average - 1) / (10 - 1)) * (9 - 1) + 1
             score = math.floor(converted_average * 2) / 2
             final_scores.append(score)
-        return math.floor(sum(final_scores) / len(final_scores) * 2) / 2
+
+        score = math.floor(sum(final_scores) / len(final_scores) * 2) / 2
+
+        uq_id: T.Optional[int] = kwargs.get('uq_id', None)
+        if uq_id is not None:
+            asyncio.create_task(self.save_metric_data(uq_id, 'pr_score', score))
+
+        return score
 
     def _get_raw_score(self, emb) -> int:
         with open(os.path.join(self.voice_model_dir, 'scaler.pkl'), 'rb') as f:

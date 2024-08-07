@@ -1,3 +1,4 @@
+import asyncio
 import logging
 import typing as T  # noqa
 import os.path
@@ -63,9 +64,18 @@ class LrParaphraseEffectively(NeuralNetworkBase):
             (40, 6.0),
             (0, 5.0)
         ]
+
+        ielts_score = 5
         for band_percent, grade in bands:
             if good_paraphrasing_percent >= band_percent:
-                return grade, premium_result
+                ielts_score = grade
+                break
+
+        uq_id: T.Optional[int] = kwargs.get('uq_id', None)
+        if uq_id is not None:
+            asyncio.create_task(self.save_metric_data(uq_id, 'lr_atup', ielts_score, str(good_paraphrasing_percent)))
+
+        return ielts_score, premium_result
 
     def check_paraphrasing(self, question: str, answer: str):
         question_preprocessed = question.lower()
