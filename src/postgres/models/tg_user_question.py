@@ -1,5 +1,5 @@
 from sqlalchemy import ForeignKey, Column, Integer, DateTime, Boolean, JSON, func, BigInteger, UniqueConstraint, \
-    Index, String
+    Index, String, Float
 
 from src.postgres.base import Base
 
@@ -27,3 +27,14 @@ class TgUserQuestion(Base):
         UniqueConstraint('user_id', 'question_id', name='uq_user_question'),
         Index('uq_tg_user_question_id', 'id', unique=True)
     )
+
+
+class TgUserQuestionMetric(Base):
+    __tablename__ = 'tg_user_question_metric'
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+
+    uq_id = Column(BigInteger, ForeignKey('tg_user_question.id'))
+    metric_id = Column(String)
+    value = Column(Float)
+    details = Column(String, nullable=True)
