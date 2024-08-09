@@ -20,7 +20,7 @@ async def support_menu_callback(callback: types.CallbackQuery, tg_user_service: 
 async def user_agreement_menu_callback(callback: types.CallbackQuery):
     text = 'Here you can view the user agreement:\nhttps://telegra.ph/User-Agreement-08-05'
     keyboard = InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton(text='🔙 Back', callback_data='menu'), ],
+        [InlineKeyboardButton(text='🔙 Back', callback_data='support_menu'), ],
     ])
     await callback.message.edit_text(text=text, reply_markup=keyboard)
 
