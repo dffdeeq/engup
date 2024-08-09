@@ -48,7 +48,7 @@ async def rate_bot_callback(callback: types.CallbackQuery, state: FSMContext, tg
     INJECTOR.inject_tg_user,
     INJECTOR.inject_feedback_service
 )
-async def feedback_get_other_option(
+async def feedback_get_review_callback(
     message: types.Message,
     state: FSMContext,
     tg_user_service: TgUserService,
