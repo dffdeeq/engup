@@ -7,10 +7,10 @@ from src.postgres.models.tg_user import TgUser
 
 
 async def get_balance_menu(user: TgUser) -> T.Tuple[str, InlineKeyboardBuilder]:
-    text = f'💎 <b>Balance:</b> {user.pts} tests.\n\nChoose an option:'
+    text = f'💎 <b>Balance:</b> {user.pts} premium test{"" if user.pts == 1 else "s"}.\n\nChoose an option:'
     builder = InlineKeyboardBuilder([
-        [InlineKeyboardButton(text='💳 Buy tests', callback_data='pricing'),],
-        [InlineKeyboardButton(text='🤝 Free tests', callback_data='free_tests'),],
+        [InlineKeyboardButton(text='💳 Buy premium tests', callback_data='pricing'),],
+        [InlineKeyboardButton(text='🤝 Get premium tests for free', callback_data='free_tests'),],
         [InlineKeyboardButton(text='🔙 Back', callback_data='menu'), ],
     ])
     return text, builder
