@@ -17,11 +17,55 @@ async def feedback_menu_callback(callback: types.CallbackQuery, tg_user_service:
     await callback.answer()
 
     keyboard = InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton(text='Stars *****', callback_data="not_implemented")],
+        [InlineKeyboardButton(text='Rate us', callback_data="rate_bot start")],
         [InlineKeyboardButton(text='Take the survey', callback_data="leave_feedback")],
         [InlineKeyboardButton(text='🔙 Back', callback_data='menu'), ],
     ])
     await callback.message.edit_text(text='Here you can leave a feedback', reply_markup=keyboard)
+
+
+@router.callback_query(F.data.startswith('rate_bot'), INJECTOR.inject_tg_user)
+async def rate_bot_callback(callback: types.CallbackQuery, state: FSMContext, tg_user_service: TgUserService):
+    rate = callback.data.split()[1]
+    if rate == 'start':
+        await tg_user_service.mark_user_activity(callback.from_user.id, 'go to rate us')
+        await callback.answer()
+        keyboard = InlineKeyboardMarkup(inline_keyboard=[
+            [InlineKeyboardButton(text=f'{i}', callback_data=f"rate_bot {i}") for i in range(1, 6)]
+        ])
+        await callback.message.edit_text(text='"Please rate your experience with the bot from 1 to 5, '
+                                              'where 1 is poor and 5 is excellent.', reply_markup=keyboard)
+    else:
+        rate = int(rate)
+        await state.set_state(FeedbackState.get_user_review)
+        await state.set_data({'rate': rate})
+        await callback.message.edit_text(text='Thank you for your rating! Please type your feedback or suggestions in '
+                                              'the message to help us improve your experience.')
+
+
+@router.message(
+    FeedbackState.get_user_review,
+    INJECTOR.inject_tg_user,
+    INJECTOR.inject_feedback_service
+)
+async def feedback_get_review_callback(
+    message: types.Message,
+    state: FSMContext,
+    tg_user_service: TgUserService,
+    feedback_service: FeedbackService
+):
+    await tg_user_service.mark_user_activity(message.from_user.id, 'left a review')
+    rate = (await state.get_data())['rate']
+    text = message.text
+    await feedback_service.save_user_review(message.from_user.id, rate, text)
+
+    keyboard = InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(text='🔙 Menu', callback_data='menu'), ],
+    ])
+
+    await message.answer(text='Thank you! We have received your feedback and appreciate your input.',
+                         reply_markup=keyboard)
+    await state.clear()
 
 
 @router.callback_query(F.data == 'leave_feedback', INJECTOR.inject_tg_user)
@@ -39,7 +83,8 @@ async def leave_feedback_callback(callback: types.CallbackQuery, state: FSMConte
 
     keyboard = InlineKeyboardMarkup(inline_keyboard=[
         [InlineKeyboardButton(text=option, callback_data=f"poll_answer:0:{idx}")] for idx, option in enumerate(options)
-    ])
+    ] + [[InlineKeyboardButton(text='🔙 Back', callback_data='feedback_menu')
+          ]])
 
     await callback.message.edit_text(text=question, reply_markup=keyboard)
 

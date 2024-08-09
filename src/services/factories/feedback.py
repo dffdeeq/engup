@@ -19,3 +19,6 @@ class FeedbackService(ServiceFactory):
 
     async def user_can_get_free_points(self, user_id: int) -> bool:
         return True if await self.repo.get_user_poll_feedback(user_id) is None else False
+
+    async def save_user_review(self, user_id: int, rating: int, text: str):
+        return await self.repo.create_user_review(user_id, rating, text)

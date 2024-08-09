@@ -3,7 +3,7 @@ import typing as T  # noqa
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import async_sessionmaker
 
-from src.postgres.models.poll_feedback import PollFeedback
+from src.postgres.models.poll_feedback import PollFeedback, TgUserReview
 from src.repos.factory import RepoFactory
 
 
@@ -19,3 +19,6 @@ class FeedbackRepo(RepoFactory):
             query = select(self.model).where(self.model.user_id == user_id)
             result = await session.execute(query)
             return result.scalars().first()
+
+    async def create_user_review(self, user_id: int, rating: int, text: str):
+        return await self.insert_one(model=TgUserReview, user_id=user_id, rating=rating, text=text)

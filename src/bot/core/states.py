@@ -17,3 +17,5 @@ class AdminState(StatesGroup):
 
 class FeedbackState(StatesGroup):
     get_other_option = State()
+
+    get_user_review = State()
