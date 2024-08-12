@@ -34,8 +34,7 @@ You will be given a prompt that presents a point of view, argument, or problem. 
                         "The advanced mode provides additional recommendations for effectively growing your skills "
                         "and increasing your grades, and also provides a priority pass to minimize waiting in line. "
                         "You can always buy additional points in the menu.</i>")
-    CALCULATING_RESULT = ("Your result is being calculated and may take a couple of minutes.\n"
-                          "We'll send it to you as soon as it's ready.")
+    CALCULATING_RESULT = "Once you have confirmed, we will begin evaluating your answers. Your answers are currently being processed, and we expect to provide you with results in a few minutes. Thank you for your patience."
 
     LOW_POINTS_BALANCE_ALERT = """
 <b>Low Points Balance Alert</b>
