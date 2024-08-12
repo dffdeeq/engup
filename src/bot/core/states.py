@@ -9,6 +9,7 @@ class SpeakingState(StatesGroup):
 
 class WritingState(StatesGroup):
     get_user_answer = State()
+    ending = State()
 
 
 class AdminState(StatesGroup):

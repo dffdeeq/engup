@@ -2,6 +2,26 @@ from src.postgres.enums import CompetenceEnum
 
 
 class DefaultMessages:
+    DEFAULT_TEXT = """
+<b>Welcome to IELTS Writing Practice!</b>
+    
+Let's get you ready for the IELTS Writing exam, essay part 2. Here’s a brief overview of what to expect in the test:
+    
+IELTS Writing Exam Overview
+    
+The IELTS Writing test is designed to assess your writing skills and is divided into two parts. The entire test lasts for 60 minutes.
+    
+Part 1: Task 1 (20 minutes)
+    
+In this part, you are required to write a short report based on visual information such as charts, graphs, or diagrams. You should summarize the information, highlight key features, and make comparisons where relevant. This task tests your ability to interpret and describe data in a clear and organized manner.
+    
+Part 2: Essay (40 minutes)
+    
+You will be given a prompt that presents a point of view, argument, or problem. You are required to write an essay in response to the prompt. Your essay should be at least 250 words long and should address all parts of the question. You will need to present a clear position, support your ideas with relevant examples and evidence, and demonstrate a logical progression of ideas. This part tests your ability to construct a coherent argument and express your thoughts in a structured and persuasive manner.
+    
+<b>Here, we will assess your ability to produce a coherent and well-structured IELTS part 2 essay.</b>
+"""
+
     TOO_SHORT_TEXT_WARNING = ("Your essay must contain at least 150 words to meet the requirement. "
                               "However, for a better evaluation, aim for at least 250 words.")
     TEXT_IS_NOT_ENGLISH = ("It appears that your text is not written in English. Unfortunately, "
@@ -14,8 +34,7 @@ class DefaultMessages:
                         "The advanced mode provides additional recommendations for effectively growing your skills "
                         "and increasing your grades, and also provides a priority pass to minimize waiting in line. "
                         "You can always buy additional points in the menu.</i>")
-    CALCULATING_RESULT = ("Your result is being calculated and may take a couple of minutes.\n"
-                          "We'll send it to you as soon as it's ready.")
+    CALCULATING_RESULT = "Once you have confirmed, we will begin evaluating your answers. Your answers are currently being processed, and we expect to provide you with results in a few minutes. Thank you for your patience."
 
     LOW_POINTS_BALANCE_ALERT = """
 <b>Low Points Balance Alert</b>

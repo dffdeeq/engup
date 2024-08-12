@@ -1,4 +1,6 @@
 import typing as T  # noqa
+
+from aiogram.types import CallbackQuery
 from sqlalchemy.ext.asyncio import async_sessionmaker
 
 from src.libs.adapter import Adapter
@@ -15,9 +17,16 @@ class QuestionService(ServiceFactory):
         super().__init__(repo, adapter, session, settings)
         self.repo = repo
 
-    async def get_or_generate_question_for_user(self, user_id: int, competence: CompetenceEnum) -> Question:
+    async def get_or_generate_question_for_user(
+        self,
+        user_id: int,
+        competence: CompetenceEnum,
+        callback: CallbackQuery = None
+    ) -> Question:
         question = await self.repo.get_question_for_user(user_id, competence)
         if not question:
+            if callback:
+                await callback.answer(text='Question is generating...')
             new_questions = await self.generate_and_save_questions(competence, 5)
             question = new_questions[0]
         return question
