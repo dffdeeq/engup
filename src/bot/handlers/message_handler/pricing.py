@@ -3,7 +3,8 @@ import logging
 
 from aiogram import Router, F, types
 from aiogram.fsm.context import FSMContext
-from aiogram.types import LabeledPrice
+from aiogram.types import LabeledPrice, InlineKeyboardButton
+from aiogram.utils.keyboard import InlineKeyboardBuilder
 
 from src.bot.handlers.defaults.menu_default import answer_menu
 from src.bot.handlers.defaults.pricing_default import answer_pricing
@@ -19,16 +20,15 @@ async def not_implemented(callback: types.CallbackQuery):
 
 
 @router.callback_query(F.data == 'pricing', INJECTOR.inject_tg_user)
-async def pricing_callback(callback: types.CallbackQuery, tg_user_service: TgUserService, state: FSMContext):
+async def pricing_callback(callback: types.CallbackQuery, tg_user_service: TgUserService):
     await callback.answer()
     await tg_user_service.mark_user_activity(callback.from_user.id, 'go to pricing')
-    await state.clear()
 
     user = await tg_user_service.get_or_create_tg_user(callback.from_user.id)
     await answer_pricing(callback, user)
 
 
-@router.callback_query(F.data.startswith('buy_pts_by_tg_stars'), INJECTOR.inject_tg_user)
+@router.callback_query(F.data.startswith('buy_pts_by_tg_stars'))
 async def buy_pts_by_tg_start(callback: types.CallbackQuery):
     await callback.answer()
 
@@ -65,7 +65,7 @@ async def precheckout_callback(pre_checkout_query: types.PreCheckoutQuery):
 
 
 @router.message(F.successful_payment, INJECTOR.inject_tg_user)
-async def successful_payment_handler(message: types.Message, tg_user_service: TgUserService):
+async def successful_payment_handler(message: types.Message, state: FSMContext, tg_user_service: TgUserService):
     successful_payment = message.successful_payment
     if not successful_payment:
         return
@@ -86,4 +86,20 @@ async def successful_payment_handler(message: types.Message, tg_user_service: Tg
                          f'(user_id_from_payload != message.from_user.id)')
 
     await message.answer("Thank you for your purchase! Your payment was successful.")
-    await answer_menu(message)
+
+    state_data = await state.get_data()
+    logging.info(state_data)
+    task_ready_to_proceed = state_data.get('task_ready_to_proceed', None)
+    logging.info(task_ready_to_proceed)
+    if task_ready_to_proceed is not None:
+        text = ('Thank you for completing all the questions! To confirm your response, '
+                'please choose one of the following options:\n\n'
+                '1. Use 1 PT to receive a detailed analysis\n'
+                '2. Receive a brief result without charge.')
+        builder = InlineKeyboardBuilder([
+            [InlineKeyboardButton(text='1', callback_data=f'confirm_task_{task_ready_to_proceed} premium')],
+            [InlineKeyboardButton(text='2', callback_data=f'confirm_task_{task_ready_to_proceed} default')],
+        ])
+        await message.answer(text, reply_markup=builder.as_markup())
+    else:
+        await answer_menu(message)

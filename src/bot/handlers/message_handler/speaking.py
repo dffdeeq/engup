@@ -45,10 +45,7 @@ async def speaking_start(
     await callback.message.edit_text(text=Messages.DEFAULT_MESSAGE)
 
     question = await question_service.get_or_generate_question_for_user(callback.from_user.id, CompetenceEnum.speaking)
-    uq_instance, spent_pts = await uq_service.get_or_create_user_question(callback.from_user.id, question.id)
-    if spent_pts:
-        await tg_user_service.mark_user_activity(callback.from_user.id, 'spent point')
-        await tg_user_service.mark_user_pts(callback.from_user.id, 'spent', -1)
+    uq_instance = await uq_service.get_or_create_user_question(callback.from_user.id, question.id)
     question_json: T.Dict = json.loads(question.question_json)
 
     await state.set_state(SpeakingState.first_part)
@@ -58,15 +55,11 @@ async def speaking_start(
         'part_3_questions': question_json['part_3'],
         'part_1_current_question': 0,
         'uq_id': uq_instance.id,
-        'premium_queue': uq_instance.premium_queue,
     })
 
     await asyncio.sleep(2)
     await callback.message.answer(Messages.FIRST_PART_MESSAGE_1, disable_web_page_preview=True)
     await asyncio.sleep(2)
-    if not uq_instance.premium_queue:
-        await callback.message.answer(text=DefaultMessages.DONT_HAVE_POINTS)
-        await asyncio.sleep(1)
 
     builder = InlineKeyboardBuilder([[InlineKeyboardButton(text='🔙 Back', callback_data='ielts_menu')]])
 
@@ -150,11 +143,9 @@ async def speaking_third_part(
     state: FSMContext,
     tg_user_service: TgUserService,
     voice_service: VoiceService,
-    apihost_producer: ApiHostProducer,
     answer_process: AnswerProcessService,
-    status_service: StatusService,
-
 ):
+    user = await tg_user_service.get_or_create_tg_user(message.from_user.id)
     state_data = await state.get_data()
     filename = os.path.basename(await voice_service.save_user_voicemail(message.voice, message.bot))
     question_text = state_data['part_3_questions'][state_data['part_3_current_question']]
@@ -171,12 +162,60 @@ async def speaking_third_part(
         await message.answer(text=next_question)
     else:
         await tg_user_service.mark_user_activity(message.from_user.id, 'end speaking')
-        await answer_process.update_user_qa_premium_queue(state_data['uq_id'], state_data['premium_queue'])
-        filepaths = await answer_process.get_temp_data_filepaths(answer_process.session, state_data['uq_id'])
-        await apihost_producer.create_task_send_to_transcription(filepaths, premium_queue=state_data['premium_queue'])
-        await status_service.change_qa_status(state_data['uq_id'], status='Sent for transcription.')
-        await state.clear()
-        builder = InlineKeyboardBuilder([
-            [InlineKeyboardButton(text='Result status', callback_data=f'result_status {state_data["uq_id"]}')]
-        ])
-        await message.answer(text=DefaultMessages.CALCULATING_RESULT, reply_markup=builder.as_markup())
+        await state.update_data({'task_ready_to_proceed': 'speaking'})
+        if user.pts >= 1:
+            text = ('Thank you for completing all the questions! To confirm your response, '
+                    'please choose one of the following options:\n\n'
+                    '1. Use 1 PT to receive a detailed analysis\n'
+                    '2. Receive a brief result without charge.')
+            builder = InlineKeyboardBuilder([
+                [InlineKeyboardButton(text='1', callback_data='confirm_task_speaking premium')],
+                [InlineKeyboardButton(text='2', callback_data='confirm_task_speaking default')],
+            ])
+        else:
+            text = ('You do not have any Premium Tests (PTs) left in your account.\n\n'
+                    'If you would like to spend 1 PT and receive a detailed analysis and '
+                    'personalized recommendations based on your answers, please purchase some PTs, then go back and'
+                    'click on "Update PTs" button for proceed test in premium')
+            builder = InlineKeyboardBuilder([
+                [InlineKeyboardButton(text='Buy PTs', callback_data='pricing')],
+                [InlineKeyboardButton(text='Proceed for free', callback_data='confirm_task_speaking default')],
+            ])
+        await message.answer(text=text, reply_markup=builder.as_markup())
+
+
+@router.callback_query(
+    F.data.startswith('confirm_task_speaking'),
+    INJECTOR.inject_tg_user,
+    INJECTOR.inject_apihost_producer,
+    INJECTOR.inject_answer_process,
+    INJECTOR.inject_status
+)
+async def speaking_confirm_task(
+    callback: types.CallbackQuery,
+    state: FSMContext,
+    tg_user_service: TgUserService,
+    apihost_producer: ApiHostProducer,
+    answer_process: AnswerProcessService,
+    status_service: StatusService,
+):
+    await tg_user_service.mark_user_activity(callback.from_user.id, 'spent point')
+
+    state_data = await state.get_data()
+    param = callback.data.split()[1]
+    premium = True if param == 'premium' else False
+    if premium is True:
+        await tg_user_service.repo.deduct_point(callback.from_user.id)
+        await tg_user_service.mark_user_activity(callback.from_user.id, 'spent point')
+        await tg_user_service.mark_user_pts(callback.from_user.id, 'spent', -1)
+
+    await answer_process.update_user_qa_premium_queue(state_data['uq_id'], premium)
+    filepaths = await answer_process.get_temp_data_filepaths(answer_process.session, state_data['uq_id'])
+    await apihost_producer.create_task_send_to_transcription(filepaths, premium_queue=premium)
+    await status_service.change_qa_status(state_data['uq_id'], status='Sent for transcription.')
+    await state.clear()
+    builder = InlineKeyboardBuilder([
+        [InlineKeyboardButton(text='Result status', callback_data=f'result_status {state_data["uq_id"]}')]
+    ])
+    await callback.message.edit_text(text=DefaultMessages.CALCULATING_RESULT, reply_markup=builder.as_markup())
+    await state.clear()
