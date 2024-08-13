@@ -29,7 +29,7 @@ class NeuralNetworkConstants:
         CompetenceEnum.writing: [
             'clear_grammar_result',
             'ta_Appropriate word count',
-            # 'gr_Mix of complex & simple sentences',
+            'gr_Complexity of the verb phrase',  # changed from "gr_Mix of complex & simple sentences"
             'lr_Varied vocabulary',
             'lr_Accurate spelling & word formation',
             'ta_Relevant & specific examples',
