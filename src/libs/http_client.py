@@ -56,8 +56,14 @@ class HttpClient:
                     try:
                         if content_type == 'text/plain':
                             resp_text = await response.text()
-                            resp_json = json.loads(resp_text)
-                            body = self._decode_json(resp_json)
+                            if resp_text:
+                                try:
+                                    resp_json = json.loads(resp_text)
+                                    body = self._decode_json(resp_json)
+                                except json.JSONDecodeError:
+                                    body = resp_text
+                            else:
+                                body = None
                         elif content_type.find('application/json') != -1:
                             body = await response.json()
                     except ContentTypeError as exc:
