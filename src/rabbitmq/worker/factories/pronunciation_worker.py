@@ -1,5 +1,4 @@
 import logging
-import os.path
 import typing as T  # noqa
 
 import numpy as np
@@ -11,7 +10,6 @@ from data.nn_models.ai_pronunciation_trainer.lambdaSpeechToScore import audiorea
 from src.libs.factories.gpt import GPTClient
 from src.rabbitmq.worker.factory import RabbitMQWorkerFactory
 from src.repos.factories.user_question_metric import TgUserQuestionMetricRepo
-from src.settings.static import TEMP_FILES_DIR
 
 
 class PronunciationWorker(RabbitMQWorkerFactory):

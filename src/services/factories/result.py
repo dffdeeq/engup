@@ -1,5 +1,6 @@
 import logging
 import math
+import os.path
 import typing as T  # noqa
 
 from pydub import AudioSegment
@@ -20,6 +21,7 @@ from src.services.factories.tg_user import TgUserService
 from src.services.factory import ServiceFactory
 from src.services.factories.user_question import UserQuestionService as UQService
 from src.settings import Settings
+from src.settings.static import TEMP_FILES_DIR
 
 
 class ResultService(ServiceFactory):
@@ -146,7 +148,7 @@ class ResultService(ServiceFactory):
         for file in filepaths:
             audio = AudioSegment.from_ogg(file)
             combined += audio
-        output_filepath = f"output_{uq_id}.ogg"
+        output_filepath = os.path.join(TEMP_FILES_DIR, f"output_{uq_id}.ogg")
         combined.export(output_filepath, format="ogg")
         await self.simple_worker.initialize()
         await self.simple_worker.publish(
