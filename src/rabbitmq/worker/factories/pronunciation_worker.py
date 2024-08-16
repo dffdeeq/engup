@@ -32,7 +32,7 @@ class PronunciationWorker(RabbitMQWorkerFactory):
         try:
             # filepath = data['filepath']
             transform = Resample(orig_freq=48000, new_freq=16000)
-            filepath = os.path.join(TEMP_FILES_DIR, 'daacf1839aae4c2da72cebb134673007.ogg')
+            filepath = data['filepath']
             signal, fs = audioread_load(filepath)
             logging.info(signal)
             logging.info(fs)
