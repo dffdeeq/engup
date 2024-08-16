@@ -10,6 +10,7 @@ from src.postgres.models.tg_user import TgUser
 from src.postgres.models.tg_user_activity import TgUserActivity
 from src.postgres.models.tg_user_question import TgUserQuestion, TgUserQuestionMetric
 from src.rabbitmq.worker.factories.gpt_service_worker import GPTWorker
+from src.rabbitmq.worker.factories.simple_worker import SimpleWorker
 from src.repos.factories.activity import ActivityRepo
 from src.repos.factories.question import QuestionRepo
 from src.repos.factories.temp_data import TempDataRepo
@@ -54,7 +55,12 @@ async def main():
         session=session,
         settings=settings,
         nn_service=ScoreGeneratorNNModel(settings.nn_models, TgUserQuestionMetricRepo(TgUserQuestionMetric, session)),
-        user_service=user_service
+        user_service=user_service,
+        simple_worker=SimpleWorker(
+            repo=repo,
+            dsn_string=settings.rabbitmq.dsn,
+            queue_name='public'
+        )
     )
     answer_process_service = AnswerProcessService(
         repo=repo,
