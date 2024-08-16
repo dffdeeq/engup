@@ -2,6 +2,7 @@ import logging
 import math
 import typing as T  # noqa
 
+from pydub import AudioSegment
 from sqlalchemy.ext.asyncio import async_sessionmaker
 
 from data.other.criteria_json import GRAMMAR_AND_LEXICAL_ERRORS_ADVICE
@@ -11,6 +12,7 @@ from src.libs.factories.gpt.models.suggestion import Suggestion
 from src.neural_network import ScoreGeneratorNNModel, timeit
 from src.postgres.enums import CompetenceEnum
 from src.postgres.models.tg_user_question import TgUserQuestion
+from src.rabbitmq.worker.factories.simple_worker import SimpleWorker
 from src.repos.factories.question import QuestionRepo
 from src.services.constants import NeuralNetworkConstants as NNConstants
 from src.services.factories.answer_process import AnswerProcessService
@@ -28,12 +30,14 @@ class ResultService(ServiceFactory):
         session: async_sessionmaker,
         settings: Settings,
         nn_service: ScoreGeneratorNNModel,
-        user_service: TgUserService
+        user_service: TgUserService,
+        simple_worker: SimpleWorker
     ) -> None:
         super().__init__(repo, adapter, session, settings)
         self.repo = repo
         self.nn_service = nn_service
         self.user_service = user_service
+        self.simple_worker = simple_worker
 
     @timeit
     def check_or_load_models(self):
@@ -55,7 +59,7 @@ class ResultService(ServiceFactory):
         else:
             answers_text_only = None
             file_paths = None
-        result, extended_output = self._generate_result_local_model(
+        result, extended_output = await self._generate_result_local_model(
             request_text, competence, premium, **kwargs,
             answers_text_only=answers_text_only, file_paths=file_paths,
             user_qa=instance.user_answer_json, uq_id=instance.id
@@ -89,7 +93,7 @@ class ResultService(ServiceFactory):
         formatted_premium_results = self.format_premium_result(additional_result)
         return formatted_premium_results
 
-    def _generate_result_local_model(
+    async def _generate_result_local_model(
         self,
         text: str,
         competence: CompetenceEnum,
@@ -109,11 +113,18 @@ class ResultService(ServiceFactory):
         elif competence == CompetenceEnum.speaking:
             results['gr_Error density'] = gr_score
             user_qa = kwargs.get('user_qa')
+            uq_id = kwargs.get('uq_id')
+            file_paths = kwargs.get('file_paths')
+
             user_p1_p3_qa = user_qa['part_1']
             user_p1_p3_qa.extend(user_qa['part_3'])
             lr_paraphrase_score, lr_premium_result = self.nn_service.lr_paraphrase_effectively(
                 questions_and_answers=user_p1_p3_qa, premium=premium, **kwargs)
             results['lr_Paraphrases Effectively'] = lr_paraphrase_score
+            pronunciation_score = await self.get_pronunciation(uq_id, file_paths, premium)
+            if pronunciation_score:
+                results['pr_Pronunciation'] = pronunciation_score
+
         advice_dict = self.nn_service.select_random_advice(results, competence)
 
         if competence == CompetenceEnum.writing:
@@ -123,10 +134,28 @@ class ResultService(ServiceFactory):
         if premium:
             if competence == CompetenceEnum.speaking:
                 result.extend(lr_premium_result)  # noqa
+                pass
+
             grammar_errors = self.format_grammar_errors(gr_errors, lxc_errors, pnkt_errors, competence)
             result.extend(grammar_errors)
         extended_output = self.dict_to_string(results)
         return result, extended_output
+
+    async def get_pronunciation(self, uq_id: int, filepaths, premium: bool = False) -> T.Optional[float]:
+        combined = AudioSegment.empty()
+        for file in filepaths:
+            audio = AudioSegment.from_ogg(file)
+            combined += audio
+        output_filepath = f"output_{uq_id}.ogg"
+        combined.export(output_filepath, format="ogg")
+        await self.simple_worker.initialize()
+        await self.simple_worker.publish(
+            {'filepath': output_filepath, 'uq_id': uq_id},
+            'pronunciation_score_generate',
+            self.simple_worker.get_priority(premium)
+        )
+        payload = await self.simple_worker.try_get_one_message(f'pronunciation_score_get_{uq_id}')
+        return payload['pronunciation_score']
 
     @staticmethod
     def format_premium_result(result: Result) -> T.List[str]:
