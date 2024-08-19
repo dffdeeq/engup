@@ -5,7 +5,6 @@ import os.path
 import subprocess
 import typing as T  # noqa
 
-from pydub import AudioSegment
 from sqlalchemy.ext.asyncio import async_sessionmaker
 
 from data.other.criteria_json import GRAMMAR_AND_LEXICAL_ERRORS_ADVICE
