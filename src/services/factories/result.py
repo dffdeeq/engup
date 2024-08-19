@@ -144,12 +144,8 @@ class ResultService(ServiceFactory):
         return result, extended_output
 
     async def get_pronunciation(self, uq_id: int, filepaths, premium: bool = False) -> T.Optional[float]:
-        combined = AudioSegment.empty()
-        for file in filepaths:
-            audio = AudioSegment.from_ogg(file)
-            combined += audio
         output_filepath = os.path.join(TEMP_FILES_DIR, f"output_{uq_id}.ogg")
-        combined.export(output_filepath, format="ogg")
+        self.combine_ogg_files(filepaths, output_filepath)
         await self.simple_worker.initialize()
         await self.simple_worker.publish(
             {'filepath': output_filepath, 'uq_id': uq_id},
@@ -158,6 +154,26 @@ class ResultService(ServiceFactory):
         )
         payload = await self.simple_worker.try_get_one_message(f'pronunciation_score_get_{uq_id}')
         return payload['pronunciation_score']
+
+    @staticmethod
+    def combine_ogg_files(filepaths, output_filepath):
+        try:
+            combined = AudioSegment.empty()
+            for file in filepaths:
+                try:
+                    if not file.lower().endswith('.ogg'):
+                        continue
+                    audio = AudioSegment.from_ogg(file)
+                    audio = audio.set_frame_rate(44100)
+                    audio = audio.set_channels(2)
+                    combined += audio
+                except Exception as e:
+                    logging.error(f"Error processing file {file}: {e}")
+                    continue
+
+            combined.export(output_filepath, format="ogg")
+        except Exception as e:
+            logging.exception(e)
 
     @staticmethod
     def format_premium_result(result: Result) -> T.List[str]:
