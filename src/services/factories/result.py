@@ -1,3 +1,4 @@
+import asyncio
 import logging
 import math
 import os.path
@@ -147,6 +148,7 @@ class ResultService(ServiceFactory):
     async def get_pronunciation(self, uq_id: int, filepaths, premium: bool = False) -> T.Optional[float]:
         output_filepath = os.path.join(TEMP_FILES_DIR, f"output_{uq_id}.ogg")
         self.combine_ogg_files(filepaths, output_filepath)
+        await asyncio.sleep(3)
         await self.simple_worker.initialize()
         await self.simple_worker.publish(
             {'filepath': output_filepath, 'uq_id': uq_id},
