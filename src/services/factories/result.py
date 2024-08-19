@@ -1,6 +1,7 @@
 import logging
 import math
 import os.path
+import subprocess
 import typing as T  # noqa
 
 from pydub import AudioSegment
@@ -158,22 +159,18 @@ class ResultService(ServiceFactory):
     @staticmethod
     def combine_ogg_files(filepaths, output_filepath):
         try:
-            combined = AudioSegment.empty()
-            for file in filepaths:
-                try:
-                    if not file.lower().endswith('.ogg'):
-                        continue
-                    audio = AudioSegment.from_ogg(file)
-                    audio = audio.set_frame_rate(44100)
-                    audio = audio.set_channels(2)
-                    combined += audio
-                except Exception as e:
-                    logging.error(f"Error processing file {file}: {e}")
-                    continue
-
-            combined.export(output_filepath, format="ogg")
-        except Exception as e:
-            logging.exception(e)
+            filepaths.sort()
+            with open('file_list.txt', 'w') as f:
+                for file in filepaths:
+                    f.write(f"file '{file}'\n")
+            command = ['ffmpeg', '-f', 'concat', '-safe', '0', '-i', 'file_list.txt', '-c', 'copy', output_filepath]
+            subprocess.run(command, check=True)
+            logging.info(f"Combined file saved to {output_filepath}")
+        except subprocess.CalledProcessError as e:
+            logging.info(f"An error occurred while combining the files: {e}")
+        finally:
+            if os.path.exists('file_list.txt'):
+                os.remove('file_list.txt')
 
     @staticmethod
     def format_premium_result(result: Result) -> T.List[str]:
