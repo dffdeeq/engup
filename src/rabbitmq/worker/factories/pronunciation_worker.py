@@ -28,7 +28,6 @@ class PronunciationWorker(RabbitMQWorkerFactory):
 
     async def get_pronuncation(self, data: T.Dict):
         try:
-            # filepath = data['filepath']
             transform = Resample(orig_freq=48000, new_freq=16000)
             filepath = data['filepath']
             signal, fs = audioread_load(filepath)
