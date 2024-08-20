@@ -46,6 +46,7 @@ class PronunciationWorker(RabbitMQWorkerFactory):
                 logging.exception(e)
 
         score = np.mean(results['score'])
+        score = self.score_to_band(score)
         levenshtein_score = np.mean(results['levenshtein_score'])
         accuracy = np.mean(results['pronunciation_accuracy'])
         transcribed_words = []
@@ -70,10 +71,7 @@ class PronunciationWorker(RabbitMQWorkerFactory):
         signal = transform(torch.Tensor(signal)).unsqueeze(0)
         logging.info(signal)
 
-        logging.info("Attempting to get trainer")
         trainer_sst_lambda = {'en': pronunciationTrainer.getTrainer("en")}
-        logging.info("Trainer retrieved successfully")
-        logging.info(f"Signal shape before transform: {signal.shape}")
         try:
             recording_transcript, recording_ipa, word_locations = trainer_sst_lambda['en'].getAudioTranscript(
                 signal)
@@ -92,20 +90,22 @@ class PronunciationWorker(RabbitMQWorkerFactory):
         result = await self.gpt_client.generate_transcript(recording_transcript)
         real_text = result.text
 
-        logging.info(f'real_text sssss: {real_text}')
         result = trainer_sst_lambda['en'].processAudioForGivenText(signal, real_text)
-        logging.info(result)
         result_score = int(result['pronunciation_accuracy']) / 100
         logging.info(f'result_score: {result_score}')
 
         levenshtein_score = self.similarity_score(recording_transcript, real_text)
-        logging.info(levenshtein_score)
         score = result_score * 0.5 + levenshtein_score * 0.5
         logging.info(score)
-        score = self.score_to_band(score)
 
-        return (score, levenshtein_score, result['pronunciation_accuracy'],
-                [error for error in result['real_and_transcribed_words_ipa']])
+        real_and_transcribed_words_ipa = []
+        for index, pair in enumerate(result["real_and_transcribed_words_ipa"]):
+            if result['pronunciation_categories'][index] == 2:
+                text =  (f"{result['real_and_transcribed_words'][index][0]}: you said '{pair[1]}', "
+                         f"the correct phoneme is '{pair[0]}'")
+                real_and_transcribed_words_ipa.append(text)
+
+        return score, levenshtein_score, result['pronunciation_accuracy'], real_and_transcribed_words_ipa
 
     def levenshtein_distance(self, a, b):
         if len(a) < len(b):
