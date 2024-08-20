@@ -105,7 +105,7 @@ class PronunciationWorker(RabbitMQWorkerFactory):
         score = self.score_to_band(score)
 
         return (score, levenshtein_score, result['pronunciation_accuracy'],
-                [error for error in result['real_and_transcribed_words_ipa'] if result['']])
+                [error for error in result['real_and_transcribed_words_ipa']])
 
     def levenshtein_distance(self, a, b):
         if len(a) < len(b):
