@@ -45,7 +45,9 @@ class PronunciationWorker(RabbitMQWorkerFactory):
             except Exception as e:
                 logging.exception(e)
 
+        logging.info(f'result scores: {results["score"]}')
         score = np.mean(results['score'])
+        logging.info(score)
         score = self.score_to_band(score)
         levenshtein_score = np.mean(results['levenshtein_score'])
         accuracy = np.mean(results['pronunciation_accuracy'])
