@@ -37,9 +37,16 @@ class PronunciationWorker(RabbitMQWorkerFactory):
             signal = transform(torch.Tensor(signal)).unsqueeze(0)
             logging.info(signal)
 
+            logging.info("Attempting to get trainer")
             trainer_sst_lambda = {'en': pronunciationTrainer.getTrainer("en")}
-            recording_transcript, recording_ipa, word_locations = trainer_sst_lambda['en'].getAudioTranscript(
-                signal)
+            logging.info("Trainer retrieved successfully")
+            logging.info(f"Signal shape before transform: {signal.shape}")
+            try:
+                recording_transcript, recording_ipa, word_locations = trainer_sst_lambda['en'].getAudioTranscript(
+                    signal)
+            except Exception as e:
+                logging.exception("Error during getAudioTranscript")
+                raise e
 
             logging.info(recording_transcript)
             logging.info(recording_ipa)
