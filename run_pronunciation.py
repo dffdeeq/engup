@@ -29,7 +29,7 @@ async def main():
         )
     )
     await pronunciation_worker.start_listening(
-        'pronunciation_score_generate', pronunciation_worker.get_pronuncation)
+        'pronunciation_score_generate', pronunciation_worker.process_pronuncation)
 
 
 if __name__ == '__main__':

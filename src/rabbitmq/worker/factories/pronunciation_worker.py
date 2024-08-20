@@ -27,63 +27,85 @@ class PronunciationWorker(RabbitMQWorkerFactory):
         self.repo = repo
         self.gpt_client = gpt_client
 
-    async def get_pronuncation(self, data: T.Dict):
-        try:
-            transform = Resample(orig_freq=48000, new_freq=16000)
-            filepath = data['filepath']
-            signal, fs = audioread_load(filepath)
-            logging.info(signal)
-            logging.info(fs)
-            signal = transform(torch.Tensor(signal)).unsqueeze(0)
-            logging.info(signal)
-
-            logging.info("Attempting to get trainer")
-            trainer_sst_lambda = {'en': pronunciationTrainer.getTrainer("en")}
-            logging.info("Trainer retrieved successfully")
-            logging.info(f"Signal shape before transform: {signal.shape}")
+    async def process_pronuncation(self, data: T.Dict):
+        filepaths = data['filepaths']
+        results = {
+            'score': [],
+            'levenshtein_score': [],
+            'pronunciation_accuracy': [],
+            'real_and_transcribed_words_ipa': []
+        }
+        for filepath in filepaths:
             try:
-                recording_transcript, recording_ipa, word_locations = trainer_sst_lambda['en'].getAudioTranscript(
-                    signal)
+                score, levenshtein_score, accuracy, transcribed_words = await self.get_pronunciation(filepath)
+                results['score'].append(score)
+                results['levenshtein_score'].append(levenshtein_score)
+                results['pronunciation_accuracy'].append(accuracy)
+                results['real_and_transcribed_words_ipa'].append(transcribed_words)
             except Exception as e:
-                logging.exception("Error during getAudioTranscript")
-                raise e
+                logging.exception(e)
 
-            logging.info(recording_transcript)
-            logging.info(recording_ipa)
-            logging.info(word_locations)
+        score = np.mean(results['score'])
+        levenshtein_score = np.mean(results['levenshtein_score'])
+        accuracy = np.mean(results['pronunciation_accuracy'])
+        transcribed_words = []
+        for ipa_list in results['real_and_transcribed_words_ipa']:
+            transcribed_words.extend(ipa_list)
+        pronunciation_text = ''
 
-            # if not is_english(recording_transcript):
-            #     details = 'Lang is not Eng'
-            #     return 1.0
+        uq_id = data["uq_id"]
+        await self.repo.create(
+            uq_id,
+            'pr_score', score, f"leven: {levenshtein_score}, acc: {accuracy},"
+                               f" errors: {transcribed_words}")
 
-            result = await self.gpt_client.generate_transcript(recording_transcript)
-            real_text = result.text
+        await self.publish({'pronunciation_score': score, 'pronunciation_text': pronunciation_text},
+                           routing_key=f'pronunciation_score_get_{uq_id}', priority=data['priority'])
 
-            logging.info(f'real_text sssss: {real_text}')
-            result = trainer_sst_lambda['en'].processAudioForGivenText(signal, real_text)
-            logging.info(result)
-            result_score = int(result['pronunciation_accuracy']) / 100
-            logging.info(f'result_score: {result_score}')
+    async def get_pronunciation(self, filepath: str):
+        transform = Resample(orig_freq=48000, new_freq=16000)
+        signal, fs = audioread_load(filepath)
+        logging.info(signal)
+        logging.info(fs)
+        signal = transform(torch.Tensor(signal)).unsqueeze(0)
+        logging.info(signal)
 
-            levenshtein_score = self.similarity_score(recording_transcript, real_text)
-            logging.info(levenshtein_score)
-            score = result_score * 0.5 + levenshtein_score * 0.5
-            logging.info(score)
-            score = self.score_to_band(score)
-            pronunciation_text = ''
-
-            uq_id = data["uq_id"]
-
-            await self.repo.create(
-                uq_id,
-                'pr_score', score, f"leven: {levenshtein_score}, acc: {result['pronunciation_accuracy']},"
-                                   f" errors: {result['real_and_transcribed_words_ipa']}")
-
-            await self.publish({'pronunciation_score': score, 'pronunciation_text': pronunciation_text},
-                               routing_key=f'pronunciation_score_get_{uq_id}', priority=data['priority'])
-            return score
+        logging.info("Attempting to get trainer")
+        trainer_sst_lambda = {'en': pronunciationTrainer.getTrainer("en")}
+        logging.info("Trainer retrieved successfully")
+        logging.info(f"Signal shape before transform: {signal.shape}")
+        try:
+            recording_transcript, recording_ipa, word_locations = trainer_sst_lambda['en'].getAudioTranscript(
+                signal)
         except Exception as e:
-            logging.exception(e)
+            logging.exception("Error during getAudioTranscript")
+            raise e
+
+        logging.info(recording_transcript)
+        logging.info(recording_ipa)
+        logging.info(word_locations)
+
+        # if not is_english(recording_transcript):
+        #     details = 'Lang is not Eng'
+        #     return 1.0
+
+        result = await self.gpt_client.generate_transcript(recording_transcript)
+        real_text = result.text
+
+        logging.info(f'real_text sssss: {real_text}')
+        result = trainer_sst_lambda['en'].processAudioForGivenText(signal, real_text)
+        logging.info(result)
+        result_score = int(result['pronunciation_accuracy']) / 100
+        logging.info(f'result_score: {result_score}')
+
+        levenshtein_score = self.similarity_score(recording_transcript, real_text)
+        logging.info(levenshtein_score)
+        score = result_score * 0.5 + levenshtein_score * 0.5
+        logging.info(score)
+        score = self.score_to_band(score)
+
+        return (score, levenshtein_score, result['pronunciation_accuracy'],
+                [error for error in result['real_and_transcribed_words_ipa'] if result['']])
 
     def levenshtein_distance(self, a, b):
         if len(a) < len(b):
