@@ -27,12 +27,8 @@ class SimpleWorker(RabbitMQWorkerFactory):
     async def initialize(self):
         await self._connect()
 
-    async def try_get_one_message(self, routing_key: str, timeout: int = 60) -> T.Optional[T.Dict]:
-        if not self.connection or self.connection.is_closed:
-            await self._connect()
-
-        queue = await self._declare_queue(routing_key)
-
+    @staticmethod
+    async def wait_for_message(queue) -> T.Optional[T.Dict]:
         try:
             async with queue.iterator() as queue_iter:
                 async for message in queue_iter:
@@ -41,8 +37,24 @@ class SimpleWorker(RabbitMQWorkerFactory):
                         payload['priority'] = message.priority
                         logger.info(f'Received one message: {str(payload)[:50]}')
                         return payload
+        except asyncio.CancelledError:
+            logger.info("Message retrieval was cancelled.")
+            return None
+
+    async def try_get_one_message(self, routing_key: str, timeout: int = 60) -> T.Optional[T.Dict]:
+        if not self.connection or self.connection.is_closed:
+            await self._connect()
+        queue = await self._declare_queue(routing_key)
+        message_task = asyncio.create_task(self.wait_for_message(queue))
+        try:
+            return await asyncio.wait_for(message_task, timeout=timeout)
         except asyncio.TimeoutError:
             logger.info(f'No message received within {timeout} seconds')
+            message_task.cancel()
+            return None
+        except Exception as e:
+            logger.error(f'Error occurred: {str(e)}', exc_info=True)
+            message_task.cancel()
             return None
 
     async def _connect(self):

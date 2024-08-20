@@ -154,6 +154,8 @@ class ResultService(ServiceFactory):
             self.simple_worker.get_priority(premium)
         )
         payload = await self.simple_worker.try_get_one_message(f'pronunciation_score_get_{uq_id}')
+        if payload is None:
+            return None
         return payload['pronunciation_score']
 
     @staticmethod
