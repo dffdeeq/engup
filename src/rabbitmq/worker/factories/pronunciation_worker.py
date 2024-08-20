@@ -6,7 +6,8 @@ import torch
 from sqlalchemy.ext.asyncio import async_sessionmaker
 from torchaudio.transforms import Resample
 
-from data.nn_models.ai_pronunciation_trainer.lambdaSpeechToScore import audioread_load, trainer_SST_lambda
+from data.nn_models.ai_pronunciation_trainer import pronunciationTrainer
+from data.nn_models.ai_pronunciation_trainer.lambdaSpeechToScore import audioread_load
 from src.libs.factories.gpt import GPTClient
 from src.rabbitmq.worker.factory import RabbitMQWorkerFactory
 from src.repos.factories.user_question_metric import TgUserQuestionMetricRepo
@@ -36,7 +37,10 @@ class PronunciationWorker(RabbitMQWorkerFactory):
             signal = transform(torch.Tensor(signal)).unsqueeze(0)
             logging.info(signal)
 
-            recording_transcript, recording_ipa, word_locations = trainer_SST_lambda['en'].getAudioTranscript(signal)
+            trainer_sst_lambda = {'en': pronunciationTrainer.getTrainer("en")}
+            recording_transcript, recording_ipa, word_locations = trainer_sst_lambda['en'].getAudioTranscript(
+                signal)
+
             logging.info(recording_transcript)
             logging.info(recording_ipa)
             logging.info(word_locations)
@@ -49,7 +53,7 @@ class PronunciationWorker(RabbitMQWorkerFactory):
             real_text = result.text
 
             logging.info(f'real_text sssss: {real_text}')
-            result = trainer_SST_lambda['en'].processAudioForGivenText(signal, real_text)
+            result = trainer_sst_lambda['en'].processAudioForGivenText(signal, real_text)
             logging.info(result)
             result_score = int(result['pronunciation_accuracy']) / 100
             logging.info(f'result_score: {result_score}')
