@@ -1,9 +1,9 @@
 import asyncio
 import logging
 import os.path
-import subprocess
 import typing as T  # noqa
 
+from pydub import AudioSegment
 from sqlalchemy.ext.asyncio import async_sessionmaker
 
 from data.other.criteria_json import GRAMMAR_AND_LEXICAL_ERRORS_ADVICE
@@ -144,7 +144,7 @@ class ResultService(ServiceFactory):
         return result, extended_output
 
     async def get_pronunciation(self, uq_id: int, filepaths, premium: bool = False) -> T.Optional[float]:
-        output_filepath = os.path.join(TEMP_FILES_DIR, f"output_{uq_id}.ogg")
+        output_filepath = os.path.join(TEMP_FILES_DIR, f"output_{uq_id}")
         self.combine_ogg_files(filepaths, output_filepath)
         await asyncio.sleep(3)
         await self.simple_worker.initialize()
@@ -159,18 +159,14 @@ class ResultService(ServiceFactory):
     @staticmethod
     def combine_ogg_files(filepaths, output_filepath):
         try:
-            filepaths.sort()
-            with open('file_list.txt', 'w') as f:
-                for file in filepaths:
-                    f.write(f"file '{file}'\n")
-            command = ['ffmpeg', '-f', 'concat', '-safe', '0', '-i', 'file_list.txt', '-c', 'copy', output_filepath]
-            subprocess.run(command, check=True)
+            combined = AudioSegment.empty()
+            for file in filepaths:
+                audio = AudioSegment.from_ogg(file)
+                combined += audio
+            combined.export(output_filepath, format="wav")
             logging.info(f"Combined file saved to {output_filepath}")
-        except subprocess.CalledProcessError as e:
+        except Exception as e:
             logging.info(f"An error occurred while combining the files: {e}")
-        finally:
-            if os.path.exists('file_list.txt'):
-                os.remove('file_list.txt')
 
     @staticmethod
     def format_premium_result(result: Result) -> T.List[str]:
