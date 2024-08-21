@@ -57,9 +57,7 @@ class PronunciationWorker(RabbitMQWorkerFactory):
         pronunciation_text = ''
 
         uq_id = data["uq_id"]
-        await self.repo.create(
-            uq_id,
-            'pr_score', score, f"leven: {levenshtein_score}, acc: {accuracy},"
+        await self.repo.create(uq_id, 'pr_score', score, f"leven: {levenshtein_score}, acc: {accuracy},"
                                f" errors: {transcribed_words}")
 
         await self.publish({'pronunciation_score': score, 'pronunciation_text': pronunciation_text},
@@ -94,9 +92,9 @@ class PronunciationWorker(RabbitMQWorkerFactory):
 
         real_and_transcribed_words_ipa = []
         for index, pair in enumerate(result["real_and_transcribed_words_ipa"]):
-            if result['pronunciation_categories'][index] == 2:
-                text =  (f"{result['real_and_transcribed_words'][index][0]}: you said '{pair[1]}', "
-                         f"the correct phoneme is '{pair[0]}'")
+            if result['pronunciation_categories'][index] == 2 and len(pair[1]) > 5:
+                text = (f"{result['real_and_transcribed_words'][index][0]}: you said '{pair[1]}', "
+                        f"the correct phoneme is '{pair[0]}'")
                 real_and_transcribed_words_ipa.append(text)
 
         return score, levenshtein_score, result['pronunciation_accuracy'], real_and_transcribed_words_ipa
