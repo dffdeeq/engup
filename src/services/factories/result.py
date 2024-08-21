@@ -141,7 +141,7 @@ class ResultService(ServiceFactory):
         extended_output = self.dict_to_string(results)
         return result, extended_output
 
-    async def get_pronunciation(self, uq_id: int, filepaths, premium: bool = False) -> T.Optional[float, str]:
+    async def get_pronunciation(self, uq_id: int, filepaths, premium: bool = False):
         await self.simple_worker.initialize()
         await self.simple_worker.publish(
             {'filepaths': filepaths, 'uq_id': uq_id},
