@@ -137,21 +137,21 @@ class PronunciationWorker(RabbitMQWorkerFactory):
 
     @staticmethod
     def score_to_band(score):
-        if score >= 0.9:
+        if score >= 0.7:
             return 9
-        elif score >= 0.85:
-            return 8
-        elif score >= 0.8:
-            return 7
-        elif score >= 0.75:
-            return 6
-        elif score >= 0.7:
-            return 5
         elif score >= 0.65:
-            return 4
+            return 8
         elif score >= 0.6:
-            return 3
+            return 7
         elif score >= 0.55:
+            return 6
+        elif score >= 0.5:
+            return 5
+        elif score >= 0.45:
+            return 4
+        elif score >= 0.4:
+            return 3
+        elif score >= 0.35:
             return 2
         else:
             return 1
