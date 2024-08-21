@@ -74,7 +74,7 @@ class TgBotWorker(RabbitMQWorkerFactory):
         text = DefaultMessages.LOW_POINTS_BALANCE_ALERT
         builder = InlineKeyboardBuilder([
                 [InlineKeyboardButton(text='Buy points', callback_data='pricing'),],
-                [InlineKeyboardButton(text='Recommend/Share', callback_data='not_implemented'),],
+                [InlineKeyboardButton(text='Recommend/Share', callback_data='free_tests'),],
                 [InlineKeyboardButton(text='Leave Feedback', callback_data='leave_feedback')]
         ])
         return text, builder
