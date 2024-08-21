@@ -200,7 +200,7 @@ class ResultService(ServiceFactory):
             if sorted_advice:
                 category_min_score = sorted_advice[0][0]
                 all_category_min_scores.append(category_min_score)
-                if category == 'Pronunciation':
+                if category == 'Pronunciation' and pronunciation_text:
                     category_advice_text = pronunciation_text
                 else:
                     category_advice_text = [f"{'✅' if score >= 7 else '⚠️'} {advice}" for score, advice in sorted_advice]
