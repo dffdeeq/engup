@@ -200,11 +200,13 @@ class ResultService(ServiceFactory):
             if sorted_advice:
                 category_min_score = sorted_advice[0][0]
                 all_category_min_scores.append(category_min_score)
-                if category == 'Pronunciation' and pronunciation_text:
-                    category_advice_text = pronunciation_text
-                else:
-                    category_advice_texts = [f"{'✅' if score >= 7 else '⚠️'} {advice}" for score, advice in sorted_advice]
-                    category_advice_text = "\n".join(category_advice_texts)
+                # if category == 'Pronunciation' and pronunciation_text:
+                #     category_advice_text = pronunciation_text
+                # else:
+                #     category_advice_texts = [f"{'✅' if score >= 7 else '⚠️'} {advice}" for score, advice in sorted_advice]  # noqa
+                #     category_advice_text = "\n".join(category_advice_texts)
+                category_advice_texts = [f"{'✅' if score >= 7 else '⚠️'} {advice}" for score, advice in sorted_advice]
+                category_advice_text = "\n".join(category_advice_texts)
                 category_text = f"<b>{category} (score {category_min_score}):</b>\n\n" + category_advice_text
                 output_texts.append(category_text)
         if all_category_min_scores:
