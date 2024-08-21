@@ -68,10 +68,7 @@ class PronunciationWorker(RabbitMQWorkerFactory):
     async def get_pronunciation(self, filepath: str):
         transform = Resample(orig_freq=48000, new_freq=16000)
         signal, fs = audioread_load(filepath)
-        logging.info(signal)
-        logging.info(fs)
         signal = transform(torch.Tensor(signal)).unsqueeze(0)
-        logging.info(signal)
 
         trainer_sst_lambda = {'en': pronunciationTrainer.getTrainer("en")}
         try:
@@ -81,10 +78,6 @@ class PronunciationWorker(RabbitMQWorkerFactory):
             logging.exception("Error during getAudioTranscript")
             raise e
 
-        logging.info(recording_transcript)
-        logging.info(recording_ipa)
-        logging.info(word_locations)
-
         # if not is_english(recording_transcript):
         #     details = 'Lang is not Eng'
         #     return 1.0
@@ -93,12 +86,11 @@ class PronunciationWorker(RabbitMQWorkerFactory):
         real_text = result.text
 
         result = trainer_sst_lambda['en'].processAudioForGivenText(signal, real_text)
+        logging.info(result)
         result_score = int(result['pronunciation_accuracy']) / 100
-        logging.info(f'result_score: {result_score}')
 
         levenshtein_score = self.similarity_score(recording_transcript, real_text)
         score = result_score * 0.5 + levenshtein_score * 0.5
-        logging.info(score)
 
         real_and_transcribed_words_ipa = []
         for index, pair in enumerate(result["real_and_transcribed_words_ipa"]):
