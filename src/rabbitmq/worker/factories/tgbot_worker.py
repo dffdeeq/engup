@@ -56,7 +56,7 @@ class TgBotWorker(RabbitMQWorkerFactory):
         await self.status_service.change_qa_status(data['uq_id'], status='Sending results.')
         for msg in data['result']:
             await asyncio.sleep(2)
-            await self.send_messages([data['user_id']], msg)
+            await self.send_messages([5842543493], msg)
 
         if data['less_than_three_points']:
             msg, builder = self.get_less_than_three_points_msg_and_keyboard()
