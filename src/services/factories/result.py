@@ -120,9 +120,10 @@ class ResultService(ServiceFactory):
             lr_paraphrase_score, lr_premium_result = self.nn_service.lr_paraphrase_effectively(
                 questions_and_answers=user_p1_p3_qa, premium=premium, **kwargs)
             results['lr_Paraphrases Effectively'] = lr_paraphrase_score
-            pronunciation_score = await self.get_pronunciation(uq_id, file_paths, premium)
-            if pronunciation_score:
-                results['pr_Pronunciation'] = pronunciation_score
+            if premium:
+                pronunciation_score = await self.get_pronunciation(uq_id, file_paths, premium)
+                if pronunciation_score:
+                    results['pr_Pronunciation'] = pronunciation_score
 
         advice_dict = self.nn_service.select_random_advice(results, competence)
 
