@@ -54,7 +54,10 @@ class PronunciationWorker(RabbitMQWorkerFactory):
         transcribed_words = []
         for ipa_list in results['real_and_transcribed_words_ipa']:
             transcribed_words.extend(ipa_list)
-        pronunciation_text = ''
+
+        pronunciation_text = 'You have made the following pronunciation errors:\n'
+        for real_and_transcribed_words in transcribed_words[:10]:
+            pronunciation_text += real_and_transcribed_words + '\n'
 
         uq_id = data["uq_id"]
         await self.repo.create(uq_id, 'pr_score', score, f"leven: {levenshtein_score}, acc: {accuracy},"

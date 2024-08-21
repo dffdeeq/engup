@@ -1,4 +1,3 @@
-import asyncio
 import logging
 import typing as T  # noqa
 
@@ -99,6 +98,7 @@ class ResultService(ServiceFactory):
         premium: bool = False,
         **kwargs
     ) -> T.Tuple[T.List[str], str]:
+        pronunciation_text = ''
         predict_params = NNConstants.predict_params[competence]
         results = self.nn_service.predict_all(
             text, predict_params, competence=competence, **kwargs)
@@ -121,7 +121,7 @@ class ResultService(ServiceFactory):
                 questions_and_answers=user_p1_p3_qa, premium=premium, **kwargs)
             results['lr_Paraphrases Effectively'] = lr_paraphrase_score
             if premium:
-                pronunciation_score = await self.get_pronunciation(uq_id, file_paths, premium)
+                pronunciation_score, pronunciation_text = await self.get_pronunciation(uq_id, file_paths, premium)
                 if pronunciation_score:
                     results['pr_Pronunciation'] = pronunciation_score
 
@@ -130,7 +130,7 @@ class ResultService(ServiceFactory):
         if competence == CompetenceEnum.writing:
             advice_dict['Grammatical Range']['Clear and correct grammar'] = GRAMMAR_AND_LEXICAL_ERRORS_ADVICE[gr_score]
 
-        result = self.format_advice(advice_dict, results, competence)
+        result = self.format_advice(advice_dict, results, competence, pronunciation_text)
         if premium:
             if competence == CompetenceEnum.speaking:
                 result.extend(lr_premium_result)  # noqa
@@ -141,8 +141,7 @@ class ResultService(ServiceFactory):
         extended_output = self.dict_to_string(results)
         return result, extended_output
 
-    async def get_pronunciation(self, uq_id: int, filepaths, premium: bool = False) -> T.Optional[float]:
-        await asyncio.sleep(3)
+    async def get_pronunciation(self, uq_id: int, filepaths, premium: bool = False) -> T.Optional[float, str]:
         await self.simple_worker.initialize()
         await self.simple_worker.publish(
             {'filepaths': filepaths, 'uq_id': uq_id},
@@ -152,7 +151,7 @@ class ResultService(ServiceFactory):
         payload = await self.simple_worker.try_get_one_message(f'pronunciation_score_get_{uq_id}')
         if payload is None:
             return None
-        return payload['pronunciation_score']
+        return payload['pronunciation_score'], payload['pronunciation_text']
 
     @staticmethod
     def format_premium_result(result: Result) -> T.List[str]:
@@ -189,7 +188,7 @@ class ResultService(ServiceFactory):
         return '\n'.join([f"{key}: {value}" for key, value in d.items()])
 
     @staticmethod
-    def format_advice(advice_dict, results, competence: CompetenceEnum):
+    def format_advice(advice_dict, results, competence: CompetenceEnum, pronunciation_text: str):
         output_texts = []
         all_category_min_scores = []
         for category, subcategories in advice_dict.items():
@@ -201,7 +200,10 @@ class ResultService(ServiceFactory):
             if sorted_advice:
                 category_min_score = sorted_advice[0][0]
                 all_category_min_scores.append(category_min_score)
-                category_advice_text = [f"{'✅' if score >= 7 else '⚠️'} {advice}" for score, advice in sorted_advice]
+                if category == 'Pronunciation':
+                    category_advice_text = pronunciation_text
+                else:
+                    category_advice_text = [f"{'✅' if score >= 7 else '⚠️'} {advice}" for score, advice in sorted_advice]
                 category_text = f"<b>{category} (score {category_min_score}):</b>\n\n" + "\n".join(category_advice_text)
                 output_texts.append(category_text)
         if all_category_min_scores:
