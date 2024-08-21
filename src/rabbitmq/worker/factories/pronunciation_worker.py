@@ -92,9 +92,10 @@ class PronunciationWorker(RabbitMQWorkerFactory):
 
         real_and_transcribed_words_ipa = []
         for index, pair in enumerate(result["real_and_transcribed_words_ipa"]):
-            if result['pronunciation_categories'][index] == 2 and len(pair[1]) > 5:
-                text = (f"{result['real_and_transcribed_words'][index][0]}: you said '{pair[1]}', "
-                        f"the correct phoneme is '{pair[0]}'")
+            if result['pronunciation_categories'][index] == 2 and (len(result['real_and_transcribed_words'][index][0]) >= 5 and len(result['real_and_transcribed_words'][index][1]) >= 5):  # noqa
+                text = (f"{result['real_and_transcribed_words'][index][0]}:\n"
+                        f"{pair[1]}⚠️\n"
+                        f"{pair[0]}✅\n")
                 real_and_transcribed_words_ipa.append(text)
 
         return score, levenshtein_score, result['pronunciation_accuracy'], real_and_transcribed_words_ipa
