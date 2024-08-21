@@ -43,13 +43,13 @@ class GrVarietyOfGrammarUsed(NeuralNetworkBase):
 
     @staticmethod
     def determine_band_gr(diversity_score, conjunction_count):
-        if diversity_score >= 0.6 and conjunction_count >= 15:
+        if diversity_score >= 0.6 and conjunction_count >= 12:
             band = 9.0
-        elif diversity_score >= 0.5 and conjunction_count >= 12:
+        elif diversity_score >= 0.5 and conjunction_count >= 10:
             band = 8.0
-        elif diversity_score >= 0.4 and conjunction_count >= 10:
+        elif diversity_score >= 0.4 and conjunction_count >= 8:
             band = 7.0
-        elif diversity_score >= 0.3 and conjunction_count >= 8:
+        elif diversity_score >= 0.3 and conjunction_count >= 6:
             band = 6.0
         else:
             band = 5.0
