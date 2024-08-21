@@ -84,8 +84,8 @@ class LrParaphraseEffectively(NeuralNetworkBase):
         identical_pos_count, common_words = self.count_identical_pos(question_preprocessed, answer_preprocessed)
         bge_m3_sim = self.bge_m3_similarity(question_preprocessed, answer_preprocessed)
 
-        identical_pos_threshold = 6
-        bge_m3_threshold = 0.4
+        identical_pos_threshold = 7
+        bge_m3_threshold = 0.5
 
         is_good_paraphrasing = identical_pos_threshold > identical_pos_count and bge_m3_sim > bge_m3_threshold
 
