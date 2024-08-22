@@ -56,6 +56,7 @@ class TgBotWorker(RabbitMQWorkerFactory):
         await self.status_service.change_qa_status(data['uq_id'], status='Sending results.')
         for msg in data['result']:
             await asyncio.sleep(2)
+            logger.info(msg)
             await self.send_messages([data['user_id']], msg)
 
         if data['less_than_three_points']:
@@ -73,7 +74,7 @@ class TgBotWorker(RabbitMQWorkerFactory):
         text = DefaultMessages.LOW_POINTS_BALANCE_ALERT
         builder = InlineKeyboardBuilder([
                 [InlineKeyboardButton(text='Buy points', callback_data='pricing'),],
-                [InlineKeyboardButton(text='Recommend/Share', callback_data='not_implemented'),],
+                [InlineKeyboardButton(text='Recommend/Share', callback_data='free_tests'),],
                 [InlineKeyboardButton(text='Leave Feedback', callback_data='leave_feedback')]
         ])
         return text, builder

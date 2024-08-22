@@ -120,3 +120,19 @@ services:
     depends_on:
       engup_postgres:
         condition: service_healthy
+
+  engup_pronunciation_worker:
+    container_name: engup_pronunciation_worker
+    command: python run_pronunciation.py
+    environment:
+      RABBITMQ_SETTINGS_HOST: engup_rabbitmq
+      POSTGRES_SETTINGS_HOST: engup_postgres
+      POSTGRES_SETTINGS_PORT: 5432
+    build:
+      dockerfile: Dockerfile.pronunciation
+    ports:
+      - '3000:3000'
+    volumes:
+      - ./data:/app/data
+    env_file:
+      - .env

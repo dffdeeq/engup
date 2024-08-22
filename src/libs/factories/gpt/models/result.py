@@ -13,3 +13,9 @@ class Result(BaseModel):
 class SimpleResult(BaseModel):
     overall_score: float
     competence_results: SimpleCompetenceResults
+
+
+class TranscriptResult(BaseModel):
+    text: str
+    self_correction_list: T.List[str]
+    repetitions_list: T.List[str]

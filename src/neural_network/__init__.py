@@ -52,7 +52,7 @@ class ScoreGeneratorNNModel(
             CompetenceEnum.writing: {
                 'clear_grammar_result': self.gr_clear_and_correct_grammar,
                 'ta_Appropriate word count': self.ta_appropriate_word_count,
-                'gr_Mix of complex & simple sentences': self.gr_mix_of_complex_and_simple_sentences,
+                'gr_Complexity of the verb phrase': self.gr_variety_of_grammar_used,
                 'lr_Varied vocabulary': self.lr_varied_vocabulary,
                 'lr_Accurate spelling & word formation': self.lr_accurate_spelling_and_word_formation,
             },

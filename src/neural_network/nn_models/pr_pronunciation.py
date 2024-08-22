@@ -13,13 +13,18 @@ import pickle
 from pyannote.audio import Inference
 from pydub import AudioSegment
 from pyannote.audio import Model
-
 from src.neural_network.base import NeuralNetworkBase
 from src.neural_network.nn_models.utils.simple_nn_model import SimpleNN
 from src.neural_network.nn_models.utils.timeit import timeit
 from src.repos.factories.user_question_metric import TgUserQuestionMetricRepo
 from src.settings import NNModelsSettings
 from src.settings.static import NN_MODELS_DIR
+
+
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(levelname)s - %(message)s'
+)
 
 
 class PrPronunciation(NeuralNetworkBase):
