@@ -14,6 +14,7 @@ from src.bot.injector import INJECTOR
 from src.postgres.enums import CompetenceEnum
 from src.rabbitmq.producer.factories.gpt import GPTProducer
 from src.services.factories.question import QuestionService
+from src.services.factories.status_service import StatusService
 from src.services.factories.tg_user import TgUserService
 from src.services.factories.user_question import UserQuestionService
 
@@ -101,14 +102,16 @@ async def writing_get_user_answer(
     F.data.startswith('confirm_task_writing'),
     INJECTOR.inject_tg_user,
     INJECTOR.inject_uq,
-    INJECTOR.inject_gpt_producer
+    INJECTOR.inject_gpt_producer,
+    INJECTOR.inject_status
 )
 async def writing_confirm_task(
     callback: types.CallbackQuery,
     state: FSMContext,
     tg_user_service: TgUserService,
     uq_service: UserQuestionService,
-    gpt_producer: GPTProducer
+    gpt_producer: GPTProducer,
+    status_service: StatusService,
 ):
     param = callback.data.split()[1]
     premium = True if param == 'premium' else False
@@ -122,5 +125,10 @@ async def writing_confirm_task(
     user_answer_json = state_data['user_answer_json']
     await uq_service.simple_update_uq(state_data['uq_id'], user_answer_json)
     await gpt_producer.create_task_generate_result(state_data['uq_id'], premium)
-    await callback.message.edit_text(text=DefaultMessages.CALCULATING_RESULT)
+
+    await status_service.change_qa_status(state_data['uq_id'], status='In Queue.')
+    builder = InlineKeyboardBuilder([
+        [InlineKeyboardButton(text='Result status', callback_data=f'result_status {state_data["uq_id"]}')]
+    ])
+    await callback.message.edit_text(text=DefaultMessages.CALCULATING_RESULT, reply_markup=builder.as_markup())
     await state.clear()
