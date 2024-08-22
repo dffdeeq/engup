@@ -8,7 +8,7 @@ class TempData(Base):
     __tablename__ = 'temp_data'
 
     id = Column(BigInteger, primary_key=True, autoincrement=True)
-    tg_user_question_id = Column(ForeignKey('tg_user_question.id'), nullable=False)
+    tg_user_question_id = Column(ForeignKey('tg_user_question.id', ondelete='CASCADE'), nullable=False)
 
     part = Column(Enum(PartEnum))
     question_text = Column(String, nullable=True)
