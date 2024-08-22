@@ -1,3 +1,4 @@
+import logging
 import uuid
 
 from aiogram import Router
@@ -20,18 +21,22 @@ async def command_start_handler(message: Message, command: CommandObject, tg_use
     utm_medium = None
     utm_campaign = None
     utm_content = None
+    logging.info(f'command_args: {command_args}')
     if command_args:
         if '__' in command_args:
             args = command_args.split('__')
+            logging.info(f'args: {args}')
             variables = {}
             for item in args:
                 key, value = item.split("=")
                 variables[key] = value
 
-                utm_source = variables.get('utm_source', 'None')
-                utm_medium = variables.get('utm_medium', 'None')
-                utm_campaign = variables.get('utm_campaign', 'None')
-                utm_content = variables.get('utm_content', 'None')
+            logging.info(f'variables: {variables}')
+
+            utm_source = variables.get('utm_source', 'None')
+            utm_medium = variables.get('utm_medium', 'None')
+            utm_campaign = variables.get('utm_campaign', 'None')
+            utm_content = variables.get('utm_content', 'None')
 
             await tg_user_service.adapter.analytics_client.send_event(
                 str(uuid.uuid4()),
