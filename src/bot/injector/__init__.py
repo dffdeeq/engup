@@ -4,6 +4,7 @@ from src.bot.injector.factories.apihost_client_injector import ApiHostClientInje
 from src.bot.injector.factories.apihost_producer_injector import ApiHostProducerInjectorMixin
 from src.bot.injector.factories.feedback_service_injector import FeedbackInjectorMixin
 from src.bot.injector.factories.gpt_producer_injector import GPTProducerInjectorMixin
+from src.bot.injector.factories.metrics_service_injector import MetricsServiceInjectorMixin
 from src.bot.injector.factories.question_service_injector import QuestionServiceInjectorMixin
 from src.bot.injector.factories.status_service_injector import StatusServiceInjectorMixin
 from src.bot.injector.factories.tg_user_service_injector import TgUserServiceInjectorMixin
@@ -23,6 +24,7 @@ class _I(
     GPTProducerInjectorMixin,
     StatusServiceInjectorMixin,
     FeedbackInjectorMixin,
+    MetricsServiceInjectorMixin,
     BaseInjector
 ):
     def __init__(self, settings: Settings):

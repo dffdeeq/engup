@@ -2,6 +2,7 @@ from src.libs.adapter import Adapter
 from src.libs.factories.apihost import ApiHostClient
 from src.libs.http_client import HttpClient
 from src.postgres.factory import initialize_postgres_pool
+from src.postgres.models.metrics_data import MetricsData
 from src.postgres.models.poll_feedback import PollFeedback
 from src.postgres.models.question import Question
 from src.postgres.models.temp_data import TempData
@@ -12,12 +13,14 @@ from src.rabbitmq.producer.factories.apihost import ApiHostProducer
 from src.rabbitmq.producer.factories.gpt import GPTProducer
 from src.repos.factories.activity import ActivityRepo
 from src.repos.factories.feedback import FeedbackRepo
+from src.repos.factories.metrics_data import MetricsDataRepo
 from src.repos.factories.question import QuestionRepo
 from src.repos.factories.temp_data import TempDataRepo
 from src.repos.factories.user import TgUserRepo
 from src.repos.factories.user_question import TgUserQuestionRepo
 from src.services.factories.answer_process import AnswerProcessService
 from src.services.factories.feedback import FeedbackService
+from src.services.factories.metrics import MetricsService
 from src.services.factories.question import QuestionService
 from src.services.factories.status_service import StatusService
 from src.services.factories.tg_user import TgUserService
@@ -93,4 +96,13 @@ class BaseInjector:
             self.adapter,
             self.session,
             self.settings
+        )
+        self.metrics_service = MetricsService(
+            repo=MetricsDataRepo(
+                MetricsData,
+                self.session
+            ),
+            adapter=self.adapter,
+            session=self.session,
+            settings=self.settings,
         )

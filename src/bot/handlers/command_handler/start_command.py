@@ -8,51 +8,63 @@ from aiogram.types import Message
 from src.bot.handlers.defaults.menu_default import answer_menu
 from src.bot.injector import INJECTOR
 from src.libs.factories.analytics.models.event_data import EventData
+from src.services.factories.metrics import MetricsService
 from src.services.factories.tg_user import TgUserService
 
 router = Router(name=__name__)
 
 
-@router.message(CommandStart(), INJECTOR.inject_tg_user)
-async def command_start_handler(message: Message, command: CommandObject, tg_user_service: TgUserService) -> None:
+@router.message(
+    CommandStart(),
+    INJECTOR.inject_tg_user,
+    INJECTOR.inject_metrics_service
+)
+async def command_start_handler(
+    message: Message,
+    command: CommandObject,
+    tg_user_service: TgUserService,
+    metrics_service: MetricsService
+) -> None:
     user_referrer_id = None
     command_args = command.args
     utm_source = None
     utm_medium = None
     utm_campaign = None
     utm_content = None
-    logging.info(f'command_args: {command_args}')
     if command_args:
-        if '__' in command_args:
-            args = command_args.split('__')
-            logging.info(f'args: {args}')
-            variables = {}
-            for item in args:
-                key, value = item.split("=")
-                variables[key] = value
+        try:
+            try:
+                metrics_uuid = uuid.UUID(command_args)
+                metrics_data = await metrics_service.get_metrics_data(metrics_uuid)
+                metrics_string = metrics_data.metrics_string.split('__')
+                logging.info(f'args: {metrics_string}')
+                variables = {}
+                for item in metrics_string:
+                    key, value = item.split("=")
+                    variables[key] = value
 
-            logging.info(f'variables: {variables}')
+                utm_source = variables.get('utm_source', 'None')
+                utm_medium = variables.get('utm_medium', 'None')
+                utm_campaign = variables.get('utm_campaign', 'None')
+                utm_content = variables.get('utm_content', 'None')
 
-            utm_source = variables.get('utm_source', 'None')
-            utm_medium = variables.get('utm_medium', 'None')
-            utm_campaign = variables.get('utm_campaign', 'None')
-            utm_content = variables.get('utm_content', 'None')
-
-            await tg_user_service.adapter.analytics_client.send_event(
-                str(uuid.uuid4()),
-                EventData(
-                    utm_source=utm_source,
-                    utm_medium=utm_medium,
-                    utm_campaign=utm_campaign,
-                    utm_content=utm_content,
-                    event_name='conversion_event_signup',
+                await tg_user_service.adapter.analytics_client.send_event(
+                    str(uuid.uuid4()),
+                    EventData(
+                        utm_source=utm_source,
+                        utm_medium=utm_medium,
+                        utm_campaign=utm_campaign,
+                        utm_content=utm_content,
+                        event_name='conversion_event_signup',
+                    )
                 )
-            )
 
-        else:
-            referral = await tg_user_service.repo.get_tg_user_by_tg_id(int(command_args))
-            if referral:
-                user_referrer_id = referral.id
+            except ValueError:
+                referral = await tg_user_service.repo.get_tg_user_by_tg_id(int(command_args))
+                if referral:
+                    user_referrer_id = referral.id
+        except Exception as e:
+            logging.error(e)
 
     await tg_user_service.get_or_create_tg_user(message.from_user.id, message.from_user.username, user_referrer_id,
                                                 utm_source, utm_medium, utm_campaign, utm_content)
