@@ -21,3 +21,6 @@ class TgUser(Base):
     utm_medium = Column(String, nullable=True)
     utm_campaign = Column(String, nullable=True)
     utm_content = Column(String, nullable=True)
+    utm_term = Column(String, nullable=True)
+    gad_source = Column(String, nullable=True)
+    gclid = Column(String, nullable=True)

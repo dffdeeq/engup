@@ -31,6 +31,9 @@ async def command_start_handler(
     utm_medium = None
     utm_campaign = None
     utm_content = None
+    utm_term = None
+    gad_source = None
+    gclid = None
     if command_args:
         try:
             try:
@@ -47,6 +50,9 @@ async def command_start_handler(
                 utm_medium = variables.get('utm_medium', 'None')
                 utm_campaign = variables.get('utm_campaign', 'None')
                 utm_content = variables.get('utm_content', 'None')
+                utm_term = variables.get('utm_term', 'None')
+                gad_source = variables.get('gad_source', 'None')
+                gclid = variables.get('gclid', 'None')
 
                 await tg_user_service.adapter.analytics_client.send_event(
                     str(uuid.uuid4()),
@@ -66,7 +72,9 @@ async def command_start_handler(
         except Exception as e:
             logging.error(e)
 
-    await tg_user_service.get_or_create_tg_user(message.from_user.id, message.from_user.username, user_referrer_id,
-                                                utm_source, utm_medium, utm_campaign, utm_content)
+    await tg_user_service.get_or_create_tg_user(
+        message.from_user.id, message.from_user.username, user_referrer_id, utm_source, utm_medium, utm_campaign,
+        utm_content, utm_term, gad_source, gclid
+    )
     await tg_user_service.mark_user_activity(message.from_user.id, 'go to menu')
     await answer_menu(message)
