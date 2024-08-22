@@ -32,8 +32,8 @@ async def command_start_handler(
     utm_campaign = None
     utm_content = None
     if command_args:
-        # try:
-        #     try:
+        try:
+            try:
                 metrics_uuid = uuid.UUID(command_args)
                 metrics_data = await metrics_service.get_metrics_data(metrics_uuid)
                 metrics_string = metrics_data.metrics_string.split('__')
@@ -59,12 +59,12 @@ async def command_start_handler(
                     )
                 )
 
-        #     except ValueError:
-        #         referral = await tg_user_service.repo.get_tg_user_by_tg_id(int(command_args))
-        #         if referral:
-        #             user_referrer_id = referral.id
-        # except Exception as e:
-        #     logging.error(e)
+            except ValueError:
+                referral = await tg_user_service.repo.get_tg_user_by_tg_id(int(command_args))
+                if referral:
+                    user_referrer_id = referral.id
+        except Exception as e:
+            logging.error(e)
 
     await tg_user_service.get_or_create_tg_user(message.from_user.id, message.from_user.username, user_referrer_id,
                                                 utm_source, utm_medium, utm_campaign, utm_content)
