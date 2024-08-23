@@ -65,9 +65,7 @@ class TgUserService(ServiceFactory):
         return user
 
     async def mark_user_activity(self, user_id: int, activity_name: str) -> None:
-        activity = await self.activity_repo.get_activity(activity_name)
-        if activity is not None:
-            await self.activity_repo.create_user_activity(user_id, activity.id)
+        await self.activity_repo.create_user_activity(user_id, activity_name)
 
     async def mark_user_balance(self, user_id: int, channel: str, amount: int, currency: str) -> TgUserWallet:
         return await self.activity_repo.create_tg_user_wallet(user_id, channel, amount, currency)
