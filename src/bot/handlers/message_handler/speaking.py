@@ -205,7 +205,7 @@ async def speaking_confirm_task(
     answer_process: AnswerProcessService,
     status_service: StatusService,
 ):
-    await tg_user_service.mark_user_activity(callback.from_user.id, 'spent point')
+    await tg_user_service.mark_user_activity(callback.from_user.id, 'end speaking')
 
     state_data = await state.get_data()
     param = callback.data.split()[1]

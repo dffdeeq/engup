@@ -9,7 +9,7 @@ class TgUserQuestion(Base):
 
     id = Column(Integer, primary_key=True, autoincrement=True)
 
-    user_id = Column(BigInteger, ForeignKey('tg_user.id'), primary_key=True)
+    user_id = Column(BigInteger, ForeignKey('tg_user.id', ondelete='CASCADE'), primary_key=True)
     question_id = Column(ForeignKey('question.id'), primary_key=True)
 
     status = Column(Boolean, default=False)
@@ -34,7 +34,7 @@ class TgUserQuestionMetric(Base):
 
     id = Column(Integer, primary_key=True, autoincrement=True)
 
-    uq_id = Column(BigInteger, ForeignKey('tg_user_question.id'))
+    uq_id = Column(BigInteger, ForeignKey('tg_user_question.id', ondelete='CASCADE'))
     metric_id = Column(String)
     value = Column(Float)
     details = Column(String, nullable=True)

@@ -1,3 +1,4 @@
+import asyncio
 import json
 import typing as T  # noqa
 import logging
@@ -28,6 +29,13 @@ class RabbitMQWorkerFactory:
 
         self.exchange = None
 
+    @staticmethod
+    async def handle_message(message: Message, func: T.Callable):
+        payload = json.loads(message.body)  # noqa
+        payload['priority'] = message.priority  # noqa
+        logger.info(f'Received {str(payload)[:50]}')
+        await asyncio.create_task(func(payload))
+
     async def start_listening(self, routing_key: str, func: T.Callable):
         logger.info('Starting listening')
         connection = await connect_robust(self.dsn_string + f'?heartbeat={self.heartbeat}')
@@ -42,13 +50,6 @@ class RabbitMQWorkerFactory:
             async for message in queue_iter:
                 async with message.process():  # noqa
                     await self.handle_message(message, func)  # noqa
-
-    @staticmethod
-    async def handle_message(message: Message, func: T.Callable):
-        payload = json.loads(message.body)  # noqa
-        payload['priority'] = message.priority  # noqa
-        logger.info(f'Received {str(payload)[:50]}')
-        await func(payload)
 
     async def publish(
         self,

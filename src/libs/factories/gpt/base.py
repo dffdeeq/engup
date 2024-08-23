@@ -15,7 +15,7 @@ class BaseGPTClient:
         self,
         method: str,
         route: str,
-        data: T.Optional[T.Dict[str, T.Any] | FormData] = None,
+        data: T.Optional[T.Union[T.Dict[str, T.Any],  FormData]] = None,
         params: T.Optional[T.Dict[str, T.Any]] = None,
     ) -> HttpClientResponse:
         headers = {

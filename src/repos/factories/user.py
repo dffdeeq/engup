@@ -36,6 +36,22 @@ class TgUserRepo(RepoFactory):
             user = await session.execute(query)
             return user.scalar_one_or_none()
 
-    async def create_tg_user(self, user_id: int, username: T.Optional[str], referrer_id: int) -> TgUser:
-        user_obj = await self.insert_one(id=user_id, username=username, referrer_id=referrer_id)
+    async def create_tg_user(
+        self,
+        user_id: int,
+        username: T.Optional[str],
+        referrer_id: int,
+        utm_source: str = None,
+        utm_medium: str = None,
+        utm_campaign: str = None,
+        utm_content: str = None,
+        utm_term: str = None,
+        gad_source: str = None,
+        gclid: str = None,
+    ) -> TgUser:
+        user_obj = await self.insert_one(
+            id=user_id, username=username, referrer_id=referrer_id,
+            utm_source=utm_source, utm_medium=utm_medium, utm_campaign=utm_campaign, utm_content=utm_content,
+            utm_term=utm_term, gad_source=gad_source, gclid=gclid
+        )
         return user_obj
