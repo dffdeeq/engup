@@ -1,4 +1,3 @@
-import asyncio
 import typing as T  # noqa
 import json
 
@@ -33,26 +32,33 @@ async def writing_start(
     question_service: QuestionService,
     uq_service: UserQuestionService,
 ):
-    await tg_user_service.mark_user_activity(callback.from_user.id, 'start writing')
+    if len(callback.data.split()) == 1:
+        question = await question_service.get_or_generate_question_for_user(
+            callback.from_user.id, CompetenceEnum.writing)
+        question_json: T.Dict = json.loads(question.question_json)
+        card_title, card_body = question_json.get('card_title'), question_json.get('card_body')
 
-    question = await question_service.get_or_generate_question_for_user(callback.from_user.id, CompetenceEnum.writing)
-    question_json: T.Dict = json.loads(question.question_json)
-    card_title, card_body = question_json.get('card_title'), question_json.get('card_body')
-
-    await state.set_state(WritingState.get_user_answer)
-    uq_instance = await uq_service.get_or_create_user_question(
-        user_id=callback.from_user.id, question_id=question.id)
-    await state.set_data({
-        'question_id': question.id,
-        'card_body': card_body,
-        'uq_id': uq_instance.id,
-    })
-
-    await callback.message.edit_text(text=DefaultMessages.DEFAULT_TEXT)
-    await asyncio.sleep(2)
-    text = MessageTemplates.CARD_TEXT_TEMPLATE.format(card_title=card_title, card_body=card_body)
-    builder = InlineKeyboardBuilder([[InlineKeyboardButton(text='🔙 Back', callback_data='ielts_menu')]])
-    await callback.message.answer(text=text, reply_markup=builder.as_markup())
+        await state.set_state(WritingState.get_user_answer)
+        uq_instance = await uq_service.get_or_create_user_question(
+            user_id=callback.from_user.id, question_id=question.id)
+        await state.set_data({
+            'question_id': question.id,
+            'card_title': card_title,
+            'card_body': card_body,
+            'uq_id': uq_instance.id,
+        })
+        builder = InlineKeyboardBuilder([
+            [InlineKeyboardButton(text='🚀 Start', callback_data='writing start')],
+            [InlineKeyboardButton(text='🔙 Back', callback_data='ielts_menu')]
+        ])
+        await callback.message.edit_text(text=DefaultMessages.DEFAULT_TEXT, reply_markup=builder.as_markup())
+    else:
+        await callback.answer()
+        await tg_user_service.mark_user_activity(callback.from_user.id, 'start writing')
+        state_data = await state.get_data()
+        text = MessageTemplates.CARD_TEXT_TEMPLATE.format(
+            card_title=state_data['card_title'], card_body=state_data['card_body'])
+        await callback.message.answer(text=text)
 
 
 @router.message(

@@ -39,32 +39,38 @@ async def speaking_start(
     question_service: QuestionService,
     uq_service: UserQuestionService,
 ):
-    await tg_user_service.mark_user_activity(callback.from_user.id, 'start speaking')
-    await callback.answer()
+    if len(callback.data.split()) == 1:
+        await callback.answer()
 
-    await callback.message.edit_text(text=Messages.DEFAULT_MESSAGE)
+        await callback.message.edit_text(text=Messages.DEFAULT_MESSAGE)
 
-    question = await question_service.get_or_generate_question_for_user(callback.from_user.id, CompetenceEnum.speaking)
-    uq_instance = await uq_service.get_or_create_user_question(callback.from_user.id, question.id)
-    question_json: T.Dict = json.loads(question.question_json)
+        question = await question_service.get_or_generate_question_for_user(
+            callback.from_user.id, CompetenceEnum.speaking)
+        uq_instance = await uq_service.get_or_create_user_question(callback.from_user.id, question.id)
+        question_json: T.Dict = json.loads(question.question_json)
 
-    await state.set_state(SpeakingState.first_part)
-    await state.set_data({
-        'part_1_questions': question_json['part_1'],
-        'part_2_question': question_json['part_2'],
-        'part_3_questions': question_json['part_3'],
-        'part_1_current_question': 0,
-        'uq_id': uq_instance.id,
-    })
+        await state.set_state(SpeakingState.first_part)
+        await state.set_data({
+            'part_1_questions': question_json['part_1'],
+            'part_2_question': question_json['part_2'],
+            'part_3_questions': question_json['part_3'],
+            'part_1_current_question': 0,
+            'uq_id': uq_instance.id,
+        })
 
-    await asyncio.sleep(2)
-    await callback.message.answer(Messages.FIRST_PART_MESSAGE_1, disable_web_page_preview=True)
-    await asyncio.sleep(2)
-
-    builder = InlineKeyboardBuilder([[InlineKeyboardButton(text='🔙 Back', callback_data='ielts_menu')]])
-
-    await callback.message.answer(
-        question_json['part_1'][0], disable_web_page_preview=True, reply_markup=builder.as_markup())
+        builder = InlineKeyboardBuilder([
+            [InlineKeyboardButton(text='🚀 Start', callback_data='speaking start')],
+            [InlineKeyboardButton(text='🔙 Back', callback_data='ielts_menu')]
+        ])
+        await asyncio.sleep(2)
+        await callback.message.answer(
+            Messages.FIRST_PART_MESSAGE_1, disable_web_page_preview=True, reply_markup=builder.as_markup())
+    else:
+        await tg_user_service.mark_user_activity(callback.from_user.id, 'start speaking')
+        await callback.answer()
+        state_data = await state.get_data()
+        await callback.message.answer(
+            state_data['part_1_questions'][0], disable_web_page_preview=True)
 
 
 @router.message(
