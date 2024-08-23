@@ -16,6 +16,7 @@ from src.repos.factories.question import QuestionRepo
 from src.repos.factories.temp_data import TempDataRepo
 from src.repos.factories.user import TgUserRepo
 from src.repos.factories.user_question import TgUserQuestionRepo
+from src.services.factories.S3 import S3Service
 from src.services.factories.answer_process import AnswerProcessService
 from src.services.factories.feedback import FeedbackService
 from src.services.factories.question import QuestionService
@@ -93,4 +94,15 @@ class BaseInjector:
             self.adapter,
             self.session,
             self.settings
+        )
+        self.s3 = S3Service(
+            repo=TempDataRepo(
+                TempData,
+                self.session
+            ),
+            adapter=Adapter(
+                settings=settings,
+            ),
+            session=self.session,
+            settings=settings
         )
