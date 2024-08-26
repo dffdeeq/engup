@@ -53,8 +53,9 @@ class LrParaphraseEffectively(NeuralNetworkBase):
                 good_paraphrasing_count += 1
 
         premium_result = []
+        metric_details = ''
         if premium:
-            premium_result = self.format_premium_result(paraphrasing_results, good_paraphrasing_count)  # noqa
+            premium_result, metric_details = self.format_premium_result(paraphrasing_results, good_paraphrasing_count)
 
         good_paraphrasing_percent = good_paraphrasing_count / len(paraphrasing_results) * 100
         bands = [
@@ -71,9 +72,11 @@ class LrParaphraseEffectively(NeuralNetworkBase):
                 ielts_score = grade
                 break
 
+        metric_text = f'good_paraphrasing_percent: {good_paraphrasing_percent}\n\n{metric_details}'
+
         uq_id: T.Optional[int] = kwargs.get('uq_id', None)
         if uq_id is not None:
-            asyncio.create_task(self.save_metric_data(uq_id, 'lr_atup', ielts_score, str(good_paraphrasing_percent)))
+            asyncio.create_task(self.save_metric_data(uq_id, 'lr_atup', ielts_score, metric_text))
 
         return ielts_score, premium_result
 
@@ -84,7 +87,7 @@ class LrParaphraseEffectively(NeuralNetworkBase):
         identical_pos_count, common_words = self.count_identical_pos(question_preprocessed, answer_preprocessed)
         bge_m3_sim = self.bge_m3_similarity(question_preprocessed, answer_preprocessed)
 
-        identical_pos_threshold = 5
+        identical_pos_threshold = 7
         bge_m3_threshold = 0.5
 
         is_good_paraphrasing = identical_pos_threshold > identical_pos_count and bge_m3_sim > bge_m3_threshold
@@ -127,14 +130,16 @@ class LrParaphraseEffectively(NeuralNetworkBase):
 
     @staticmethod
     def format_premium_result(
-        paraphrasing_results: T.List[T.Tuple[bool, Counter, int, float, str, str]],
-        good_paraphrasing_count: int
-    ) -> T.List[str]:
+        paraphrasing_results: T.List,
+        good_paraphrasing_count: int,
+    ) -> T.Tuple[T.List[str], str]:
         good_example = None
         bad_example = None
         paraphrasing_text_chunks = []
         current_chunk = ''
         example_count = 0
+
+        metric_details = ''
 
         for paraphrasing in paraphrasing_results:
             if paraphrasing[0]:
@@ -142,6 +147,7 @@ class LrParaphraseEffectively(NeuralNetworkBase):
             else:
                 common_words, identical_pos_count, bge_m3_sim = paraphrasing[1], paraphrasing[2], paraphrasing[3]
                 bad_example = paraphrasing[4] + ' - ' + paraphrasing[5]
+                metric_detail = bad_example
                 current_chunk += f'\n\n<b>{bad_example}</b>'
 
                 unique_elements = common_words.keys()
@@ -157,13 +163,14 @@ class LrParaphraseEffectively(NeuralNetworkBase):
                     current_chunk += (f'\nIn this instance, you have repeated the following terms'
                                       f'{following_terms} from the query and '
                                       f'failed to address the query.')
-                # current_chunk += f'\nbge: {bge_m3_sim}, identical_pos_count: {identical_pos_count}'  # additional
 
-                example_count += 1
-                if example_count == 5:
+                metric_detail += f'\nbge: {bge_m3_sim}, identical_pos_count: {identical_pos_count}'
+                metric_details += f'{metric_detail}\n\n'
+
+                if len(paraphrasing_text_chunks) < 3:
                     paraphrasing_text_chunks.append(current_chunk)
-                    current_chunk = ''
-                    example_count = 0
+                    example_count += 1
+                current_chunk = ''
 
         if current_chunk:
             paraphrasing_text_chunks.append(current_chunk)
@@ -171,12 +178,13 @@ class LrParaphraseEffectively(NeuralNetworkBase):
         text_intro = (f"You have successfully rephrased the responses to {good_paraphrasing_count} "
                       f"questions out of {len(paraphrasing_results)}.\n\n")
         text_intro += f"An example of a successful rephrasing:\n<b>{good_example}</b> ✅" if good_example else ''
-        text_intro += f"\n\nAn instance of an unsuccessful rephrase:\n<b>{bad_example}</b> ⚠️" if bad_example else ''
+        paraphrasing_text_chunks.insert(0, text_intro)
 
-        final_text_chunks = paraphrasing_text_chunks
-        final_text_chunks.insert(0, text_intro)
+        if bad_example:
+            paraphrasing_text_chunks.insert(
+                1, f"\n\nAn instance{'s' if example_count > 1 else ''} of an unsuccessful rephrase:\n")
 
-        for text_chunk in final_text_chunks:
+        for text_chunk in paraphrasing_text_chunks:
             logging.info(text_chunk)
 
-        return final_text_chunks
+        return paraphrasing_text_chunks, metric_details

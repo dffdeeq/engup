@@ -1,5 +1,4 @@
 import logging
-import math
 import typing as T  # noqa
 
 from sqlalchemy.ext.asyncio import async_sessionmaker
@@ -11,6 +10,7 @@ from src.libs.factories.gpt.models.suggestion import Suggestion
 from src.neural_network import ScoreGeneratorNNModel, timeit
 from src.postgres.enums import CompetenceEnum
 from src.postgres.models.tg_user_question import TgUserQuestion
+from src.rabbitmq.worker.factories.simple_worker import SimpleWorker
 from src.repos.factories.question import QuestionRepo
 from src.services.constants import NeuralNetworkConstants as NNConstants
 from src.services.factories.answer_process import AnswerProcessService
@@ -28,12 +28,14 @@ class ResultService(ServiceFactory):
         session: async_sessionmaker,
         settings: Settings,
         nn_service: ScoreGeneratorNNModel,
-        user_service: TgUserService
+        user_service: TgUserService,
+        simple_worker: SimpleWorker
     ) -> None:
         super().__init__(repo, adapter, session, settings)
         self.repo = repo
         self.nn_service = nn_service
         self.user_service = user_service
+        self.simple_worker = simple_worker
 
     @timeit
     def check_or_load_models(self):
@@ -55,7 +57,7 @@ class ResultService(ServiceFactory):
         else:
             answers_text_only = None
             file_paths = None
-        result, extended_output = self._generate_result_local_model(
+        result, extended_output = await self._generate_result_local_model(
             request_text, competence, premium, **kwargs,
             answers_text_only=answers_text_only, file_paths=file_paths,
             user_qa=instance.user_answer_json, uq_id=instance.id
@@ -89,13 +91,14 @@ class ResultService(ServiceFactory):
         formatted_premium_results = self.format_premium_result(additional_result)
         return formatted_premium_results
 
-    def _generate_result_local_model(
+    async def _generate_result_local_model(
         self,
         text: str,
         competence: CompetenceEnum,
         premium: bool = False,
         **kwargs
     ) -> T.Tuple[T.List[str], str]:
+        pronunciation_text = ''
         predict_params = NNConstants.predict_params[competence]
         results = self.nn_service.predict_all(
             text, predict_params, competence=competence, **kwargs)
@@ -109,24 +112,46 @@ class ResultService(ServiceFactory):
         elif competence == CompetenceEnum.speaking:
             results['gr_Error density'] = gr_score
             user_qa = kwargs.get('user_qa')
+            uq_id = kwargs.get('uq_id')
+            file_paths = kwargs.get('file_paths')
+
             user_p1_p3_qa = user_qa['part_1']
             user_p1_p3_qa.extend(user_qa['part_3'])
             lr_paraphrase_score, lr_premium_result = self.nn_service.lr_paraphrase_effectively(
                 questions_and_answers=user_p1_p3_qa, premium=premium, **kwargs)
             results['lr_Paraphrases Effectively'] = lr_paraphrase_score
+            if premium:
+                pronunciation_score, pronunciation_text = await self.get_pronunciation(uq_id, file_paths, premium)
+                if pronunciation_score:
+                    results['pr_Pronunciation'] = pronunciation_score
+
         advice_dict = self.nn_service.select_random_advice(results, competence)
 
         if competence == CompetenceEnum.writing:
             advice_dict['Grammatical Range']['Clear and correct grammar'] = GRAMMAR_AND_LEXICAL_ERRORS_ADVICE[gr_score]
 
-        result = self.format_advice(advice_dict, results, competence)
+        result = self.format_advice(advice_dict, results, competence, pronunciation_text)
         if premium:
             if competence == CompetenceEnum.speaking:
                 result.extend(lr_premium_result)  # noqa
+                pass
+
             grammar_errors = self.format_grammar_errors(gr_errors, lxc_errors, pnkt_errors, competence)
             result.extend(grammar_errors)
         extended_output = self.dict_to_string(results)
         return result, extended_output
+
+    async def get_pronunciation(self, uq_id: int, filepaths, premium: bool = False):
+        await self.simple_worker.initialize()
+        await self.simple_worker.publish(
+            {'filepaths': filepaths, 'uq_id': uq_id},
+            'pronunciation_score_generate',
+            self.simple_worker.get_priority(premium)
+        )
+        payload = await self.simple_worker.try_get_one_message(f'pronunciation_score_get_{uq_id}')
+        if payload is None:
+            return None
+        return payload['pronunciation_score'], payload['pronunciation_text']
 
     @staticmethod
     def format_premium_result(result: Result) -> T.List[str]:
@@ -163,7 +188,7 @@ class ResultService(ServiceFactory):
         return '\n'.join([f"{key}: {value}" for key, value in d.items()])
 
     @staticmethod
-    def format_advice(advice_dict, results, competence: CompetenceEnum):
+    def format_advice(advice_dict, results, competence: CompetenceEnum, pronunciation_text: str):
         output_texts = []
         all_category_min_scores = []
         for category, subcategories in advice_dict.items():
@@ -175,11 +200,17 @@ class ResultService(ServiceFactory):
             if sorted_advice:
                 category_min_score = sorted_advice[0][0]
                 all_category_min_scores.append(category_min_score)
-                category_advice_text = [f"{'✅' if score >= 7 else '⚠️'} {advice}" for score, advice in sorted_advice]
-                category_text = f"<b>{category} (score {category_min_score}):</b>\n\n" + "\n".join(category_advice_text)
+                # if category == 'Pronunciation' and pronunciation_text:
+                #     category_advice_text = pronunciation_text
+                # else:
+                #     category_advice_texts = [f"{'✅' if score >= 7 else '⚠️'} {advice}" for score, advice in sorted_advice]  # noqa
+                #     category_advice_text = "\n".join(category_advice_texts)
+                category_advice_texts = [f"{'✅' if score >= 7 else '⚠️'} {advice}" for score, advice in sorted_advice]
+                category_advice_text = "\n".join(category_advice_texts)
+                category_text = f"<b>{category} (score {category_min_score}):</b>\n\n" + category_advice_text
                 output_texts.append(category_text)
         if all_category_min_scores:
-            average_score = math.floor(sum(all_category_min_scores) / len(all_category_min_scores) * 2) / 2
+            average_score = round(sum(all_category_min_scores) / len(all_category_min_scores) * 2) / 2
             output_texts.insert(0, f"\nYour <b>IELTS</b> {competence.value} <b>score</b> is <b>{average_score:.1f}</b>")
         return output_texts
 

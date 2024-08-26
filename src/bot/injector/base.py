@@ -8,6 +8,7 @@ from src.postgres.models.temp_data import TempData
 from src.postgres.models.tg_user import TgUser
 from src.postgres.models.tg_user_activity import TgUserActivity
 from src.postgres.models.tg_user_question import TgUserQuestion
+from src.postgres.models.metrics_data import MetricsData
 from src.rabbitmq.producer.factories.apihost import ApiHostProducer
 from src.rabbitmq.producer.factories.gpt import GPTProducer
 from src.repos.factories.activity import ActivityRepo
@@ -16,7 +17,7 @@ from src.repos.factories.question import QuestionRepo
 from src.repos.factories.temp_data import TempDataRepo
 from src.repos.factories.user import TgUserRepo
 from src.repos.factories.user_question import TgUserQuestionRepo
-from src.services.factories.S3 import S3Service
+from src.repos.factories.metrics_data import MetricsDataRepo
 from src.services.factories.answer_process import AnswerProcessService
 from src.services.factories.feedback import FeedbackService
 from src.services.factories.question import QuestionService
@@ -24,6 +25,8 @@ from src.services.factories.status_service import StatusService
 from src.services.factories.tg_user import TgUserService
 from src.services.factories.user_question import UserQuestionService
 from src.services.factories.voice import VoiceService
+from src.services.factories.metrics import MetricsService
+from src.services.factories.S3 import S3Service
 from src.settings import Settings
 
 
@@ -94,6 +97,15 @@ class BaseInjector:
             self.adapter,
             self.session,
             self.settings
+        )
+        self.metrics_service = MetricsService(
+            repo=MetricsDataRepo(
+                MetricsData,
+                self.session
+            ),
+            adapter=self.adapter,
+            session=self.session,
+            settings=self.settings,
         )
         self.s3 = S3Service(
             repo=TempDataRepo(

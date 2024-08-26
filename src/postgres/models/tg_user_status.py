@@ -7,7 +7,7 @@ class TgUserStatus(Base):
     __tablename__ = 'tg_user_status'
 
     id = Column(Integer, primary_key=True, autoincrement=True)
-    user_id = Column(BigInteger, ForeignKey('tg_user.id'))
+    user_id = Column(BigInteger, ForeignKey('tg_user.id', ondelete='CASCADE'))
 
     flag_new_user = Column(Boolean, nullable=True)
     flag_active_user = Column(Boolean, nullable=True)

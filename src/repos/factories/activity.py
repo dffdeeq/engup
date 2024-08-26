@@ -1,9 +1,7 @@
 import typing as T  # noqa
 
-from sqlalchemy import select, and_
 from sqlalchemy.ext.asyncio import async_sessionmaker
 
-from src.postgres.models.activity import Activity
 from src.postgres.models.tg_user_activity import TgUserActivity
 from src.postgres.models.tg_user_pts import TgUserPts
 from src.postgres.models.tg_user_wallet import TgUserWallet
@@ -32,13 +30,6 @@ class ActivityRepo(RepoFactory):
         if instance is not None:
             return instance
 
-    async def get_activity(self, activity_name: str) -> T.Optional[Activity]:
-        async with self.session() as session:
-            query = select(Activity).where(and_(Activity.name == activity_name))
-            result = await session.execute(query)
-            instance = result.scalar_one_or_none()
-            return instance
-
-    async def create_user_activity(self, user_id: int, activity_id: int) -> TgUserActivity:
-        instance = await self.insert_one(user_id=user_id, activity_id=activity_id)
+    async def create_user_activity(self, user_id: int, activity_name: str) -> TgUserActivity:
+        instance = await self.insert_one(user_id=user_id, activity_name=activity_name)
         return instance
