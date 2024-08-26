@@ -55,7 +55,7 @@ async def writing_start(
         await callback.message.edit_text(text=DefaultMessages.DEFAULT_TEXT, reply_markup=builder.as_markup())
     else:
         await callback.answer()
-        await tg_user_service.mark_user_activity(callback.from_user.id, 'start writing')
+        await tg_user_service.mark_user_activity(callback.from_user.id, 'button start writing')
         state_data = await state.get_data()
         text = MessageTemplates.CARD_TEXT_TEMPLATE.format(
             card_title=state_data['card_title'], card_body=state_data['card_body'])

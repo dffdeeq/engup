@@ -66,7 +66,7 @@ async def speaking_start(
         await callback.message.answer(
             Messages.FIRST_PART_MESSAGE_1, disable_web_page_preview=True, reply_markup=builder.as_markup())
     else:
-        await tg_user_service.mark_user_activity(callback.from_user.id, 'start speaking')
+        await tg_user_service.mark_user_activity(callback.from_user.id, 'button start speaking')
         await callback.answer()
         state_data = await state.get_data()
         await callback.message.answer(
@@ -77,13 +77,15 @@ async def speaking_start(
     SpeakingState.first_part,
     VoicemailFilter(),
     INJECTOR.inject_voice,
-    INJECTOR.inject_answer_process
+    INJECTOR.inject_answer_process,
+    INJECTOR.inject_tg_user
 )
 async def speaking_first_part(
     message: types.Message,
     state: FSMContext,
     voice_service: VoiceService,
-    answer_process: AnswerProcessService
+    answer_process: AnswerProcessService,
+    tg_user_service: TgUserService,
 ):
     state_data = await state.get_data()
     filename = os.path.basename(await voice_service.save_user_voicemail(message.voice, message.bot))
@@ -91,6 +93,8 @@ async def speaking_first_part(
     await answer_process.insert_temp_data(state_data['uq_id'], PartEnum.first, question_text, filename)
 
     next_question_pk = int(state_data['part_1_current_question']) + 1
+    if next_question_pk == 1:
+        await tg_user_service.mark_user_activity(message.from_user.id, 'start part 1 speaking')
 
     if next_question_pk < len(state_data['part_1_questions']):
         next_question = state_data['part_1_questions'][next_question_pk]
@@ -111,14 +115,18 @@ async def speaking_first_part(
     SpeakingState.second_part,
     VoicemailFilter(),
     INJECTOR.inject_voice,
-    INJECTOR.inject_answer_process
+    INJECTOR.inject_answer_process,
+    INJECTOR.inject_tg_user
 )
 async def speaking_second_part(
     message: types.Message,
     state: FSMContext,
     voice_service: VoiceService,
-    answer_process: AnswerProcessService
+    answer_process: AnswerProcessService,
+    tg_user_service: TgUserService,
 ):
+    await tg_user_service.mark_user_activity(message.from_user.id, 'start part 2 speaking')
+
     state_data = await state.get_data()
     filename = os.path.basename(await voice_service.save_user_voicemail(message.voice, message.bot))
     question_text = state_data['part_2_question']
@@ -158,6 +166,8 @@ async def speaking_third_part(
     await answer_process.insert_temp_data(state_data['uq_id'], PartEnum.third, question_text, filename)
 
     next_question_pk = int(state_data['part_3_current_question']) + 1
+    if next_question_pk == 1:
+        await tg_user_service.mark_user_activity(message.from_user.id, 'start part 3 speaking')
 
     if next_question_pk < len(state_data['part_3_questions']):
         next_question = state_data['part_3_questions'][next_question_pk]
@@ -205,8 +215,6 @@ async def speaking_confirm_task(
     answer_process: AnswerProcessService,
     status_service: StatusService,
 ):
-    await tg_user_service.mark_user_activity(callback.from_user.id, 'end speaking')
-
     state_data = await state.get_data()
     param = callback.data.split()[1]
     premium = True if param == 'premium' else False
