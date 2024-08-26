@@ -10,6 +10,8 @@ router = Router(name=__name__)
 
 @router.callback_query(F.data == 'referral', INJECTOR.inject_tg_user)
 async def referral_callback(callback: types.CallbackQuery, tg_user_service: TgUserService):
+    await tg_user_service.mark_user_activity(callback.from_user.id, 'go to Invite a friend')
+
     user = await tg_user_service.get_or_create_tg_user(callback.from_user.id)
     user_referrals_count = await tg_user_service.get_user_referrals(callback.from_user.id, count_only=True)
 
