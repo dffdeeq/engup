@@ -8,6 +8,7 @@ pydantic==2.7.3
 python-dotenv==1.0.1
 SQLAlchemy==2.0.30
 starlette==0.37.2
+boto3==1.35.4
 
 openpyxl==3.1.5
 
@@ -23,6 +24,3 @@ pyannote.audio==3.3.1
 fuzzywuzzy==0.18.0
 python-levenshtein==0.25.1
 sentence-transformers==3.0.1
-
-
-
