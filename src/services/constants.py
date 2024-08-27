@@ -24,7 +24,7 @@ class NeuralNetworkConstants:
             'fc_Minimal Self-Correction',
             'fc_Relevance of spoken sentences to the general purpose of a turn',
             'fc_Range of Linking Words and Discourse Markers',
-            # 'pr_Pronunciation',
+            'pr_Pronunciation',
         ],
         CompetenceEnum.writing: [
             'clear_grammar_result',
