@@ -121,17 +121,12 @@ class ResultService(ServiceFactory):
         elif competence == CompetenceEnum.speaking:
             results['gr_Error density'] = gr_score
             user_qa = kwargs.get('user_qa')
-            uq_id = kwargs.get('uq_id')
 
             user_p1_p3_qa = user_qa['part_1']
             user_p1_p3_qa.extend(user_qa['part_3'])
             lr_paraphrase_score, lr_premium_result = self.nn_service.lr_paraphrase_effectively(
                 questions_and_answers=user_p1_p3_qa, premium=premium, **kwargs)
             results['lr_Paraphrases Effectively'] = lr_paraphrase_score
-            if premium:
-                pronunciation_score, pronunciation_text = await self.get_pronunciation(uq_id, file_paths, premium)  # noqa
-                if pronunciation_score:
-                    results['pr_Pronunciation'] = pronunciation_score
 
         advice_dict = self.nn_service.select_random_advice(results, competence)
 
