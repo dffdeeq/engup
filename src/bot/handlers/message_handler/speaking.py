@@ -66,7 +66,7 @@ async def speaking_start(
         await callback.message.answer(
             Messages.FIRST_PART_MESSAGE_1, disable_web_page_preview=True, reply_markup=builder.as_markup())
     else:
-        await tg_user_service.mark_user_activity(callback.from_user.id, 'button start speaking')
+        await tg_user_service.mark_user_activity(callback.from_user.id, 'start speaking')
         await callback.answer()
         state_data = await state.get_data()
         await callback.message.answer(
@@ -88,7 +88,8 @@ async def speaking_first_part(
     tg_user_service: TgUserService,
 ):
     state_data = await state.get_data()
-    filename = os.path.basename(await voice_service.save_user_voicemail(message.voice, message.bot))
+    filepath = await voice_service.save_user_voicemail(message.voice, message.bot)
+    filename = os.path.basename(filepath)
     question_text = state_data['part_1_questions'][state_data['part_1_current_question']]
     await answer_process.insert_temp_data(state_data['uq_id'], PartEnum.first, question_text, filename)
 
