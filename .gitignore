@@ -1,14 +1,15 @@
-# Log files
-*.log
-
-# Maven
+# Node artifact files
+node_modules/
 dist/
 
 # JetBrains IDE
 .idea/
 
-# Local variables
+# Local Variables
 .env
 
-# Local Env
-.venv
+# Volumes and Temp Files
+/data/postgresql/*
+/data/rabbitmq/*
+/data/temp_files/*
+/data/nn_models/*

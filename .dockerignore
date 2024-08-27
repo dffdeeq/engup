@@ -1,0 +1,17 @@
+# data/tests
+./data/postgresql/*
+./data/rabbitmq/*
+./data/temp_files/*
+./data/nn_models/*
+./tests
+
+# local dirs
+.idea
+.venv
+
+# unimportant files for docker
+./bitbucket-pipelines.yml
+./example.env
+./README.md
+./.gitignore
+./.flake8

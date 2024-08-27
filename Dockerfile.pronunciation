@@ -1,0 +1,26 @@
+FROM python:3.9
+
+WORKDIR /app
+
+RUN mkdir -p /app/requirements /app/src/settings /app/src/rabbitmq /app/src/repos /app/src/libs
+
+COPY ./requirements/pronunciation.txt ./requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt && rm -rf /root/.cache/pip
+RUN apt-get update && apt-get install -y libsndfile1-dev
+
+RUN pip install starlette
+RUN pip install langdetect==1.0.9
+
+RUN pip uninstall numpy -y
+RUN pip install numpy==1.23
+
+RUN apt-get install -y ffmpeg
+
+
+COPY ./src/settings ./src/settings
+COPY ./src/rabbitmq ./src/rabbitmq
+COPY ./src/repos ./src/repos
+COPY ./run_pronunciation.py ./run_pronunciation.py
+COPY ./src/libs ./src/libs
+COPY ./src/postgres ./src/postgres
+COPY ./src/bot/utils.py ./src/bot/utils.py

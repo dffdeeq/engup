@@ -1,0 +1,138 @@
+services:
+  engup_postgres:
+    container_name: engup_postgres
+    image: "postgres:15.4-alpine3.18"
+    restart: always
+    environment:
+      POSTGRES_USER: ${POSTGRES_SETTINGS_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_SETTINGS_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_SETTINGS_NAME}
+    volumes:
+      - ./data/postgresql:/var/lib/postgresql/data
+    ports:
+      - '5433:5432'
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_SETTINGS_USER} -d ${POSTGRES_SETTINGS_NAME}" ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  engup_rabbitmq:
+    container_name: engup_rabbitmq
+    restart: always
+    image: "rabbitmq:3.9.29-alpine"
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_SETTINGS_USER}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_SETTINGS_PASSWORD}
+    ports:
+      - '5672:5672'
+      - '15672:15672'
+    volumes:
+      - ./data/rabbitmq:/var/lib/rabbitmq
+    healthcheck:
+      test: [ "CMD", "rabbitmqctl", "ping" ]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  engup_api:
+    container_name: engup_api
+    build: .
+    command: python run_api.py
+    ports:
+      - '8000:8000'
+    environment:
+      RABBITMQ_SETTINGS_HOST: engup_rabbitmq
+      POSTGRES_SETTINGS_HOST: engup_postgres
+      POSTGRES_SETTINGS_PORT: 5432
+    depends_on:
+      engup_rabbitmq:
+        condition: service_healthy
+
+  engup_tgbot:
+    container_name: engup_tgbot
+    build: .
+    command: /bin/sh -c "alembic upgrade head && python run_bot.py"
+    volumes:
+      - ./data/temp_files:/app/data/temp_files
+    environment:
+      RABBITMQ_SETTINGS_HOST: engup_rabbitmq
+      POSTGRES_SETTINGS_HOST: engup_postgres
+      POSTGRES_SETTINGS_PORT: 5432
+    depends_on:
+      engup_rabbitmq:
+        condition: service_healthy
+      engup_postgres:
+        condition: service_healthy
+
+  engup_apihost_worker:
+    container_name: engup_apihost_worker
+    build: .
+    command: python run_queue_apihost.py
+    volumes:
+      - ./data/temp_files:/app/data/temp_files
+    environment:
+      RABBITMQ_SETTINGS_HOST: engup_rabbitmq
+      POSTGRES_SETTINGS_HOST: engup_postgres
+      POSTGRES_SETTINGS_PORT: 5432
+    depends_on:
+      engup_rabbitmq:
+        condition: service_healthy
+
+  engup_gpt_worker:
+    container_name: engup_gpt_worker
+    build:
+      dockerfile: Dockerfile.neuro
+    command: python run_queue_gpt.py
+    volumes:
+      - ./data:/app/data
+    environment:
+      RABBITMQ_SETTINGS_HOST: engup_rabbitmq
+      POSTGRES_SETTINGS_HOST: engup_postgres
+      POSTGRES_SETTINGS_PORT: 5432
+    depends_on:
+      engup_rabbitmq:
+        condition: service_healthy
+
+  engup_tg_bot_worker:
+    container_name: engup_tg_bot_worker
+    build: .
+    command: python run_queue_tg_bot.py
+    environment:
+      RABBITMQ_SETTINGS_HOST: engup_rabbitmq
+      POSTGRES_SETTINGS_HOST: engup_postgres
+      POSTGRES_SETTINGS_PORT: 5432
+    depends_on:
+      engup_rabbitmq:
+        condition: service_healthy
+
+  engup_weekly_status_updater:
+    container_name: engup_weekly_status_updater
+    volumes:
+      - ./data:/app/data
+    env_file:
+      - .env
+    build:
+      dockerfile: Dockerfile.weekly_status
+    command: python run_weekly_status_updater.py
+    environment:
+      POSTGRES_SETTINGS_PORT: 5432
+    depends_on:
+      engup_postgres:
+        condition: service_healthy
+
+  engup_pronunciation_worker:
+    container_name: engup_pronunciation_worker
+    command: python run_pronunciation.py
+    environment:
+      RABBITMQ_SETTINGS_HOST: engup_rabbitmq
+      POSTGRES_SETTINGS_HOST: engup_postgres
+      POSTGRES_SETTINGS_PORT: 5432
+    build:
+      dockerfile: Dockerfile.pronunciation
+    ports:
+      - '3000:3000'
+    volumes:
+      - ./data:/app/data
+    env_file:
+      - .env

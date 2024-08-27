@@ -1,0 +1,9 @@
+[flake8]
+max-line-length = 122
+extend-exclude =
+    dist,
+    build,
+    alembic,
+    requirements,
+    data,
+    src/bot/constants.py
