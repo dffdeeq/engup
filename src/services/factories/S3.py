@@ -33,11 +33,13 @@ class S3Service(ServiceFactory):
         self,
         upload_filepath: str,
         object_name: str = None,
-        object_dir: str = '',
         bucket_name: str = 'ielts-user-recorded-voice-files',
     ):
         object_name = object_name if object_name else os.path.basename(upload_filepath)
-        self.s3.upload_file(upload_filepath, bucket_name, object_dir + object_name)
+        self.s3.upload_file(upload_filepath, bucket_name, object_name)
+
+    def upload_file_obj(self, file, filename: str, bucket_name: str = 'ielts-user-recorded-voice-files'):
+        self.s3.upload_fileobj(file, Bucket=bucket_name, Key=filename)
 
     def download_file(
         self,
@@ -47,6 +49,11 @@ class S3Service(ServiceFactory):
     ):
         self.s3.download_file(bucket_name, object_name, os.path.join(download_dir, object_name))
 
-    def download_files_list(self, file_keys: T.List, bucket_name: str = 'ielts-user-recorded-voice-files'):
+    def download_files_list(
+        self,
+        file_keys: T.List,
+        bucket_name: str = 'ielts-user-recorded-voice-files',
+        download_dir: str = TEMP_FILES_DIR,
+    ):
         for file_key in file_keys:
-            self.download_file(file_key, bucket_name=bucket_name)
+            self.download_file(file_key, download_dir, bucket_name)

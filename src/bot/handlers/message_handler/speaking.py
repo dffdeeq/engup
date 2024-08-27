@@ -77,16 +77,17 @@ async def speaking_start(
     SpeakingState.first_part,
     VoicemailFilter(),
     INJECTOR.inject_voice,
-    INJECTOR.inject_answer_process
+    INJECTOR.inject_answer_process,
 )
 async def speaking_first_part(
     message: types.Message,
     state: FSMContext,
     voice_service: VoiceService,
-    answer_process: AnswerProcessService
+    answer_process: AnswerProcessService,
 ):
     state_data = await state.get_data()
-    filename = os.path.basename(await voice_service.save_user_voicemail(message.voice, message.bot))
+    filepath = await voice_service.save_user_voicemail(message.voice, message.bot)
+    filename = os.path.basename(filepath)
     question_text = state_data['part_1_questions'][state_data['part_1_current_question']]
     await answer_process.insert_temp_data(state_data['uq_id'], PartEnum.first, question_text, filename)
 

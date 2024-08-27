@@ -60,12 +60,6 @@ class BaseInjector:
             session=self.session,
             settings=self.settings,
         )
-        self.voice_service = VoiceService(
-            repo=QuestionRepo(Question, self.session),
-            adapter=self.adapter,
-            session=self.session,
-            settings=self.settings
-        )
         self.apihost_producer = ApiHostProducer(
             dsn_string=settings.rabbitmq.dsn,
             exchange_name='direct',
@@ -117,4 +111,11 @@ class BaseInjector:
             ),
             session=self.session,
             settings=settings
+        )
+        self.voice_service = VoiceService(
+            s3_service=self.s3,
+            repo=QuestionRepo(Question, self.session),
+            adapter=self.adapter,
+            session=self.session,
+            settings=self.settings
         )
