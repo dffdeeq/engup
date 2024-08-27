@@ -74,7 +74,8 @@ class ResultService(ServiceFactory):
             result.extend(additional_result)
 
         # TODO: Add common recommendations
-        self._clear_temp_files(file_paths)
+        if competence == CompetenceEnum.speaking:
+            self._clear_temp_files(file_paths)
 
         return result, extended_output
 
