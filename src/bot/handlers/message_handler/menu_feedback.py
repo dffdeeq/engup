@@ -54,7 +54,7 @@ async def feedback_get_review_callback(
     tg_user_service: TgUserService,
     feedback_service: FeedbackService
 ):
-    await tg_user_service.mark_user_activity(message.from_user.id, 'left a review')
+    await tg_user_service.mark_user_activity(message.from_user.id, 'rate completed')
     rate = (await state.get_data())['rate']
     text = message.text
     await feedback_service.save_user_review(message.from_user.id, rate, text)
@@ -122,6 +122,8 @@ async def handle_poll_answer(
     await state.update_data({'results': results})
 
     next_question = current_question + 1
+    if next_question == 1:
+        await tg_user_service.mark_user_activity(callback.from_user.id, 'start the survey')
     if next_question < state_data['poll_len']:
         question, options = poll_questions[next_question]
         keyboard = InlineKeyboardMarkup(inline_keyboard=[
@@ -135,8 +137,9 @@ async def handle_poll_answer(
         ])
         if await feedback_service.user_can_get_free_points(callback.from_user.id):
             await feedback_service.save_user_poll_feedback(callback.from_user.id, results)
-            await tg_user_service.mark_user_activity(callback.from_user.id, 'left a feedback')
+            await tg_user_service.mark_user_activity(callback.from_user.id, 'end the survey')
             await tg_user_service.add_points(callback.from_user.id, 3)
+            await tg_user_service.mark_user_activity(callback.from_user.id, 'add free premium tests')
             await tg_user_service.mark_user_pts(callback.from_user.id, 'feedback', 3)
             await callback.message.edit_text(
                 text="Thanks for the feedback! You have 3 more free tests",

@@ -69,10 +69,10 @@ class GPTWorker(RabbitMQWorkerFactory):
             )
 
         elif competence == CompetenceEnum.speaking:
-            await self.user_service.mark_user_activity(user.id, 'use voice request')
             result, extended_output = await self.result_service.generate_result(
                 instance, competence, premium=data['priority'], extended_output=True
             )
+            await self.user_service.mark_user_activity(user.id, 'use voice request')
         else:
             return
 
@@ -86,7 +86,7 @@ class GPTWorker(RabbitMQWorkerFactory):
                     result.insert(0, extended_output)
             await UserQuestionService.update_uq(self.session, instance, json.dumps(uq_result))
             await self.status_service.change_qa_status(data['uq_id'], 'Sending results for processing.')
-            await self.user_service.mark_user_activity(user.id, 'response generated')
+            await self.user_service.mark_user_activity(user.id, f'response generated {competence}')
             await self.publish(
                 {
                     'user_id': user.id,

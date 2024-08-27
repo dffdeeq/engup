@@ -15,10 +15,10 @@ pipelines:
             script:
               - pipe: atlassian/ssh-run:0.8.0
                 variables:
-                  SSH_USER: $SSH_USER
-                  SERVER: $SERVER
+                  SSH_USER: $TEST_SERVER_SSH_USER
+                  SERVER: $TEST_SERVER
                   COMMAND: |
-                    cd /opt/engup
+                    cd /opt/enguptelegramrepo
                     git pull
                     docker-compose up -d --build
     main:
