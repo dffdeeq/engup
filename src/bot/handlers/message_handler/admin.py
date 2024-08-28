@@ -51,10 +51,10 @@ async def admin_to_(callback: types.CallbackQuery, state: FSMContext):
 async def admin_run_task(
     message: types.Message,
     state: FSMContext,
+    s3_service: S3Service,
     gpt_producer: GPTProducer,
     answer_process: AnswerProcessService,
     apihost_producer: ApiHostProducer,
-    s3_service: S3Service,
 ):
     try:
         uq_id = int(message.text)
