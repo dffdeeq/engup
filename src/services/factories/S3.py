@@ -1,3 +1,4 @@
+import logging
 import os.path
 import typing as T  # noqa
 
@@ -56,4 +57,7 @@ class S3Service(ServiceFactory):
         download_dir: str = TEMP_FILES_DIR,
     ):
         for file_key in file_keys:
-            self.download_file(file_key, download_dir, bucket_name)
+            try:
+                self.download_file(file_key, download_dir, bucket_name)
+            except Exception as e:
+                logging.exception(e)
