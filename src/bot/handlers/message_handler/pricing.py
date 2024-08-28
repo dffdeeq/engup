@@ -35,7 +35,7 @@ async def buy_pts_by_tg_start(callback: types.CallbackQuery, tg_user_service: Tg
     await callback.answer()
 
     price = {
-        3: [LabeledPrice(label="3 PTs", amount=1)],
+        3: [LabeledPrice(label="3 PTs", amount=150)],
         10: [LabeledPrice(label="10 PTs", amount=450)],
         100: [LabeledPrice(label="100 PTs", amount=4000)]
     }
@@ -63,10 +63,10 @@ async def buy_pts_by_tg_start(callback: types.CallbackQuery, tg_user_service: Tg
     await tg_user_service.adapter.analytics_client.send_event(
         str(uuid.uuid4()),
         EventData(
-            utm_source=user.utm_source,
-            utm_medium=user.utm_medium,
-            utm_campaign=user.utm_campaign,
-            utm_content=user.utm_content,
+            utm_source=user.utm_data_json.get('utm_source', None),
+            utm_medium=user.utm_data_json.get('utm_medium', None),
+            utm_campaign=user.utm_data_json.get('utm_campaign', None),
+            utm_content=user.utm_data_json.get('utm_content', None),
             event_name='conversion_event_begin_checkout',
         )
     )
@@ -99,10 +99,10 @@ async def successful_payment_handler(message: types.Message, state: FSMContext, 
             await tg_user_service.adapter.analytics_client.send_event(
                 str(uuid.uuid4()),
                 EventData(
-                    utm_source=user_instance.utm_source,
-                    utm_medium=user_instance.utm_medium,
-                    utm_campaign=user_instance.utm_campaign,
-                    utm_content=user_instance.utm_content,
+                    utm_source=user_instance.utm_data_json.get('utm_source', None),
+                    utm_medium=user_instance.utm_data_json.get('utm_medium', None),
+                    utm_campaign=user_instance.utm_data_json.get('utm_campaign', None),
+                    utm_content=user_instance.utm_data_json.get('utm_content', None),
                     event_name='conversion_event_purchase',
                 )
             )
