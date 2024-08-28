@@ -13,6 +13,7 @@ from src.bot.core.states import SpeakingState
 from src.bot.injector import INJECTOR
 from src.postgres.enums import CompetenceEnum, PartEnum
 from src.rabbitmq.producer.factories.apihost import ApiHostProducer
+from src.services.factories.S3 import S3Service
 from src.services.factories.answer_process import AnswerProcessService
 from src.services.factories.question import QuestionService
 from src.services.factories.status_service import StatusService
@@ -66,7 +67,7 @@ async def speaking_start(
         await callback.message.answer(
             Messages.FIRST_PART_MESSAGE_1, disable_web_page_preview=True, reply_markup=builder.as_markup())
     else:
-        await tg_user_service.mark_user_activity(callback.from_user.id, 'button start speaking')
+        await tg_user_service.mark_user_activity(callback.from_user.id, 'start speaking')
         await callback.answer()
         state_data = await state.get_data()
         await callback.message.answer(
@@ -88,7 +89,8 @@ async def speaking_first_part(
     tg_user_service: TgUserService,
 ):
     state_data = await state.get_data()
-    filename = os.path.basename(await voice_service.save_user_voicemail(message.voice, message.bot))
+    filepath = await voice_service.save_user_voicemail(message.voice, message.bot)
+    filename = os.path.basename(filepath)
     question_text = state_data['part_1_questions'][state_data['part_1_current_question']]
     await answer_process.insert_temp_data(state_data['uq_id'], PartEnum.first, question_text, filename)
 
@@ -205,7 +207,8 @@ async def speaking_third_part(
     INJECTOR.inject_tg_user,
     INJECTOR.inject_apihost_producer,
     INJECTOR.inject_answer_process,
-    INJECTOR.inject_status
+    INJECTOR.inject_status,
+    INJECTOR.inject_s3
 )
 async def speaking_confirm_task(
     callback: types.CallbackQuery,
@@ -214,6 +217,7 @@ async def speaking_confirm_task(
     apihost_producer: ApiHostProducer,
     answer_process: AnswerProcessService,
     status_service: StatusService,
+    s3_service: S3Service
 ):
     state_data = await state.get_data()
     param = callback.data.split()[1]
@@ -225,6 +229,9 @@ async def speaking_confirm_task(
 
     await answer_process.update_user_qa_premium_queue(state_data['uq_id'], premium)
     filepaths = await answer_process.get_temp_data_filepaths(answer_process.session, state_data['uq_id'])
+
+    s3_service.download_files_list([os.path.basename(key) for key in filepaths])
+
     await apihost_producer.create_task_send_to_transcription(filepaths, premium_queue=premium)
     await status_service.change_qa_status(state_data['uq_id'], status='Sent for transcription.')
     await state.clear()

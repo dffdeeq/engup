@@ -1,5 +1,7 @@
 import logging
+import os
 import typing as T  # noqa
+from pathlib import Path
 
 from sqlalchemy.ext.asyncio import async_sessionmaker
 
@@ -13,6 +15,7 @@ from src.postgres.models.tg_user_question import TgUserQuestion
 from src.rabbitmq.worker.factories.simple_worker import SimpleWorker
 from src.repos.factories.question import QuestionRepo
 from src.services.constants import NeuralNetworkConstants as NNConstants
+from src.services.factories.S3 import S3Service
 from src.services.factories.answer_process import AnswerProcessService
 from src.services.factories.tg_user import TgUserService
 from src.services.factory import ServiceFactory
@@ -29,13 +32,15 @@ class ResultService(ServiceFactory):
         settings: Settings,
         nn_service: ScoreGeneratorNNModel,
         user_service: TgUserService,
-        simple_worker: SimpleWorker
+        simple_worker: SimpleWorker,
+        s3_service: S3Service
     ) -> None:
         super().__init__(repo, adapter, session, settings)
         self.repo = repo
         self.nn_service = nn_service
         self.user_service = user_service
         self.simple_worker = simple_worker
+        self.s3_service = s3_service
 
     @timeit
     def check_or_load_models(self):
@@ -69,7 +74,8 @@ class ResultService(ServiceFactory):
             result.extend(additional_result)
 
         # TODO: Add common recommendations
-        # TODO: Clear temp files
+        if competence == CompetenceEnum.speaking:
+            self._clear_temp_files(file_paths)
 
         return result, extended_output
 
@@ -100,6 +106,10 @@ class ResultService(ServiceFactory):
     ) -> T.Tuple[T.List[str], str]:
         pronunciation_text = ''
         predict_params = NNConstants.predict_params[competence]
+        if competence == CompetenceEnum.speaking:
+            file_paths = kwargs.get('file_paths')
+            self.s3_service.download_files_list([os.path.basename(key) for key in file_paths])
+
         results = self.nn_service.predict_all(
             text, predict_params, competence=competence, **kwargs)
 
@@ -112,18 +122,12 @@ class ResultService(ServiceFactory):
         elif competence == CompetenceEnum.speaking:
             results['gr_Error density'] = gr_score
             user_qa = kwargs.get('user_qa')
-            uq_id = kwargs.get('uq_id')
-            file_paths = kwargs.get('file_paths')
 
             user_p1_p3_qa = user_qa['part_1']
             user_p1_p3_qa.extend(user_qa['part_3'])
             lr_paraphrase_score, lr_premium_result = self.nn_service.lr_paraphrase_effectively(
                 questions_and_answers=user_p1_p3_qa, premium=premium, **kwargs)
             results['lr_Paraphrases Effectively'] = lr_paraphrase_score
-            if premium:
-                pronunciation_score, pronunciation_text = await self.get_pronunciation(uq_id, file_paths, premium)
-                if pronunciation_score:
-                    results['pr_Pronunciation'] = pronunciation_score
 
         advice_dict = self.nn_service.select_random_advice(results, competence)
 
@@ -261,3 +265,10 @@ class ResultService(ServiceFactory):
         for part in output:
             final_output.append(''.join(part))
         return final_output
+
+    @staticmethod
+    def _clear_temp_files(filepaths: T.List[str]) -> None:
+        for file in filepaths:
+            path = Path(file)
+            if path.exists():
+                path.unlink()

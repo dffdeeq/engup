@@ -86,7 +86,7 @@ class GPTWorker(RabbitMQWorkerFactory):
                     result.insert(0, extended_output)
             await UserQuestionService.update_uq(self.session, instance, json.dumps(uq_result))
             await self.status_service.change_qa_status(data['uq_id'], 'Sending results for processing.')
-            await self.user_service.mark_user_activity(user.id, f'response generated {competence}')
+            await self.user_service.mark_user_activity(user.id, f'response generated {competence.value}')
             await self.publish(
                 {
                     'user_id': user.id,

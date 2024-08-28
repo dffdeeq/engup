@@ -2,30 +2,31 @@ from src.libs.adapter import Adapter
 from src.libs.factories.apihost import ApiHostClient
 from src.libs.http_client import HttpClient
 from src.postgres.factory import initialize_postgres_pool
-from src.postgres.models.metrics_data import MetricsData
 from src.postgres.models.poll_feedback import PollFeedback
 from src.postgres.models.question import Question
 from src.postgres.models.temp_data import TempData
 from src.postgres.models.tg_user import TgUser
 from src.postgres.models.tg_user_activity import TgUserActivity
 from src.postgres.models.tg_user_question import TgUserQuestion
+from src.postgres.models.metrics_data import MetricsData
 from src.rabbitmq.producer.factories.apihost import ApiHostProducer
 from src.rabbitmq.producer.factories.gpt import GPTProducer
 from src.repos.factories.activity import ActivityRepo
 from src.repos.factories.feedback import FeedbackRepo
-from src.repos.factories.metrics_data import MetricsDataRepo
 from src.repos.factories.question import QuestionRepo
 from src.repos.factories.temp_data import TempDataRepo
 from src.repos.factories.user import TgUserRepo
 from src.repos.factories.user_question import TgUserQuestionRepo
+from src.repos.factories.metrics_data import MetricsDataRepo
 from src.services.factories.answer_process import AnswerProcessService
 from src.services.factories.feedback import FeedbackService
-from src.services.factories.metrics import MetricsService
 from src.services.factories.question import QuestionService
 from src.services.factories.status_service import StatusService
 from src.services.factories.tg_user import TgUserService
 from src.services.factories.user_question import UserQuestionService
 from src.services.factories.voice import VoiceService
+from src.services.factories.metrics import MetricsService
+from src.services.factories.S3 import S3Service
 from src.settings import Settings
 
 
@@ -58,12 +59,6 @@ class BaseInjector:
             adapter=self.adapter,
             session=self.session,
             settings=self.settings,
-        )
-        self.voice_service = VoiceService(
-            repo=QuestionRepo(Question, self.session),
-            adapter=self.adapter,
-            session=self.session,
-            settings=self.settings
         )
         self.apihost_producer = ApiHostProducer(
             dsn_string=settings.rabbitmq.dsn,
@@ -105,4 +100,22 @@ class BaseInjector:
             adapter=self.adapter,
             session=self.session,
             settings=self.settings,
+        )
+        self.s3 = S3Service(
+            repo=TempDataRepo(
+                TempData,
+                self.session
+            ),
+            adapter=Adapter(
+                settings=settings,
+            ),
+            session=self.session,
+            settings=settings
+        )
+        self.voice_service = VoiceService(
+            s3_service=self.s3,
+            repo=QuestionRepo(Question, self.session),
+            adapter=self.adapter,
+            session=self.session,
+            settings=self.settings
         )

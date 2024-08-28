@@ -5,7 +5,6 @@ import io
 import math
 import os.path
 import concurrent.futures
-from pathlib import Path
 
 import numpy as np
 import torch
@@ -132,10 +131,3 @@ class PrPronunciation(NeuralNetworkBase):
         inference = Inference(model, window="whole", device=self.device)
         embedding = inference(wav_path)
         return embedding
-
-    @staticmethod
-    def _clear_temp_files(filepaths: T.List[str]) -> None:
-        for file in filepaths:
-            path = Path(file)
-            if path.exists():
-                path.unlink()

@@ -17,6 +17,7 @@ from src.repos.factories.temp_data import TempDataRepo
 from src.repos.factories.user import TgUserRepo
 from src.repos.factories.user_question import TgUserQuestionRepo
 from src.repos.factories.user_question_metric import TgUserQuestionMetricRepo
+from src.services.factories.S3 import S3Service
 from src.services.factories.answer_process import AnswerProcessService
 from src.services.factories.result import ResultService
 from src.services.factories.status_service import StatusService
@@ -60,6 +61,12 @@ async def main():
             repo=repo,
             dsn_string=settings.rabbitmq.dsn,
             queue_name='public'
+        ),
+        s3_service=S3Service(
+            repo=repo,
+            adapter=adapter,
+            session=session,
+            settings=settings,
         )
     )
     answer_process_service = AnswerProcessService(

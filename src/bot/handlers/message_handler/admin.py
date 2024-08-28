@@ -1,3 +1,5 @@
+import os
+
 from aiogram import Router, F, types
 from aiogram.fsm.context import FSMContext
 from aiogram.types import InlineKeyboardButton
@@ -7,6 +9,7 @@ from src.bot.core.states import AdminState
 from src.bot.injector import INJECTOR
 from src.rabbitmq.producer.factories.apihost import ApiHostProducer
 from src.rabbitmq.producer.factories.gpt import GPTProducer
+from src.services.factories.S3 import S3Service
 from src.services.factories.answer_process import AnswerProcessService
 
 router = Router(name=__name__)
@@ -40,17 +43,18 @@ async def admin_to_(callback: types.CallbackQuery, state: FSMContext):
 
 @router.message(
     AdminState.get_uq_id,
+    INJECTOR.inject_s3,
     INJECTOR.inject_gpt_producer,
     INJECTOR.inject_answer_process,
     INJECTOR.inject_apihost_producer,
 )
-async def speaking_first_part(
+async def admin_run_task(
     message: types.Message,
     state: FSMContext,
     gpt_producer: GPTProducer,
     answer_process: AnswerProcessService,
     apihost_producer: ApiHostProducer,
-
+    s3: S3Service,
 ):
     try:
         uq_id = int(message.text)
@@ -64,6 +68,7 @@ async def speaking_first_part(
 
     if to == 'apihost':
         filepaths = await answer_process.get_temp_data_filepaths(answer_process.session, uq_id)
+        s3.download_files_list([os.path.basename(key) for key in filepaths])
         await apihost_producer.create_task_send_to_transcription(filepaths, premium_queue=premium_queue)
     elif to == 'gpt':
         await gpt_producer.create_task_generate_result(uq_id, premium_queue=premium_queue)
