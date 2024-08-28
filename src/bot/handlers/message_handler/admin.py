@@ -48,7 +48,7 @@ async def admin_to_(callback: types.CallbackQuery, state: FSMContext):
     INJECTOR.inject_apihost_producer,
     INJECTOR.inject_s3
 )
-async def speaking_first_part(
+async def admin_run_task(
     message: types.Message,
     state: FSMContext,
     gpt_producer: GPTProducer,
