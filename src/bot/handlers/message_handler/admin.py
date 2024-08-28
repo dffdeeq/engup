@@ -43,10 +43,10 @@ async def admin_to_(callback: types.CallbackQuery, state: FSMContext):
 
 @router.message(
     AdminState.get_uq_id,
+    INJECTOR.inject_s3,
     INJECTOR.inject_gpt_producer,
     INJECTOR.inject_answer_process,
     INJECTOR.inject_apihost_producer,
-    INJECTOR.inject_s3
 )
 async def admin_run_task(
     message: types.Message,
