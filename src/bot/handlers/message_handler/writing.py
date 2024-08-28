@@ -85,7 +85,7 @@ async def writing_get_user_answer(
     if user.pts >= 1:
         text = ('Thank you for completing all the questions! To confirm your response, '
                 'please choose one of the following options:\n\n'
-                '1. Use 1 PT to receive a detailed analysis\n'
+                '1. Use 1 Premium Test to receive a detailed analysis\n'
                 '2. Receive a brief result without charge.')
         builder = InlineKeyboardBuilder([
             [InlineKeyboardButton(text='1', callback_data='confirm_task_writing premium')],
@@ -94,7 +94,7 @@ async def writing_get_user_answer(
 
     else:
         text = ('You do not have any Premium Tests (PTs) left in your account.\n\n'
-                'If you would like to spend 1 PT and receive a detailed analysis and '
+                'If you would like to spend 1 Premium Test and receive a detailed analysis and '
                 'personalized recommendations based on your answers, please purchase some PTs, then go back and'
                 'click on "Update PTs" button for proceed test in premium')
         builder = InlineKeyboardBuilder([

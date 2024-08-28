@@ -217,7 +217,7 @@ async def speaking_confirm_task(
     apihost_producer: ApiHostProducer,
     answer_process: AnswerProcessService,
     status_service: StatusService,
-    s3_service: S3Service
+    s3: S3Service
 ):
     state_data = await state.get_data()
     param = callback.data.split()[1]
@@ -230,7 +230,7 @@ async def speaking_confirm_task(
     await answer_process.update_user_qa_premium_queue(state_data['uq_id'], premium)
     filepaths = await answer_process.get_temp_data_filepaths(answer_process.session, state_data['uq_id'])
 
-    s3_service.download_files_list([os.path.basename(key) for key in filepaths])
+    s3.download_files_list([os.path.basename(key) for key in filepaths])
 
     await apihost_producer.create_task_send_to_transcription(filepaths, premium_queue=premium)
     await status_service.change_qa_status(state_data['uq_id'], status='Sent for transcription.')
