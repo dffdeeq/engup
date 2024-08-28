@@ -1,4 +1,4 @@
-from sqlalchemy import Column, DateTime, BigInteger, String, func, Integer, ForeignKey
+from sqlalchemy import Column, DateTime, BigInteger, String, func, Integer, ForeignKey, JSON
 from sqlalchemy.orm import relationship, backref
 
 from src.postgres.base import Base
@@ -17,10 +17,4 @@ class TgUser(Base):
     referrer_id = Column(BigInteger, ForeignKey('tg_user.id'), nullable=True)
     referrer = relationship('TgUser', remote_side='TgUser.id', backref=backref('referrals', lazy='dynamic'))
 
-    utm_source = Column(String, nullable=True)
-    utm_medium = Column(String, nullable=True)
-    utm_campaign = Column(String, nullable=True)
-    utm_content = Column(String, nullable=True)
-    utm_term = Column(String, nullable=True)
-    gad_source = Column(String, nullable=True)
-    gclid = Column(String, nullable=True)
+    utm_data_json = Column(JSON, nullable=True)

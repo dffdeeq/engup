@@ -46,20 +46,12 @@ class TgUserService(ServiceFactory):
         user_id: int,
         username: T.Optional[str] = None,
         referrer_id: int = None,
-        utm_source: str = None,
-        utm_medium: str = None,
-        utm_campaign: str = None,
-        utm_content: str = None,
-        utm_term: str = None,
-        gad_source: str = None,
-        gclid: str = None,
+        umt_data_dict: T.Optional[T.Dict] = None
     ) -> TgUser:
         user = await self.repo.get_tg_user_by_tg_id(user_id=user_id)
         if not user:
             user = await self.repo.create_tg_user(
-                user_id=user_id, username=username, referrer_id=referrer_id,
-                utm_source=utm_source, utm_medium=utm_medium, utm_campaign=utm_campaign, utm_content=utm_content,
-                utm_term=utm_term, gad_source=gad_source, gclid=gclid
+                user_id=user_id, username=username, referrer_id=referrer_id, umt_data_dict=umt_data_dict
             )
             await self.mark_user_pts(user_id, 'start', 3)
             await self.mark_user_activity(user.id, 'add free premium tests')
