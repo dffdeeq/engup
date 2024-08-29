@@ -14,4 +14,5 @@ router = Router(name=__name__)
 async def command_menu_handler(message: Message, tg_user_service: TgUserService, state: FSMContext) -> None:
     await state.clear()
     await tg_user_service.get_or_create_tg_user(message.from_user.id, message.from_user.username)
+    await tg_user_service.mark_user_activity(message.from_user.id, 'go to menu')
     await answer_menu(message)

@@ -54,7 +54,7 @@ class TgUserService(ServiceFactory):
                 user_id=user_id, username=username, referrer_id=referrer_id, umt_data_dict=umt_data_dict
             )
             await self.mark_user_pts(user_id, 'start', 3)
-            await self.mark_user_activity(user.id, 'add free premium tests')
+            await self.mark_user_activity(user.id, 'add start free pt')
         return user
 
     async def mark_user_activity(self, user_id: int, activity_name: str) -> None:
