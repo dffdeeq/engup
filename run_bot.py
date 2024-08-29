@@ -26,7 +26,7 @@ async def set_commands(bot: Bot):
 async def main():
     bot = get_bot(INJECTOR.settings)
     await bot.delete_webhook()
-    dp = get_dispatcher()
+    dp = get_dispatcher(INJECTOR.settings.redis.dsn)
 
     register_handlers(dp)
 
