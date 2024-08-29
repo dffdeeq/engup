@@ -17,8 +17,8 @@ async def feedback_menu_callback(callback: types.CallbackQuery, tg_user_service:
     await callback.answer()
 
     keyboard = InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton(text='Rate us', callback_data="rate_bot start")],
-        [InlineKeyboardButton(text='Take the survey', callback_data="leave_feedback")],
+        [InlineKeyboardButton(text='⭐️ Rate us', callback_data="rate_bot start")],
+        [InlineKeyboardButton(text='✅ Take the survey', callback_data="leave_feedback")],
         [InlineKeyboardButton(text='🔙 Back', callback_data='menu'), ],
     ])
     await callback.message.edit_text(text='Here you can leave a feedback', reply_markup=keyboard)
