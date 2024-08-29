@@ -10,6 +10,7 @@ from src.settings.factories.postgres import PostgresSettings
 from src.settings.factories.rabbitmq import RabbitMQSettings
 from src.settings.factories.analytics import AnalyticsSettings
 from src.settings.factories.S3 import S3Settings
+from src.settings.factories.redis import RedisSettings
 
 
 class Settings(BaseModel):
@@ -21,6 +22,7 @@ class Settings(BaseModel):
     nn_models: NNModelsSettings
     analytics: AnalyticsSettings
     s3: S3Settings
+    redis: RedisSettings
 
     @classmethod
     def new(cls) -> 'Settings':
@@ -36,4 +38,5 @@ class Settings(BaseModel):
             nn_models=NNModelsSettings.from_dict(settings_dict),
             analytics=AnalyticsSettings.from_dict(settings_dict),
             s3=S3Settings.from_dict(settings_dict),
+            redis=RedisSettings.from_dict(settings_dict),
         )

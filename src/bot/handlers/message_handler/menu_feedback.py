@@ -17,8 +17,8 @@ async def feedback_menu_callback(callback: types.CallbackQuery, tg_user_service:
     await callback.answer()
 
     keyboard = InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton(text='Rate us', callback_data="rate_bot start")],
-        [InlineKeyboardButton(text='Take the survey', callback_data="leave_feedback")],
+        [InlineKeyboardButton(text='⭐️ Rate us', callback_data="rate_bot start")],
+        [InlineKeyboardButton(text='✅ Take the survey', callback_data="leave_feedback")],
         [InlineKeyboardButton(text='🔙 Back', callback_data='menu'), ],
     ])
     await callback.message.edit_text(text='Here you can leave a feedback', reply_markup=keyboard)
@@ -70,7 +70,7 @@ async def feedback_get_review_callback(
 
 @router.callback_query(F.data == 'leave_feedback', INJECTOR.inject_tg_user)
 async def leave_feedback_callback(callback: types.CallbackQuery, state: FSMContext, tg_user_service: TgUserService):
-    await tg_user_service.mark_user_activity(callback.from_user.id, 'go to leave feedback')
+    await tg_user_service.mark_user_activity(callback.from_user.id, 'go to take the survey')
 
     await callback.answer()
     await state.set_data({
@@ -184,10 +184,11 @@ async def feedback_get_other_option(
         keyboard = InlineKeyboardMarkup(inline_keyboard=[
             [InlineKeyboardButton(text='🔙 Menu', callback_data='menu')]
         ])
+        await tg_user_service.mark_user_activity(message.from_user.id, 'end the survey')
         if await feedback_service.user_can_get_free_points(message.from_user.id):
             await feedback_service.save_user_poll_feedback(message.from_user.id, results)
-            await tg_user_service.mark_user_activity(message.from_user.id, 'left a feedback')
             await tg_user_service.add_points(message.from_user.id, 3)
+            await tg_user_service.mark_user_activity(message.from_user.id, 'add feedback free pt')
             await tg_user_service.mark_user_pts(message.from_user.id, 'feedback', 3)
             await message.answer(
                 text="Thanks for the feedback! You have 3 more free tests",
