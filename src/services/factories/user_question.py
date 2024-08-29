@@ -64,6 +64,7 @@ class UserQuestionService(ServiceFactory):
                 if referrer:
                     referrer.pts += 5
                     session.add(referrer)
+                    await self.activity_repo.create_user_activity(referrer.id, 'add ref free pt')
                     try:
                         await session.execute(
                             insert(TgUserPts).values(user_id=referrer.id, pts_channel='referral', balance_movement=5)
@@ -71,7 +72,6 @@ class UserQuestionService(ServiceFactory):
                     except Exception as e:
                         logging.exception(e)
             await session.commit()
-            await self.activity_repo.create_user_activity(referrer.id, 'add ref free pt')
 
     @staticmethod
     async def format_question_answer_to_dict(card_text: str, user_answer: str) -> T.Dict:
