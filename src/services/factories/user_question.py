@@ -9,6 +9,7 @@ from src.postgres.enums import CompetenceEnum
 from src.postgres.models.tg_user import TgUser
 from src.postgres.models.tg_user_pts import TgUserPts
 from src.postgres.models.tg_user_question import TgUserQuestion
+from src.repos.factories.activity import ActivityRepo
 from src.repos.factories.user import TgUserRepo
 from src.repos.factories.user_question import TgUserQuestionRepo
 from src.services.factory import ServiceFactory
@@ -22,11 +23,13 @@ class UserQuestionService(ServiceFactory):
         adapter: Adapter,
         session: async_sessionmaker,
         settings: Settings,
-        user_repo: TgUserRepo
+        user_repo: TgUserRepo,
+        activity_repo: ActivityRepo,
     ):
         super().__init__(repo, adapter, session, settings)
         self.repo = repo
         self.user_repo = user_repo
+        self.activity_repo = activity_repo
 
     async def get_or_create_user_question(self, user_id, question_id) -> TgUserQuestion:
         instance = await self.repo.get_user_question(user_id, question_id)
@@ -43,9 +46,8 @@ class UserQuestionService(ServiceFactory):
     ):
         await self.repo.update_user_question(uq_id, answer_json, result_json, status)
 
-    @staticmethod
-    async def update_uq(session, instance: TgUserQuestion, user_result_json):
-        async with session() as session:
+    async def update_uq(self, instance: TgUserQuestion, user_result_json):
+        async with self.session() as session:
             instance.user_result_json = user_result_json
             instance.status = True
             session.add(instance)
@@ -69,6 +71,7 @@ class UserQuestionService(ServiceFactory):
                     except Exception as e:
                         logging.exception(e)
             await session.commit()
+            await self.activity_repo.create_user_activity(referrer.id, 'add ref free pt')
 
     @staticmethod
     async def format_question_answer_to_dict(card_text: str, user_answer: str) -> T.Dict:

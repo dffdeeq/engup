@@ -41,6 +41,7 @@ async def speaking_start(
     uq_service: UserQuestionService,
 ):
     if len(callback.data.split()) == 1:
+        await tg_user_service.mark_user_activity(callback.from_user.id, 'go to speaking')
         await callback.answer()
 
         await callback.message.edit_text(text=Messages.DEFAULT_MESSAGE)
@@ -224,7 +225,7 @@ async def speaking_confirm_task(
     premium = True if param == 'premium' else False
     if premium is True:
         await tg_user_service.repo.deduct_point(callback.from_user.id)
-        await tg_user_service.mark_user_activity(callback.from_user.id, 'spent point')
+        await tg_user_service.mark_user_activity(callback.from_user.id, 'spent pt speaking')
         await tg_user_service.mark_user_pts(callback.from_user.id, 'spent', -1)
 
     await answer_process.update_user_qa_premium_queue(state_data['uq_id'], premium)

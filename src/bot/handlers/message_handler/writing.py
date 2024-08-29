@@ -34,6 +34,7 @@ async def writing_start(
     uq_service: UserQuestionService,
 ):
     if len(callback.data.split()) == 1:
+        await tg_user_service.mark_user_activity(callback.from_user.id, 'go to writing')
         question = await question_service.get_or_generate_question_for_user(
             callback.from_user.id, CompetenceEnum.writing)
         question_json: T.Dict = json.loads(question.question_json)
@@ -75,6 +76,7 @@ async def writing_get_user_answer(
     uq_service: UserQuestionService,
     tg_user_service: TgUserService,
 ):
+    await tg_user_service.mark_user_activity(message.from_user.id, 'start writing')
     user = await tg_user_service.get_or_create_tg_user(message.from_user.id)
     await tg_user_service.mark_user_activity(message.from_user.id, 'end writing')
     state_data = await state.get_data()
@@ -125,7 +127,7 @@ async def writing_confirm_task(
     state_data = await state.get_data()
     if premium is True:
         await tg_user_service.repo.deduct_point(callback.from_user.id)
-        await tg_user_service.mark_user_activity(callback.from_user.id, 'spent point')
+        await tg_user_service.mark_user_activity(callback.from_user.id, 'spent pt writing')
         await tg_user_service.mark_user_pts(callback.from_user.id, 'spent', -1)
 
     user_answer_json = state_data['user_answer_json']

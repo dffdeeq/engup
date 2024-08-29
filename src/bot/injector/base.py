@@ -39,6 +39,7 @@ class BaseInjector:
         self.apihost_client = ApiHostClient(http_client=self.http_client, settings=self.settings.apihost)
         tg_user_repo = TgUserRepo(TgUser, self.session)
         tg_user_question_repo = TgUserQuestionRepo(TgUserQuestion, self.session)
+        activity_repo = ActivityRepo(TgUserActivity, self.session)
 
         self.question_service = QuestionService(
             repo=QuestionRepo(Question, self.session),
@@ -51,11 +52,12 @@ class BaseInjector:
             adapter=self.adapter,
             session=self.session,
             settings=self.settings,
-            user_repo=tg_user_repo
+            user_repo=tg_user_repo,
+            activity_repo=activity_repo
         )
         self.tg_user_service = TgUserService(
             repo=tg_user_repo,
-            activity_repo=ActivityRepo(TgUserActivity, self.session),
+            activity_repo=activity_repo,
             adapter=self.adapter,
             session=self.session,
             settings=self.settings,
