@@ -16,7 +16,7 @@ async def support_menu_callback(callback: types.CallbackQuery, tg_user_service: 
     await answer_support_menu(callback)
 
 
-@router.callback_query(F.data == 'user_agreement', INJECTOR.inject_tg_user, INJECTOR.inject_tg_user)
+@router.callback_query(F.data == 'user_agreement', INJECTOR.inject_tg_user)
 async def user_agreement_menu_callback(callback: types.CallbackQuery, tg_user_service: TgUserService):
     await tg_user_service.mark_user_activity(callback.from_user.id, 'go to user agreement')
 
@@ -27,7 +27,7 @@ async def user_agreement_menu_callback(callback: types.CallbackQuery, tg_user_se
     await callback.message.edit_text(text=text, reply_markup=keyboard)
 
 
-@router.callback_query(F.data == 'contact_support', INJECTOR.inject_tg_user, INJECTOR.inject_tg_user)
+@router.callback_query(F.data == 'contact_support', INJECTOR.inject_tg_user)
 async def contact_support_menu_callback(callback: types.CallbackQuery, tg_user_service: TgUserService):
     await tg_user_service.mark_user_activity(callback.from_user.id, 'go to contact support')
 
@@ -38,7 +38,7 @@ async def contact_support_menu_callback(callback: types.CallbackQuery, tg_user_s
     await callback.message.edit_text(text=text, reply_markup=keyboard)
 
 
-@router.callback_query(F.data == 'about_bot', INJECTOR.inject_tg_user, INJECTOR.inject_tg_user)
+@router.callback_query(F.data == 'about_bot', INJECTOR.inject_tg_user)
 async def about_bot_callback(callback: types.CallbackQuery, tg_user_service: TgUserService):
     await tg_user_service.mark_user_activity(callback.from_user.id, 'go to about')
 

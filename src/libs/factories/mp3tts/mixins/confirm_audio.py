@@ -1,11 +1,11 @@
 import uuid
 
-from src.libs.factories.apihost.base import BaseApiHostClient
-from src.libs.factories.apihost.models.transcription_response import TranscriptionResponse
-from src.libs.factories.apihost.routes import CONFIRM_TRANSCRIPTION
+from src.libs.factories.mp3tts.base import BaseMP3TTSClient
+from src.libs.factories.mp3tts.models.transcription_response import TranscriptionResponse
+from src.libs.factories.mp3tts.routes import CONFIRM_TRANSCRIPTION
 
 
-class ConfirmTranscriptionMixin(BaseApiHostClient):
+class ConfirmTranscriptionMixin(BaseMP3TTSClient):
     async def confirm_transcription(self, transcription_id: uuid.UUID) -> TranscriptionResponse:
         payload = {
             "upload_id": str(transcription_id),

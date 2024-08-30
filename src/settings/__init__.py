@@ -2,7 +2,7 @@ import os
 from dotenv import load_dotenv
 from pydantic import BaseModel
 
-from src.settings.factories.apihost import ApiHostSettings
+from src.settings.factories.mp3tts import MP3TTSSettings
 from src.settings.factories.bot import BotSettings
 from src.settings.factories.gpt import GPTSettings
 from src.settings.factories.nn_models import NNModelsSettings
@@ -16,7 +16,7 @@ from src.settings.factories.redis import RedisSettings
 class Settings(BaseModel):
     bot: BotSettings
     postgres: PostgresSettings
-    apihost: ApiHostSettings
+    mp3tts: MP3TTSSettings
     gpt: GPTSettings
     rabbitmq: RabbitMQSettings
     nn_models: NNModelsSettings
@@ -31,7 +31,7 @@ class Settings(BaseModel):
 
         return Settings(
             bot=BotSettings.from_dict(settings_dict),
-            apihost=ApiHostSettings.from_dict(settings_dict),
+            mp3tts=MP3TTSSettings.from_dict(settings_dict),
             postgres=PostgresSettings.from_dict(settings_dict),
             gpt=GPTSettings.from_dict(settings_dict),
             rabbitmq=RabbitMQSettings.from_dict(settings_dict),

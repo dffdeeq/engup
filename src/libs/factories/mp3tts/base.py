@@ -3,11 +3,11 @@ import typing as T # noqa
 from aiohttp import FormData
 
 from src.libs.http_client import HttpClient, HttpClientResponse
-from src.settings.factories.apihost import ApiHostSettings
+from src.settings.factories.mp3tts import MP3TTSSettings
 
 
-class BaseApiHostClient:
-    def __init__(self, http_client: HttpClient, settings: ApiHostSettings) -> None:
+class BaseMP3TTSClient:
+    def __init__(self, http_client: HttpClient, settings: MP3TTSSettings) -> None:
         self.http_client = http_client
         self.settings = settings
 
