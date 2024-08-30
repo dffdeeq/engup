@@ -2,6 +2,7 @@ import os
 from dotenv import load_dotenv
 from pydantic import BaseModel
 
+from src.settings.factories.apihost import ApiHostSettings
 from src.settings.factories.mp3tts import MP3TTSSettings
 from src.settings.factories.bot import BotSettings
 from src.settings.factories.gpt import GPTSettings
@@ -23,6 +24,7 @@ class Settings(BaseModel):
     analytics: AnalyticsSettings
     s3: S3Settings
     redis: RedisSettings
+    apihost: ApiHostSettings
 
     @classmethod
     def new(cls) -> 'Settings':
@@ -39,4 +41,5 @@ class Settings(BaseModel):
             analytics=AnalyticsSettings.from_dict(settings_dict),
             s3=S3Settings.from_dict(settings_dict),
             redis=RedisSettings.from_dict(settings_dict),
+            apihost=ApiHostSettings.from_dict(settings_dict),
         )
