@@ -72,10 +72,10 @@ services:
       engup_postgres:
         condition: service_healthy
 
-  engup_apihost_worker:
-    container_name: engup_apihost_worker
+  engup_mp3tts_worker:
+    container_name: engup_mp3tts_worker
     build: .
-    command: python run_queue_apihost.py
+    command: python run_queue_mp3tts.py
     volumes:
       - ./data/temp_files:/app/data/temp_files
     environment:
