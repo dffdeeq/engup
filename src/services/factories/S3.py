@@ -1,6 +1,7 @@
 import logging
 import os.path
 import typing as T  # noqa
+from io import BytesIO
 
 import boto3
 from boto3 import Session
@@ -49,6 +50,13 @@ class S3Service(ServiceFactory):
         bucket_name: str = 'ielts-user-recorded-voice-files'
     ):
         self.s3.download_file(bucket_name, object_name, os.path.join(download_dir, object_name))
+
+    def get_file_obj(self, object_name: str, bucket_name: str = 'ielts-user-recorded-voice-files'):
+        audio_stream = BytesIO()
+        self.s3.download_fileobj(bucket_name, object_name, audio_stream)
+        audio_stream.seek(0)
+        audio_stream.name = object_name
+        return audio_stream
 
     def download_files_list(
         self,
