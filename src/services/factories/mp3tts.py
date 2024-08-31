@@ -11,7 +11,7 @@ from src.services.factory import ServiceFactory
 from src.settings import Settings
 
 
-class ApiHostService(ServiceFactory):
+class MP3TTSService(ServiceFactory):
     def __init__(
         self,
         repo: TgUserRepo,
@@ -31,14 +31,14 @@ class ApiHostService(ServiceFactory):
 
     async def _send_files_to_transcription(self, filepaths: T.List[str]) -> uuid.UUID:
         try:
-            transcription = await self.adapter.apihost_client.send_files_to_transcription(filepaths)
+            transcription = await self.adapter.mp3tts_client.send_files_to_transcription(filepaths)
             return transcription.upload_id
         except Exception as e:
             logging.error(e)
 
     async def _confirm_transcription(self, transcription_id: uuid.UUID) -> uuid.UUID:
         try:
-            transcription = await self.adapter.apihost_client.confirm_transcription(transcription_id)
+            transcription = await self.adapter.mp3tts_client.confirm_transcription(transcription_id)
             return transcription.transcribe_id
         except Exception as e:
             logging.error(e)

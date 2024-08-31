@@ -26,7 +26,7 @@ async def admin_run_task_processing(callback: types.CallbackQuery, state: FSMCon
 
     builder = InlineKeyboardBuilder([
         [
-            InlineKeyboardButton(text='To apihost', callback_data='admin_to apihost'),
+            InlineKeyboardButton(text='To mp3tts', callback_data='admin_to apihost'),
             InlineKeyboardButton(text='To gpt', callback_data='admin_to gpt'),
         ],
     ])

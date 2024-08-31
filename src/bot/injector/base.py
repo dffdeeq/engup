@@ -1,5 +1,5 @@
 from src.libs.adapter import Adapter
-from src.libs.factories.apihost import ApiHostClient
+from src.libs.factories.mp3tts import MP3TTSClient
 from src.libs.http_client import HttpClient
 from src.postgres.factory import initialize_postgres_pool
 from src.postgres.models.poll_feedback import PollFeedback
@@ -36,7 +36,7 @@ class BaseInjector:
         self.session = initialize_postgres_pool(settings.postgres)
         self.http_client = HttpClient()
         self.adapter = Adapter(self.settings)
-        self.apihost_client = ApiHostClient(http_client=self.http_client, settings=self.settings.apihost)
+        self.mp3tts_client = MP3TTSClient(http_client=self.http_client, settings=self.settings.mp3tts)
         tg_user_repo = TgUserRepo(TgUser, self.session)
         tg_user_question_repo = TgUserQuestionRepo(TgUserQuestion, self.session)
         activity_repo = ActivityRepo(TgUserActivity, self.session)

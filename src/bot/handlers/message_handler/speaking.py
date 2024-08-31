@@ -180,6 +180,7 @@ async def speaking_third_part(
         })
         await message.answer(text=next_question)
     else:
+        await state.set_state(SpeakingState.end)
         await tg_user_service.mark_user_activity(message.from_user.id, 'end speaking')
         await state.update_data({'task_ready_to_proceed': 'speaking'})
         if user.pts >= 1:

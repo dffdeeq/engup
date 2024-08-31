@@ -3,7 +3,7 @@ from aiogram.filters import Filter
 from src.bot.injector.base import BaseInjector
 
 
-class _ApiHostClientInjector(Filter):
+class _MP3TTSClientInjector(Filter):
     def __init__(self, apihost_client):
         self.apihost_client = apihost_client
 
@@ -11,7 +11,7 @@ class _ApiHostClientInjector(Filter):
         return {'apihost_client': self.apihost_client}
 
 
-class ApiHostClientInjectorMixin(BaseInjector):
+class MP3TTSClientInjectorMixin(BaseInjector):
     @property
-    def inject_apihost(self) -> _ApiHostClientInjector:
-        return _ApiHostClientInjector(self.apihost_client)
+    def inject_mp3tts(self) -> _MP3TTSClientInjector:
+        return _MP3TTSClientInjector(self.mp3tts_client)

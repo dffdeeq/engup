@@ -1,6 +1,6 @@
 from src.bot.injector.base import BaseInjector
 from src.bot.injector.factories.answer_process_injector import AnswerProcessInjectorMixin
-from src.bot.injector.factories.apihost_client_injector import ApiHostClientInjectorMixin
+from src.bot.injector.factories.mp3tts_client_injector import MP3TTSClientInjectorMixin
 from src.bot.injector.factories.apihost_producer_injector import ApiHostProducerInjectorMixin
 from src.bot.injector.factories.feedback_service_injector import FeedbackInjectorMixin
 from src.bot.injector.factories.gpt_producer_injector import GPTProducerInjectorMixin
@@ -15,7 +15,7 @@ from src.settings import Settings
 
 
 class _I(
-    ApiHostClientInjectorMixin,
+    MP3TTSClientInjectorMixin,
     TgUserServiceInjectorMixin,
     VoiceServiceInjectorMixin,
     ApiHostProducerInjectorMixin,
