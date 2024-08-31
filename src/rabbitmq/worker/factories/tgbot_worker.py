@@ -5,7 +5,7 @@ import asyncio
 from functools import wraps
 
 from aio_pika import Message
-from aiogram.types import InlineKeyboardButton
+from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 from sqlalchemy.ext.asyncio import async_sessionmaker
 
@@ -62,6 +62,11 @@ class TgBotWorker(RabbitMQWorkerFactory):
         if data['less_than_three_points']:
             msg, builder = self.get_less_than_three_points_msg_and_keyboard()
             await self.bot.send_message(data['user_id'], msg, reply_markup=builder.as_markup())
+        else:
+            keyboard = InlineKeyboardMarkup(inline_keyboard=[
+                [InlineKeyboardButton(text='Menu', callback_data='menu'), ],
+            ])
+            await self.bot.send_message(data['user_id'], 'Sending the result is finished', reply_markup=keyboard)
 
         await self.status_service.change_qa_status(data['uq_id'], status='Finished.')
 
@@ -75,6 +80,7 @@ class TgBotWorker(RabbitMQWorkerFactory):
         builder = InlineKeyboardBuilder([
                 [InlineKeyboardButton(text='Buy points', callback_data='pricing'),],
                 [InlineKeyboardButton(text='Recommend/Share', callback_data='free_tests'),],
-                [InlineKeyboardButton(text='Leave Feedback', callback_data='leave_feedback')]
+                [InlineKeyboardButton(text='Leave Feedback', callback_data='leave_feedback')],
+                [InlineKeyboardButton(text='Menu', callback_data='menu'), ],
         ])
         return text, builder
