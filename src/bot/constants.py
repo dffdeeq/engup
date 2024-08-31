@@ -2,6 +2,10 @@ from src.postgres.enums import CompetenceEnum
 
 
 class DefaultMessages:
+    START_MESSAGE = """
+This chatbot will help you prepare for IELTS. It gives you tasks to complete and checks how well you are doing, providing you with feedback on your progress. The chatbot meets the standards of IELTS. If you follow its recommendations, your IELTS score will be higher.
+"""
+
     DEFAULT_TEXT = """
 <b>Welcome to IELTS Writing Practice!</b>
     

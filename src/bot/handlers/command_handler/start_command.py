@@ -3,9 +3,10 @@ import uuid
 
 from aiogram import Router
 from aiogram.filters import CommandStart, CommandObject
-from aiogram.types import Message
+from aiogram.types import Message, InlineKeyboardButton
+from aiogram.utils.keyboard import InlineKeyboardBuilder
 
-from src.bot.handlers.defaults.menu_default import answer_menu
+from src.bot.constants import DefaultMessages
 from src.bot.injector import INJECTOR
 from src.libs.factories.analytics.models.event_data import EventData
 from src.services.factories.metrics import MetricsService
@@ -63,5 +64,7 @@ async def command_start_handler(
     await tg_user_service.get_or_create_tg_user(
         message.from_user.id, message.from_user.username, user_referrer_id, umt_data_dict
     )
-    await tg_user_service.mark_user_activity(message.from_user.id, 'go to menu')
-    await answer_menu(message)
+    builder = InlineKeyboardBuilder([
+        [InlineKeyboardButton(text='📚 Start preparing for IELTS', callback_data='ielts_menu')],
+    ])
+    await message.answer(text=DefaultMessages.START_MESSAGE, reply_markup=builder.as_markup())
