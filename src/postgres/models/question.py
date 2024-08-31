@@ -1,4 +1,4 @@
-from sqlalchemy import Integer, Column, Enum, JSON, Boolean, DateTime, func
+from sqlalchemy import Integer, Column, Enum, JSON, Boolean, DateTime, func, String
 
 from src.postgres.base import Base
 from src.postgres.enums import CompetenceEnum
@@ -12,3 +12,5 @@ class Question(Base):
     question_json = Column(JSON)
     is_active = Column(Boolean, default=True)
     date_modified = Column(DateTime, default=func.now(), onupdate=func.now())
+
+    question_audio_filename = Column(String, nullable=True)

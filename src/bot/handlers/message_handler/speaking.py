@@ -5,7 +5,7 @@ import json
 
 from aiogram import Router, types, F
 from aiogram.fsm.context import FSMContext
-from aiogram.types import InlineKeyboardButton
+from aiogram.types import InlineKeyboardButton, BufferedInputFile
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 
 from src.bot.core.filters.voicemail_filter import VoicemailFilter
@@ -32,6 +32,7 @@ router = Router(name=__name__)
     INJECTOR.inject_question,
     INJECTOR.inject_uq,
     INJECTOR.inject_answer_process,
+    INJECTOR.inject_s3
 )
 async def speaking_start(
     callback: types.CallbackQuery,
@@ -39,6 +40,7 @@ async def speaking_start(
     tg_user_service: TgUserService,
     question_service: QuestionService,
     uq_service: UserQuestionService,
+    s3: S3Service,
 ):
     if len(callback.data.split()) == 1:
         await tg_user_service.mark_user_activity(callback.from_user.id, 'go to speaking')
@@ -58,6 +60,7 @@ async def speaking_start(
             'part_3_questions': question_json['part_3'],
             'part_1_current_question': 0,
             'uq_id': uq_instance.id,
+            'question_id': question.id,
         })
 
         builder = InlineKeyboardBuilder([
@@ -71,8 +74,12 @@ async def speaking_start(
         await tg_user_service.mark_user_activity(callback.from_user.id, 'start speaking')
         await callback.answer()
         state_data = await state.get_data()
-        await callback.message.answer(
-            state_data['part_1_questions'][0], disable_web_page_preview=True)
+
+        question_audio_filename = await question_service.get_question_audio_filename(state_data['question_id'])
+        audio_stream = s3.get_file_obj(question_audio_filename)
+        input_file = BufferedInputFile(audio_stream.read(), filename=question_audio_filename)
+        await callback.message.answer_voice(
+            voice=input_file, caption=f"<blockquote>{state_data['part_1_questions'][0]}</blockquote>")
 
 
 @router.message(
