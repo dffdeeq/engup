@@ -5,6 +5,7 @@ class SpeakingState(StatesGroup):
     first_part = State()
     second_part = State()
     third_part = State()
+    end = State()
 
 
 class WritingState(StatesGroup):
