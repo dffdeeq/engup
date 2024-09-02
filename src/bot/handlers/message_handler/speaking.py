@@ -5,7 +5,7 @@ import json
 
 from aiogram import Router, types, F
 from aiogram.fsm.context import FSMContext
-from aiogram.types import InlineKeyboardButton, BufferedInputFile
+from aiogram.types import InlineKeyboardButton
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 
 from src.bot.core.filters.voicemail_filter import VoicemailFilter
@@ -32,7 +32,6 @@ router = Router(name=__name__)
     INJECTOR.inject_question,
     INJECTOR.inject_uq,
     INJECTOR.inject_answer_process,
-    INJECTOR.inject_s3
 )
 async def speaking_start(
     callback: types.CallbackQuery,
@@ -40,7 +39,6 @@ async def speaking_start(
     tg_user_service: TgUserService,
     question_service: QuestionService,
     uq_service: UserQuestionService,
-    s3: S3Service,
 ):
     if len(callback.data.split()) == 1:
         await tg_user_service.mark_user_activity(callback.from_user.id, 'go to speaking')
@@ -75,9 +73,7 @@ async def speaking_start(
         await callback.answer()
         state_data = await state.get_data()
 
-        question_audio_filename = await question_service.get_question_audio_filename(state_data['question_id'])
-        audio_stream = s3.get_file_obj(question_audio_filename)
-        input_file = BufferedInputFile(audio_stream.read(), filename=question_audio_filename)
+        input_file = await question_service.get_buffered_input_file_for_question_text(state_data['part_1_questions'][0])
         await callback.message.answer_voice(
             voice=input_file, caption=f"<blockquote>{state_data['part_1_questions'][0]}</blockquote>")
 
@@ -87,7 +83,8 @@ async def speaking_start(
     VoicemailFilter(),
     INJECTOR.inject_voice,
     INJECTOR.inject_answer_process,
-    INJECTOR.inject_tg_user
+    INJECTOR.inject_tg_user,
+    INJECTOR.inject_question,
 )
 async def speaking_first_part(
     message: types.Message,
@@ -95,6 +92,7 @@ async def speaking_first_part(
     voice_service: VoiceService,
     answer_process: AnswerProcessService,
     tg_user_service: TgUserService,
+    question_service: QuestionService,
 ):
     state_data = await state.get_data()
     filepath = await voice_service.save_user_voicemail(message.voice, message.bot)
@@ -112,13 +110,17 @@ async def speaking_first_part(
             'part_1_current_question': next_question_pk,
             f'part_1_q_{next_question_pk}': next_question
         })
-        await message.answer(text=next_question)
+
+        input_file = await question_service.get_buffered_input_file_for_question_text(next_question)
+        await message.answer_voice(voice=input_file, caption=f"<blockquote>{next_question}</blockquote>")
     else:
         part_2_question = state_data['part_2_question']
         await state.update_data({'part_2_q_0': part_2_question})
-        text = Messages.SECOND_PART_MESSAGE.format(question=part_2_question)
         await state.set_state(SpeakingState.second_part)
-        await message.answer(text=text)
+
+        await message.answer(text=Messages.SECOND_PART_MESSAGE)
+        input_file = await question_service.get_buffered_input_file_for_question_text(part_2_question)
+        await message.answer_voice(voice=input_file, caption=f"<blockquote>{part_2_question}</blockquote>")
 
 
 @router.message(
@@ -126,7 +128,8 @@ async def speaking_first_part(
     VoicemailFilter(),
     INJECTOR.inject_voice,
     INJECTOR.inject_answer_process,
-    INJECTOR.inject_tg_user
+    INJECTOR.inject_tg_user,
+    INJECTOR.inject_question
 )
 async def speaking_second_part(
     message: types.Message,
@@ -134,6 +137,7 @@ async def speaking_second_part(
     voice_service: VoiceService,
     answer_process: AnswerProcessService,
     tg_user_service: TgUserService,
+    question_service: QuestionService,
 ):
     await tg_user_service.mark_user_activity(message.from_user.id, 'start part 2 speaking')
 
@@ -150,7 +154,9 @@ async def speaking_second_part(
 
     await state.set_state(SpeakingState.third_part)
     await message.answer(text=Messages.THIRD_PART_MESSAGE)
-    await message.answer(text=current_question)
+
+    input_file = await question_service.get_buffered_input_file_for_question_text(current_question)
+    await message.answer_voice(voice=input_file, caption=f"<blockquote>{current_question}</blockquote>")
 
 
 @router.message(
@@ -160,7 +166,8 @@ async def speaking_second_part(
     INJECTOR.inject_voice,
     INJECTOR.inject_apihost_producer,
     INJECTOR.inject_answer_process,
-    INJECTOR.inject_status
+    INJECTOR.inject_status,
+    INJECTOR.inject_question
 )
 async def speaking_third_part(
     message: types.Message,
@@ -168,6 +175,7 @@ async def speaking_third_part(
     tg_user_service: TgUserService,
     voice_service: VoiceService,
     answer_process: AnswerProcessService,
+    question_service: QuestionService,
 ):
     user = await tg_user_service.get_or_create_tg_user(message.from_user.id)
     state_data = await state.get_data()
@@ -185,7 +193,8 @@ async def speaking_third_part(
             'part_3_current_question': next_question_pk,
             f'part_3_q_{next_question_pk}': next_question
         })
-        await message.answer(text=next_question)
+        input_file = await question_service.get_buffered_input_file_for_question_text(next_question)
+        await message.answer_voice(voice=input_file, caption=f"<blockquote>{next_question}</blockquote>")
     else:
         await state.set_state(SpeakingState.end)
         await tg_user_service.mark_user_activity(message.from_user.id, 'end speaking')

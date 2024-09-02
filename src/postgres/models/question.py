@@ -13,4 +13,13 @@ class Question(Base):
     is_active = Column(Boolean, default=True)
     date_modified = Column(DateTime, default=func.now(), onupdate=func.now())
 
-    question_audio_filename = Column(String, nullable=True)
+    question_audio_json = Column(JSON, nullable=True)
+
+
+class QuestionAudioFile(Base):
+    __tablename__ = 'question_audio_file'
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+
+    text_hash = Column(String, nullable=True)
+    filename = Column(String, nullable=True)

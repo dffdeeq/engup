@@ -94,9 +94,8 @@ Welcome to Part 2 of the IELTS Speaking test. This part lasts 3-4 minutes. You w
 
 Please note that if your recording exceeds 2 minutes, it will be cut off at the 2-minute mark, and any additional content will not be counted. This part tests your ability to speak at length on a given topic.
 
-<b>Here’s your topic. Take a minute to prepare.</b>
-{question}
-    """
+<b>Below is your topic. Take a minute to prepare.</b>
+"""
 
     THIRD_PART_MESSAGE = """
 Welcome to Part 3 of the IELTS Speaking test. This part lasts 4-5 minutes. You will be asked  further questions related to the topic in Part 2. This is an opportunity to discuss more abstract ideas and issues. 
