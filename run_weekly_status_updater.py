@@ -29,6 +29,6 @@ async def task(_session: async_sessionmaker):
 settings = Settings.new()
 session = initialize_postgres_pool(settings.postgres)
 scheduler = AsyncIOScheduler()
-scheduler.add_job(task, 'cron', day_of_week='mon', hour=14, minute=59, args=(session, ))
+scheduler.add_job(task, 'cron', day_of_week='mon', hour=4, minute=1, args=(session, ))
 scheduler.start()
 asyncio.get_event_loop().run_forever()
