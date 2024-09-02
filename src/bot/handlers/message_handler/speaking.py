@@ -58,6 +58,7 @@ async def speaking_start(
             'part_3_questions': question_json['part_3'],
             'part_1_current_question': 0,
             'uq_id': uq_instance.id,
+            'question_id': question.id,
         })
 
         builder = InlineKeyboardBuilder([
@@ -69,10 +70,11 @@ async def speaking_start(
             Messages.FIRST_PART_MESSAGE_1, disable_web_page_preview=True, reply_markup=builder.as_markup())
     else:
         await tg_user_service.mark_user_activity(callback.from_user.id, 'start speaking')
-        await callback.answer()
+        await callback.answer(text='Generating the question, please wait a few seconds...', show_alert=True)
         state_data = await state.get_data()
-        await callback.message.answer(
-            state_data['part_1_questions'][0], disable_web_page_preview=True)
+        input_file = await question_service.get_buffered_input_file_for_question_text(state_data['part_1_questions'][0])
+        await callback.message.answer_voice(
+            voice=input_file, caption=f"<blockquote>{state_data['part_1_questions'][0]}</blockquote>")
 
 
 @router.message(
@@ -80,7 +82,8 @@ async def speaking_start(
     VoicemailFilter(),
     INJECTOR.inject_voice,
     INJECTOR.inject_answer_process,
-    INJECTOR.inject_tg_user
+    INJECTOR.inject_tg_user,
+    INJECTOR.inject_question,
 )
 async def speaking_first_part(
     message: types.Message,
@@ -88,6 +91,7 @@ async def speaking_first_part(
     voice_service: VoiceService,
     answer_process: AnswerProcessService,
     tg_user_service: TgUserService,
+    question_service: QuestionService,
 ):
     state_data = await state.get_data()
     filepath = await voice_service.save_user_voicemail(message.voice, message.bot)
@@ -105,13 +109,17 @@ async def speaking_first_part(
             'part_1_current_question': next_question_pk,
             f'part_1_q_{next_question_pk}': next_question
         })
-        await message.answer(text=next_question)
+
+        input_file = await question_service.get_buffered_input_file_for_question_text(next_question)
+        await message.answer_voice(voice=input_file, caption=f"<blockquote>{next_question}</blockquote>")
     else:
         part_2_question = state_data['part_2_question']
         await state.update_data({'part_2_q_0': part_2_question})
-        text = Messages.SECOND_PART_MESSAGE.format(question=part_2_question)
         await state.set_state(SpeakingState.second_part)
-        await message.answer(text=text)
+
+        await message.answer(text=Messages.SECOND_PART_MESSAGE)
+        input_file = await question_service.get_buffered_input_file_for_question_text(part_2_question)
+        await message.answer_voice(voice=input_file, caption=f"<blockquote>{part_2_question}</blockquote>")
 
 
 @router.message(
@@ -119,7 +127,8 @@ async def speaking_first_part(
     VoicemailFilter(),
     INJECTOR.inject_voice,
     INJECTOR.inject_answer_process,
-    INJECTOR.inject_tg_user
+    INJECTOR.inject_tg_user,
+    INJECTOR.inject_question
 )
 async def speaking_second_part(
     message: types.Message,
@@ -127,6 +136,7 @@ async def speaking_second_part(
     voice_service: VoiceService,
     answer_process: AnswerProcessService,
     tg_user_service: TgUserService,
+    question_service: QuestionService,
 ):
     await tg_user_service.mark_user_activity(message.from_user.id, 'start part 2 speaking')
 
@@ -143,7 +153,9 @@ async def speaking_second_part(
 
     await state.set_state(SpeakingState.third_part)
     await message.answer(text=Messages.THIRD_PART_MESSAGE)
-    await message.answer(text=current_question)
+
+    input_file = await question_service.get_buffered_input_file_for_question_text(current_question)
+    await message.answer_voice(voice=input_file, caption=f"<blockquote>{current_question}</blockquote>")
 
 
 @router.message(
@@ -153,7 +165,8 @@ async def speaking_second_part(
     INJECTOR.inject_voice,
     INJECTOR.inject_apihost_producer,
     INJECTOR.inject_answer_process,
-    INJECTOR.inject_status
+    INJECTOR.inject_status,
+    INJECTOR.inject_question
 )
 async def speaking_third_part(
     message: types.Message,
@@ -161,6 +174,7 @@ async def speaking_third_part(
     tg_user_service: TgUserService,
     voice_service: VoiceService,
     answer_process: AnswerProcessService,
+    question_service: QuestionService,
 ):
     user = await tg_user_service.get_or_create_tg_user(message.from_user.id)
     state_data = await state.get_data()
@@ -178,7 +192,8 @@ async def speaking_third_part(
             'part_3_current_question': next_question_pk,
             f'part_3_q_{next_question_pk}': next_question
         })
-        await message.answer(text=next_question)
+        input_file = await question_service.get_buffered_input_file_for_question_text(next_question)
+        await message.answer_voice(voice=input_file, caption=f"<blockquote>{next_question}</blockquote>")
     else:
         await state.set_state(SpeakingState.end)
         await tg_user_service.mark_user_activity(message.from_user.id, 'end speaking')

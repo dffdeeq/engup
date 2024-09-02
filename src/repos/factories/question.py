@@ -4,7 +4,7 @@ from sqlalchemy import select, not_, and_
 from sqlalchemy.ext.asyncio import async_sessionmaker
 
 from src.postgres.enums import CompetenceEnum
-from src.postgres.models.question import Question
+from src.postgres.models.question import Question, QuestionAudioFile
 from src.postgres.models.tg_user_question import TgUserQuestion
 from src.repos.factory import RepoFactory
 
@@ -12,6 +12,12 @@ from src.repos.factory import RepoFactory
 class QuestionRepo(RepoFactory):
     def __init__(self, model: T.Type[Question], session: async_sessionmaker):
         super().__init__(model, session)
+
+    async def get_question_by_id(self, question_id: int) -> T.Optional[Question]:
+        async with self.session() as session:
+            query = select(self.model).where(self.model.id == question_id)
+            result = await session.execute(query)
+            return result.scalar_one_or_none()
 
     async def get_question_for_user(self, user_id: int, competence: CompetenceEnum) -> T.Optional[Question]:
         """
@@ -40,3 +46,9 @@ class QuestionRepo(RepoFactory):
         async with self.session() as session:
             result = await session.execute(query)
             return result.scalars().first()
+
+    async def get_question_filename(self, text_hash: str) -> T.Optional[str]:
+        async with self.session() as session:
+            query = select(QuestionAudioFile.filename).where(and_(QuestionAudioFile.text_hash == text_hash))
+            result = await session.execute(query)
+            return result.scalar_one_or_none()

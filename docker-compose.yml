@@ -40,6 +40,8 @@ services:
     image: "redis:7.2.1-alpine3.18"
     volumes:
       - ./data/redis:/data
+    ports:
+      - '6379:6379'
 
   engup_api:
     container_name: engup_api
@@ -123,6 +125,7 @@ services:
       dockerfile: Dockerfile.weekly_status
     command: python run_weekly_status_updater.py
     environment:
+      POSTGRES_SETTINGS_HOST: engup_postgres
       POSTGRES_SETTINGS_PORT: 5432
     depends_on:
       engup_postgres:
