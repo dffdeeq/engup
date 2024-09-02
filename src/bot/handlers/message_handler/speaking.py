@@ -67,7 +67,11 @@ async def speaking_start(
         ])
         await asyncio.sleep(2)
         await callback.message.answer(
-            Messages.FIRST_PART_MESSAGE_1, disable_web_page_preview=True, reply_markup=builder.as_markup())
+            Messages.FIRST_PART_MESSAGE_1)
+        await asyncio.sleep(2)
+        await callback.message.answer(
+            Messages.FIRST_PART_MESSAGE_2, disable_web_page_preview=True, reply_markup=builder.as_markup()
+        )
     else:
         await tg_user_service.mark_user_activity(callback.from_user.id, 'start speaking')
         await callback.answer(text='Generating the question, please wait a few seconds...', show_alert=True)
