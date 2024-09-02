@@ -40,8 +40,19 @@ class BaseInjector:
         tg_user_repo = TgUserRepo(TgUser, self.session)
         tg_user_question_repo = TgUserQuestionRepo(TgUserQuestion, self.session)
         activity_repo = ActivityRepo(TgUserActivity, self.session)
-
+        self.s3 = S3Service(
+            repo=TempDataRepo(
+                TempData,
+                self.session
+            ),
+            adapter=Adapter(
+                settings=settings,
+            ),
+            session=self.session,
+            settings=settings
+        )
         self.question_service = QuestionService(
+            s3_service=self.s3,
             repo=QuestionRepo(Question, self.session),
             adapter=self.adapter,
             session=self.session,
@@ -102,17 +113,6 @@ class BaseInjector:
             adapter=self.adapter,
             session=self.session,
             settings=self.settings,
-        )
-        self.s3 = S3Service(
-            repo=TempDataRepo(
-                TempData,
-                self.session
-            ),
-            adapter=Adapter(
-                settings=settings,
-            ),
-            session=self.session,
-            settings=settings
         )
         self.voice_service = VoiceService(
             s3_service=self.s3,

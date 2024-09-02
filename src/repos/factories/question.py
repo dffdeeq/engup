@@ -13,6 +13,12 @@ class QuestionRepo(RepoFactory):
     def __init__(self, model: T.Type[Question], session: async_sessionmaker):
         super().__init__(model, session)
 
+    async def get_question_by_id(self, question_id: int) -> T.Optional[Question]:
+        async with self.session() as session:
+            query = select(self.model).where(self.model.id == question_id)
+            result = await session.execute(query)
+            return result.scalar_one_or_none()
+
     async def get_question_for_user(self, user_id: int, competence: CompetenceEnum) -> T.Optional[Question]:
         """
         Returns the question associated with the given user and competence if available.
