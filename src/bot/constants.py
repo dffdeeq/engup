@@ -82,7 +82,11 @@ Welcome to Part 1 of the IELTS Speaking test. This part lasts 4-5 minutes. You w
 Please note that if your recording exceeds 1.5 minutes, it will be cut off at the 1.5-minute mark, and any additional content will not be counted. 
 
 This part tests your ability to speak at length on a given topic.
-
+"""
+    FIRST_PART_MESSAGE_2 = """
+    
+<b>You will be asked a question and you will need to respond using the voice recording feature available in Telegram. To activate this feature, please hold down the microphone button 🎙 and speak your response.</b>
+    
 <u><a href='https://telegra.ph/How-to-Record-an-Audio-File-in-Telegram-07-04'>How to Record an Audio File in Telegram</a></u>
 
 Let's begin!
