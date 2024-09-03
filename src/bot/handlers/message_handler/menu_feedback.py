@@ -176,6 +176,7 @@ async def handle_poll_answer(
         ])
 
         text = await write_poll_results(survey_type, tg_user_service, feedback_service, callback.from_user.id, results)
+        await state.clear()
         await callback.message.edit_text(
             text=text,
             reply_markup=keyboard
@@ -225,4 +226,5 @@ async def feedback_get_other_option(
         await tg_user_service.mark_user_activity(message.from_user.id, 'end the survey')
 
         text = await write_poll_results(survey_type, tg_user_service, feedback_service, message.from_user.id, results)
+        await state.clear()
         await message.answer(text=text, reply_markup=keyboard)
