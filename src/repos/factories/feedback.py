@@ -14,7 +14,7 @@ class FeedbackRepo(RepoFactory):
     async def create_user_poll_feedback(self, user_id: int, feedback_dict: T.Dict, poll_type: str) -> PollFeedback:
         return await self.insert_one(user_id=user_id, feedback_json=feedback_dict, poll_type=poll_type)
 
-    async def get_user_poll_feedback(self, user_id: int, poll_type: str = 'new_user') -> T.Optional[PollFeedback]:
+    async def get_user_poll_feedback(self, user_id: int, poll_type: str = 'new') -> T.Optional[PollFeedback]:
         async with self.session() as session:
             query = select(self.model).where(and_(self.model.user_id == user_id, self.model.poll_type == poll_type))
             result = await session.execute(query)

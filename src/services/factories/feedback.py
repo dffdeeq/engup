@@ -18,7 +18,7 @@ class FeedbackService(ServiceFactory):
         self,
         user_id: int,
         feedback_dict: T.Dict,
-        poll_type: str = 'new_user'
+        poll_type: str = 'new'
     ) -> PollFeedback:
         return await self.repo.create_user_poll_feedback(user_id, feedback_dict, poll_type)
 

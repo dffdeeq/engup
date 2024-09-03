@@ -32,7 +32,7 @@ async def feedback_menu_callback(callback: types.CallbackQuery, tg_user_service:
 
     keyboard = InlineKeyboardMarkup(inline_keyboard=[
         [InlineKeyboardButton(text='⭐️ Rate us', callback_data="rate_bot start")],
-        [InlineKeyboardButton(text='☑️ Take the survey', callback_data="take_the_survey new_user")],
+        [InlineKeyboardButton(text='☑️ Take the survey', callback_data="take_the_survey new")],
         [InlineKeyboardButton(text='✅ Take the advanced survey', callback_data="take_the_survey advanced")],
         [InlineKeyboardButton(text='🔙 Back', callback_data='menu'), ],
     ])
@@ -206,7 +206,7 @@ async def feedback_get_other_option(
     next_question = current_question + 1
 
     poll_len = state_data['poll_len']
-    poll_len -= 1 if survey_type == 'new_user' else 0
+    poll_len -= 1 if survey_type == 'new' else 0
     if next_question < poll_len:
         question, options = poll_questions[next_question]
         if len(options) < 1:
@@ -223,7 +223,6 @@ async def feedback_get_other_option(
         keyboard = InlineKeyboardMarkup(inline_keyboard=[
             [InlineKeyboardButton(text='🔙 Menu', callback_data='menu')]
         ])
-        await tg_user_service.mark_user_activity(message.from_user.id, 'end the survey')
 
         text = await write_poll_results(survey_type, tg_user_service, feedback_service, message.from_user.id, results)
         await state.clear()
