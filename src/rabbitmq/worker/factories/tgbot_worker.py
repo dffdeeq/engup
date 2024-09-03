@@ -80,7 +80,7 @@ class TgBotWorker(RabbitMQWorkerFactory):
         builder = InlineKeyboardBuilder([
                 [InlineKeyboardButton(text='Buy points', callback_data='pricing'),],
                 [InlineKeyboardButton(text='Recommend/Share', callback_data='free_tests'),],
-                [InlineKeyboardButton(text='Leave Feedback', callback_data='leave_feedback')],
+                [InlineKeyboardButton(text='Leave Feedback', callback_data='take_the_survey')],
                 [InlineKeyboardButton(text='Menu', callback_data='menu'), ],
         ])
         return text, builder

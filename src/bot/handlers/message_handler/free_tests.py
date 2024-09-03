@@ -16,7 +16,7 @@ async def free_tests_menu_callback(callback: types.CallbackQuery, tg_user_servic
     text = f'You have <b>{user.pts}</b> premium tests\n\nHere you can get premium tests for free'
     builder = InlineKeyboardBuilder([
         [InlineKeyboardButton(text='👋 Invite a friend', callback_data='referral'), ],
-        [InlineKeyboardButton(text='✅ Take the survey', callback_data='leave_feedback'), ],
+        [InlineKeyboardButton(text='✅ Take the survey', callback_data='take_the_survey'), ],
         [InlineKeyboardButton(text='🔙 Back', callback_data='balance_menu'), ],
     ])
 
