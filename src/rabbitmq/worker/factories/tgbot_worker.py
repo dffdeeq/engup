@@ -66,7 +66,7 @@ class TgBotWorker(RabbitMQWorkerFactory):
             keyboard = InlineKeyboardMarkup(inline_keyboard=[
                 [InlineKeyboardButton(text='Menu', callback_data='menu'), ],
             ])
-            await self.bot.send_message(data['user_id'], 'Sending the result is finished', reply_markup=keyboard)
+            await self.bot.send_message(data['user_id'], 'Sending results is complete.', reply_markup=keyboard)
 
         await self.status_service.change_qa_status(data['uq_id'], status='Finished.')
 

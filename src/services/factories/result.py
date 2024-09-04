@@ -5,6 +5,7 @@ from pathlib import Path
 
 from sqlalchemy.ext.asyncio import async_sessionmaker
 
+from data.other.constants import PRACTISE_REGULARLY
 from data.other.criteria_json import GRAMMAR_AND_LEXICAL_ERRORS_ADVICE
 from src.libs.adapter import Adapter
 from src.libs.factories.gpt.models.result import Result
@@ -56,30 +57,37 @@ class ResultService(ServiceFactory):
     ) -> T.Tuple[T.List, str]:
         self.check_or_load_models()
         request_text = await UQService.format_user_qa_to_full_text(instance.user_answer_json, competence)
+
         if competence == CompetenceEnum.speaking:
             answers_text_only = await UQService.format_user_qa_to_answers_only(instance.user_answer_json)
             file_paths = await AnswerProcessService.get_temp_data_filepaths(self.session, instance.id)
         else:
             answers_text_only = None
             file_paths = None
+
+        additional_dict = None
+        if premium:
+            additional_dict = await self.generate_gpt_result_and_format(instance.user_answer_json, competence)
+            await self.user_service.mark_user_activity(instance.user_id, 'use gpt request')
+
         result, extended_output = await self._generate_result_local_model(
             request_text, competence, premium, **kwargs,
             answers_text_only=answers_text_only, file_paths=file_paths,
-            user_qa=instance.user_answer_json, uq_id=instance.id
+            user_qa=instance.user_answer_json, uq_id=instance.id, additional_dict=additional_dict
         )
 
+        general_text = PRACTISE_REGULARLY
         if premium:
-            additional_result = await self.generate_gpt_result_and_format(instance.user_answer_json, competence)
-            await self.user_service.mark_user_activity(instance.user_id, 'use gpt request')
-            result.extend(additional_result)
+            if vocabulary := additional_dict.get('Vocabulary', None):
+                general_text += f'\n - <b>Expand your vocabulary(Premium):</b>\n{vocabulary}'
+            result.append(general_text)
 
-        # TODO: Add common recommendations
         if competence == CompetenceEnum.speaking:
             self._clear_temp_files(file_paths)
 
         return result, extended_output
 
-    async def generate_gpt_result_and_format(self, user_answer_json: T.Dict, competence: CompetenceEnum) -> T.List[str]:
+    async def generate_gpt_result_and_format(self, user_answer_json: T.Dict, competence: CompetenceEnum) -> T.Dict:
         additional_request_text = await UQService.format_user_qa_to_text_for_gpt(user_answer_json, competence)
         for attempt in range(1, 5):
             try:
@@ -92,10 +100,10 @@ class ResultService(ServiceFactory):
                 pass
         else:
             logging.error('GPT generation failed 5/5 (ValidationError)')
-            return ['Gpt service error 5/5']
+            return {}
 
-        formatted_premium_results = self.format_premium_result(additional_result)
-        return formatted_premium_results
+        premium_results_dict = self.format_premium_result(additional_result)
+        return premium_results_dict
 
     async def _generate_result_local_model(
         self,
@@ -104,6 +112,7 @@ class ResultService(ServiceFactory):
         premium: bool = False,
         **kwargs
     ) -> T.Tuple[T.List[str], str]:
+        additional_dict = kwargs.get('additional_dict', {})
         pronunciation_text = ''
         predict_params = NNConstants.predict_params[competence]
         if competence == CompetenceEnum.speaking:
@@ -134,7 +143,7 @@ class ResultService(ServiceFactory):
         if competence == CompetenceEnum.writing:
             advice_dict['Grammatical Range']['Clear and correct grammar'] = GRAMMAR_AND_LEXICAL_ERRORS_ADVICE[gr_score]
 
-        result = self.format_advice(advice_dict, results, competence, pronunciation_text)
+        result = self.format_advice(advice_dict, results, competence, pronunciation_text, additional_dict)
         if premium:
             if competence == CompetenceEnum.speaking:
                 result.extend(lr_premium_result)  # noqa
@@ -158,11 +167,11 @@ class ResultService(ServiceFactory):
         return payload['pronunciation_score'], payload['pronunciation_text']
 
     @staticmethod
-    def format_premium_result(result: Result) -> T.List[str]:
-        def format_suggestion(suggestion_name: str, suggestion: T.Optional[Suggestion]) -> T.Optional[str]:
+    def format_premium_result(result: Result) -> T.Dict[str, str]:
+        def format_suggestion(suggestion: T.Optional[Suggestion]) -> T.Optional[str]:
             if suggestion is None:
                 return None
-            formatted_text = f"{suggestion_name}:\n"
+            formatted_text = ""
             for enhancement in suggestion.enhancements:
                 formatted_text += (
                     f"\n{enhancement.basic_suggestion}\n"
@@ -171,28 +180,29 @@ class ResultService(ServiceFactory):
                 )
             return formatted_text.strip()
 
-        premium_texts = ['<b>Advanced Recommendations (Premium)</b>', ]
+        premium_dict = {}
         competence_results = result.competence_results
         suggestion_names = [
             ("Task Achievement", competence_results.task_achievement),
-            ("Fluency Coherence", competence_results.fluency_coherence),
+            ("Coherence and Cohesion", competence_results.fluency_coherence),
             ("Lexical Resources", competence_results.lexical_resources),
             ("Grammatical Range", competence_results.grammatical_range)
         ]
-        formatted_suggestions = [format_suggestion(name, suggestion) for name, suggestion in suggestion_names if
-                                 suggestion is not None]
-
-        premium_texts.extend(formatted_suggestions)
-        vocabulary = '<b>Vocabulary (Premium):</b>\n' + '\n'.join(f'- {word}' for word in result.vocabulary)
-        premium_texts.append(vocabulary)
-        return premium_texts
+        for name, suggestion in suggestion_names:
+            formatted_text = format_suggestion(suggestion)
+            if formatted_text:
+                premium_dict[name] = formatted_text
+        vocabulary = '\n'.join(f'- {word}' for word in result.vocabulary)
+        premium_dict["Vocabulary"] = vocabulary
+        logging.info(f'premium_dict: {premium_dict}')
+        return premium_dict
 
     @staticmethod
     def dict_to_string(d):
         return '\n'.join([f"{key}: {value}" for key, value in d.items()])
 
     @staticmethod
-    def format_advice(advice_dict, results, competence: CompetenceEnum, pronunciation_text: str):
+    def format_advice(advice_dict, results, competence: CompetenceEnum, pronunciation_text: str, premium_dict):
         output_texts = []
         all_category_min_scores = []
         for category, subcategories in advice_dict.items():
@@ -213,6 +223,8 @@ class ResultService(ServiceFactory):
                 category_advice_text = "\n".join(category_advice_texts)
                 category_text = f"<b>{category} (score {category_min_score}):</b>\n\n" + category_advice_text
                 output_texts.append(category_text)
+                if premium_text := premium_dict.get(category, None):
+                    output_texts.append(premium_text)
         if all_category_min_scores:
             average_score = round(sum(all_category_min_scores) / len(all_category_min_scores) * 2) / 2
             output_texts.insert(0, f"\nYour <b>IELTS</b> {competence.value} <b>score</b> is <b>{average_score:.1f}</b>")
