@@ -37,13 +37,13 @@ Your essay type is <b>"{essay_type}"</b>, which means you should have four parag
 """
     WRITING_FIRST_PARAGRAPH_3 = """
 The first paragraph should include the following information: 
-<b>{first_paragraph_info}.</b>
+<b>Paragraph {first_paragraph_info}.</b>
 
 Please write the first paragraph using the chat.
 """
     WRITING_PARAGRAPH_DEFAULT = """
 The {paragraph} paragraph should include the following information: 
-<b>{paragraph_info}.</b>
+<b>Paragraph {paragraph_info}.</b>
 
 Please write the {paragraph} paragraph using the chat.
 """
