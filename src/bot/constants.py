@@ -29,23 +29,26 @@ You will be given a prompt that presents a point of view, argument, or problem. 
     
 <b>Here, we will assess your ability to produce a coherent and well-structured IELTS part 2 essay.</b>
 """
-    WRITING_FIRST_PARAGRAPH = """
-Here is your card with the essay topic: <b>"{card text}"</b>
-
-Your essay type is {essay_type}, which means you should have four paragraphs. Here is a brief description of this type of essay: {essay_description}.
-
-The first paragraph should include the following information: {first_paragraph_info}.
+    WRITING_FIRST_PARAGRAPH_1 = """
+Here is your card with the essay topic: <b>"{card_text}"</b>
+"""
+    WRITING_FIRST_PARAGRAPH_2 = """
+Your essay type is <b>"{essay_type}"</b>, which means you should have four paragraphs. Here is a brief description of this type of essay: {essay_description}.
+"""
+    WRITING_FIRST_PARAGRAPH_3 = """
+The first paragraph should include the following information: 
+<b>{first_paragraph_info}.</b>
 
 Please write the first paragraph using the chat.
 """
     WRITING_PARAGRAPH_DEFAULT = """
-The {paragraph} paragraph should include the following information: {second_paragraph_info}.
+The {paragraph} paragraph should include the following information: 
+<b>{paragraph_info}.</b>
 
 Please write the {paragraph} paragraph using the chat.
 """
 
-    TOO_SHORT_TEXT_WARNING = ("Your essay must contain at least 150 words to meet the requirement. "
-                              "However, for a better evaluation, aim for at least 250 words.")
+    TOO_SHORT_TEXT_WARNING = "You have used a very short paragraph in this text. Please try to expand your writing to at least <b>30 words.</b>"
     TEXT_IS_NOT_ENGLISH = ("It appears that your text is not written in English. Unfortunately, "
                            "I cannot process such an answer. Please rewrite it using English words and content.")
     TEXT_IS_COPY_PASTE = ('It appears that your text contains repeated phrases and seems to be copied and pasted '

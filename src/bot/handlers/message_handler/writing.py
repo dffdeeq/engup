@@ -1,3 +1,4 @@
+import asyncio
 import typing as T  # noqa
 import json
 
@@ -8,7 +9,7 @@ from aiogram.utils.keyboard import InlineKeyboardBuilder
 
 from src.bot.core.filters.essay_filter import EssayFilter
 from src.bot.core.states import WritingState
-from src.bot.constants import MessageTemplates, DefaultMessages
+from src.bot.constants import DefaultMessages
 from src.bot.injector import INJECTOR
 from src.postgres.enums import CompetenceEnum
 from src.rabbitmq.producer.factories.gpt import GPTProducer
@@ -39,12 +40,17 @@ async def writing_start(
             callback.from_user.id, CompetenceEnum.writing)
         question_json: T.Dict = json.loads(question.question_json)
         card_title, card_body = question_json.get('card_title'), question_json.get('card_body')
+        essay_description, paragraphs = await question_service.get_question_essay_parts(card_title)
 
         await state.set_state(WritingState.get_user_answer)
         uq_instance = await uq_service.get_or_create_user_question(
             user_id=callback.from_user.id, question_id=question.id)
         await state.set_data({
             'question_id': question.id,
+            'essay_description': essay_description,
+            'paragraphs': paragraphs,
+            'user_paragraphs': [],
+            'current_paragraph': 0,
             'card_title': card_title,
             'card_body': card_body,
             'uq_id': uq_instance.id,
@@ -58,30 +64,56 @@ async def writing_start(
         await callback.answer()
         await tg_user_service.mark_user_activity(callback.from_user.id, 'button start writing')
         state_data = await state.get_data()
-        text = MessageTemplates.CARD_TEXT_TEMPLATE.format(
-            card_title=state_data['card_title'], card_body=state_data['card_body'])
-        await callback.message.answer(text=text)
+        for text in [
+            DefaultMessages.WRITING_FIRST_PARAGRAPH_1.format(card_text=state_data['card_body']),
+            DefaultMessages.WRITING_FIRST_PARAGRAPH_2.format(
+                essay_type=state_data['card_title'], essay_description=state_data['essay_description']
+            ),
+            DefaultMessages.WRITING_FIRST_PARAGRAPH_3.format(first_paragraph_info=state_data['paragraphs'][0])
+        ]:
+            await asyncio.sleep(2)
+            await callback.message.answer(text=text)
 
 
 @router.message(
     WritingState.get_user_answer,
     EssayFilter(),
+    INJECTOR.inject_question,
     INJECTOR.inject_tg_user,
     INJECTOR.inject_uq,
-    INJECTOR.inject_gpt_producer
 )
-async def writing_get_user_answer(
+async def writing_get_paragraphs(
     message: types.Message,
     state: FSMContext,
+    question_service: QuestionService,
     uq_service: UserQuestionService,
     tg_user_service: TgUserService,
 ):
-    await tg_user_service.mark_user_activity(message.from_user.id, 'start writing')
+    paragraph_text = message.text
+    state_data = await state.get_data()
+    current_paragraph = state_data['current_paragraph']
+    user_paragraphs = state_data['user_paragraphs']
+    paragraphs = state_data['paragraphs']
+    next_paragraph = current_paragraph + 1
+
+    user_paragraphs.append(paragraph_text)
+    if next_paragraph < len(paragraphs):
+        await state.update_data({'current_paragraph': next_paragraph, 'user_paragraphs': user_paragraphs})
+
+        text = DefaultMessages.WRITING_PARAGRAPH_DEFAULT.format(
+            paragraph=question_service.number_to_text(next_paragraph+1),
+            paragraph_info=paragraphs[next_paragraph]
+        )
+        await message.answer(text=text)
+        return
+
+    await state.update_data({'user_paragraphs': user_paragraphs})
     user = await tg_user_service.get_or_create_tg_user(message.from_user.id)
     await tg_user_service.mark_user_activity(message.from_user.id, 'end writing')
-    state_data = await state.get_data()
     await state.set_state(WritingState.ending)
-    user_answer_json = await uq_service.format_question_answer_to_dict(state_data['card_body'], message.text)
+
+    user_essay = '\n'.join(user_paragraphs)
+    user_answer_json = await uq_service.format_question_answer_to_dict(state_data['card_body'], user_essay)
     await state.update_data({'user_answer_json': user_answer_json, 'task_ready_to_proceed': 'writing'})
 
     if user.pts >= 1:
