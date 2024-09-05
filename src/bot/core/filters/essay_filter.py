@@ -12,7 +12,7 @@ class EssayFilter(Filter):
     async def __call__(self, message: Message) -> bool:
         if is_copypaste(message.text):
             warning = DefaultMessages.TEXT_IS_COPY_PASTE
-        elif len(message.text.split()) < 150:
+        elif len(message.text.split()) < 30:
             warning = DefaultMessages.TOO_SHORT_TEXT_WARNING
         elif not is_english(message.text):
             warning = DefaultMessages.TEXT_IS_NOT_ENGLISH
