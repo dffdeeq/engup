@@ -96,7 +96,7 @@ async def writing_get_paragraphs(
     paragraphs = state_data['paragraphs']
     next_paragraph = current_paragraph + 1
 
-    await tg_user_service.mark_user_activity(message.from_user.id, f'start part {current_paragraph} writing')
+    await tg_user_service.mark_user_activity(message.from_user.id, f'start part {next_paragraph} writing')
 
     user_paragraphs.append(paragraph_text)
     if next_paragraph < len(paragraphs):
