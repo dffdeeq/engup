@@ -1,8 +1,10 @@
 import asyncio
 import hashlib
+import os.path
 import typing as T  # noqa
 import uuid
 
+import pandas as pd
 import requests
 from aiogram.types import CallbackQuery, BufferedInputFile
 from sqlalchemy import insert
@@ -16,6 +18,7 @@ from src.services.factory import ServiceFactory
 from src.settings import Settings
 from src.libs.factories.gpt.models.question import Question as QuestionModel
 from src.postgres.models.question import Question, QuestionAudioFile
+from src.settings.static import OTHER_DATA_DIR
 
 
 class QuestionService(ServiceFactory):
@@ -84,5 +87,22 @@ class QuestionService(ServiceFactory):
         return input_file
 
     @staticmethod
+    async def get_question_essay_parts(essay_type: str) -> T.Tuple[str, T.List[str]]:
+        df = pd.read_excel(os.path.join(OTHER_DATA_DIR, 'essay_types.xlsx'), sheet_name='Sheet1')
+        filtered_df = df[df['name'] == essay_type]
+        if filtered_df.empty:
+            filtered_df = df[df['name'] == 'Opinion Essay']
+        description = filtered_df['description'].values[0]
+        p_values = filtered_df[['p1_desc', 'p2_desc', 'p3_desc', 'p4_desc']].values.flatten().tolist()
+        return description, p_values
+
+    @staticmethod
     async def serialize_questions(questions: T.List[QuestionModel], competence: CompetenceEnum) -> T.List[T.Dict]:
         return [{'competence': competence, 'question_json': question.model_dump_json()} for question in questions]
+
+    @staticmethod
+    def number_to_text(n):
+        words = ["first", "second", "third", "fourth"]
+        if 1 <= n <= len(words):
+            return words[n - 1]
+        return "Number out of range"

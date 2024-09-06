@@ -66,7 +66,7 @@ class TgBotWorker(RabbitMQWorkerFactory):
             keyboard = InlineKeyboardMarkup(inline_keyboard=[
                 [InlineKeyboardButton(text='Menu', callback_data='menu'), ],
             ])
-            await self.bot.send_message(data['user_id'], 'Sending the result is finished', reply_markup=keyboard)
+            await self.bot.send_message(data['user_id'], 'Sending results is complete.', reply_markup=keyboard)
 
         await self.status_service.change_qa_status(data['uq_id'], status='Finished.')
 
@@ -80,7 +80,7 @@ class TgBotWorker(RabbitMQWorkerFactory):
         builder = InlineKeyboardBuilder([
                 [InlineKeyboardButton(text='Buy points', callback_data='pricing'),],
                 [InlineKeyboardButton(text='Recommend/Share', callback_data='free_tests'),],
-                [InlineKeyboardButton(text='Leave Feedback', callback_data='leave_feedback')],
+                [InlineKeyboardButton(text='Leave Feedback', callback_data='take_the_survey')],
                 [InlineKeyboardButton(text='Menu', callback_data='menu'), ],
         ])
         return text, builder
