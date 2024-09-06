@@ -24,6 +24,7 @@ class SendEventMixin(BaseAnalyticsClient):
             ]
         }
         response = await self.request('POST', '/collect', json=payload, params={'measurement_id': 'G-FJR3TBQ19F'})
+        logging.info(response)
         if response.status == 204 or response.status == 200:
             return
         else:
