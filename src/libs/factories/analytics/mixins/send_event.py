@@ -1,27 +1,24 @@
+import typing as T  # noqa
 import logging
 
 from src.libs.factories.analytics.base import BaseAnalyticsClient
-from src.libs.factories.analytics.models.event_data import EventData
 
 
 class SendEventMixin(BaseAnalyticsClient):
-    async def send_event(self, client_id: str, event_data: EventData):
+    async def send_event(self, client_id: str, event_name: str, umt_data_dict: T.Dict):
         params = {
             "category": "payment",
             "action": "complete",
             "label": "telegram_bot",
             "value": 100,
-            "source": event_data.utm_source,
-            "medium": event_data.utm_medium,
-            "campaign": event_data.utm_campaign,
-            "content": event_data.utm_content
+            **umt_data_dict
         }
 
         payload = {
             "client_id": client_id,
             "events": [
                 {
-                    "name": event_data.event_name,
+                    "name": event_name,
                     "params": params
                 }
             ]

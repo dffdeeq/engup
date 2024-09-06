@@ -63,13 +63,8 @@ async def buy_pts_by_tg_start(callback: types.CallbackQuery, tg_user_service: Tg
     utm_data = user.utm_data_json or {}
     await tg_user_service.adapter.analytics_client.send_event(
         str(uuid.uuid4()),
-        EventData(
-            utm_source=utm_data.get('utm_source', None),
-            utm_medium=utm_data.get('utm_medium', None),
-            utm_campaign=utm_data.get('utm_campaign', None),
-            utm_content=utm_data.get('utm_content', None),
-            event_name='conversion_event_begin_checkout',
-        )
+        umt_data_dict=user.utm_data_json,
+        event_name='conversion_event_begin_checkout',
     )
 
 
@@ -100,13 +95,8 @@ async def successful_payment_handler(message: types.Message, state: FSMContext, 
             utm_data = user_instance.utm_data_json or {}
             await tg_user_service.adapter.analytics_client.send_event(
                 str(uuid.uuid4()),
-                EventData(
-                    utm_source=utm_data.get('utm_source', None),
-                    utm_medium=utm_data.get('utm_medium', None),
-                    utm_campaign=utm_data.get('utm_campaign', None),
-                    utm_content=utm_data.get('utm_content', None),
-                    event_name='conversion_event_purchase',
-                )
+                event_name='conversion_event_purchase',
+                umt_data_dict=user_instance.utm_data_json
             )
     else:
         logging.critical(f'Payment failed for user {message.from_user.id} (from payload - {user_id_from_payload}) '
