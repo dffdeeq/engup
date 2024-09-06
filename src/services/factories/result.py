@@ -203,6 +203,7 @@ class ResultService(ServiceFactory):
 
     @staticmethod
     def format_advice(advice_dict, results, competence: CompetenceEnum, pronunciation_text: str, premium_dict):
+        premium_dict = {}
         output_texts = []
         all_category_min_scores = []
         for category, subcategories in advice_dict.items():
