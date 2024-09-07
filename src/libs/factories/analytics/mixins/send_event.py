@@ -13,7 +13,7 @@ class SendEventMixin(BaseAnalyticsClient):
             "value": 100,
             **umt_data_dict
         }
-        logging.info(f'params: {params}')
+        logging.debug(f'params: {params}')
 
         payload = {
             "client_id": client_id,
@@ -24,9 +24,9 @@ class SendEventMixin(BaseAnalyticsClient):
                 }
             ]
         }
-        logging.info(f'payload: {payload}')
+        logging.debug(f'payload: {payload}')
         response = await self.request('POST', '/collect', json=payload, params={'measurement_id': 'G-FJR3TBQ19F'})
-        logging.info(response)
+        logging.debug(response)
         if response.status == 204 or response.status == 200:
             return
         else:
