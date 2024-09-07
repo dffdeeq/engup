@@ -10,7 +10,6 @@ from aiogram.utils.keyboard import InlineKeyboardBuilder
 from src.bot.handlers.defaults.menu_default import answer_menu
 from src.bot.handlers.defaults.pricing_default import answer_pricing
 from src.bot.injector import INJECTOR
-from src.libs.factories.analytics.models.event_data import EventData
 from src.services.factories.tg_user import TgUserService
 
 router = Router(name=__name__)
@@ -60,7 +59,6 @@ async def buy_pts_by_tg_start(callback: types.CallbackQuery, tg_user_service: Tg
     )
 
     user = await tg_user_service.get_or_create_tg_user(callback.from_user.id)
-    utm_data = user.utm_data_json or {}
     await tg_user_service.adapter.analytics_client.send_event(
         str(uuid.uuid4()),
         umt_data_dict=user.utm_data_json,
@@ -92,7 +90,6 @@ async def successful_payment_handler(message: types.Message, state: FSMContext, 
             await tg_user_service.mark_user_balance(message.from_user.id, 'Telegram', price, 'TGS')
             await tg_user_service.mark_user_pts(message.from_user.id, 'buy', purchased_pts)
 
-            utm_data = user_instance.utm_data_json or {}
             await tg_user_service.adapter.analytics_client.send_event(
                 str(uuid.uuid4()),
                 event_name='conversion_event_purchase',

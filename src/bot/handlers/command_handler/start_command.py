@@ -8,7 +8,6 @@ from aiogram.utils.keyboard import InlineKeyboardBuilder
 
 from src.bot.constants import DefaultMessages
 from src.bot.injector import INJECTOR
-from src.libs.factories.analytics.models.event_data import EventData
 from src.services.factories.metrics import MetricsService
 from src.services.factories.tg_user import TgUserService
 
