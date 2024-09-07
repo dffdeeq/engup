@@ -8,7 +8,6 @@ from aiogram.utils.keyboard import InlineKeyboardBuilder
 
 from src.bot.constants import DefaultMessages
 from src.bot.injector import INJECTOR
-from src.libs.factories.analytics.models.event_data import EventData
 from src.services.factories.metrics import MetricsService
 from src.services.factories.tg_user import TgUserService
 
@@ -45,13 +44,8 @@ async def command_start_handler(
 
                     await tg_user_service.adapter.analytics_client.send_event(
                         str(uuid.uuid4()),
-                        EventData(
-                            utm_source=umt_data_dict.get('utm_source', None),
-                            utm_medium=umt_data_dict.get('utm_medium', None),
-                            utm_campaign=umt_data_dict.get('utm_campaign', None),
-                            utm_content=umt_data_dict.get('utm_content', None),
-                            event_name='conversion_event_signup',
-                        )
+                        event_name='conversion_event_signup',
+                        umt_data_dict=umt_data_dict
                     )
 
                 except ValueError:
