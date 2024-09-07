@@ -1,6 +1,6 @@
 import typing as T  # noqa
 
-from sqlalchemy import select, not_, and_
+from sqlalchemy import select, not_, and_, func
 from sqlalchemy.ext.asyncio import async_sessionmaker
 
 from src.postgres.enums import CompetenceEnum
@@ -41,7 +41,7 @@ class QuestionRepo(RepoFactory):
         ).outerjoin(
             TgUserQuestion,
             and_(TgUserQuestion.user_id == user_id, TgUserQuestion.question_id == Question.id)
-        ).order_by(TgUserQuestion.status)
+        ).order_by(func.random())
 
         async with self.session() as session:
             result = await session.execute(query)
