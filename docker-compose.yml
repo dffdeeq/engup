@@ -90,6 +90,7 @@ services:
 
   engup_gpt_worker:
     container_name: engup_gpt_worker
+    restart: always
     build:
       dockerfile: Dockerfile.neuro
     command: python run_queue_gpt.py
