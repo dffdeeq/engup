@@ -68,8 +68,9 @@ async def admin_run_task(
 
     if to == 'apihost':
         filepaths = await answer_process.get_temp_data_filepaths(answer_process.session, uq_id)
-        s3.download_files_list([os.path.basename(key) for key in filepaths])
-        await apihost_producer.create_task_send_to_transcription(filepaths, premium_queue=premium_queue)
+        if filepaths:
+            s3.download_files_list([os.path.basename(key) for key in filepaths])
+            await apihost_producer.create_task_send_to_transcription(filepaths, premium_queue=premium_queue)
     elif to == 'gpt':
         await gpt_producer.create_task_generate_result(uq_id, premium_queue=premium_queue)
     else:
