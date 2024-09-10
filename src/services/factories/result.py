@@ -133,7 +133,11 @@ class ResultService(ServiceFactory):
             user_qa = kwargs.get('user_qa')
 
             user_p1_p3_qa = user_qa['part_1']
-            user_p1_p3_qa.extend(user_qa['part_3'])
+            try:
+                user_p1_p3_qa.extend(user_qa['part_3'])
+            except KeyError:
+                pass
+
             lr_paraphrase_score, lr_premium_result = self.nn_service.lr_paraphrase_effectively(
                 questions_and_answers=user_p1_p3_qa, premium=premium, **kwargs)
             results['lr_Paraphrases Effectively'] = lr_paraphrase_score
