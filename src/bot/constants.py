@@ -2,6 +2,14 @@ from src.postgres.enums import CompetenceEnum
 
 
 class DefaultMessages:
+    START_MESSAGE = """
+💬 This chatbot will help you prepare for IELTS. 
+
+📝 It gives you tasks to complete and checks how well you are doing, providing you with feedback on your progress. 
+
+✅ The chatbot meets the standards of IELTS. If you follow its recommendations, your IELTS score will be higher 🎯
+"""
+
     DEFAULT_TEXT = """
 <b>Welcome to IELTS Writing Practice!</b>
     
@@ -21,9 +29,26 @@ You will be given a prompt that presents a point of view, argument, or problem. 
     
 <b>Here, we will assess your ability to produce a coherent and well-structured IELTS part 2 essay.</b>
 """
+    WRITING_FIRST_PARAGRAPH_1 = """
+Here is your card with the essay topic: <b>"{card_text}"</b>
+"""
+    WRITING_FIRST_PARAGRAPH_2 = """
+Your essay type is <b>"{essay_type}"</b>, which means you should have four paragraphs. Here is a brief description of this type of essay: {essay_description}.
+"""
+    WRITING_FIRST_PARAGRAPH_3 = """
+The first paragraph should include the following information: 
+<b>Paragraph {first_paragraph_info}.</b>
 
-    TOO_SHORT_TEXT_WARNING = ("Your essay must contain at least 150 words to meet the requirement. "
-                              "However, for a better evaluation, aim for at least 250 words.")
+Please write the first paragraph using the chat.
+"""
+    WRITING_PARAGRAPH_DEFAULT = """
+The {paragraph} paragraph should include the following information: 
+<b>Paragraph {paragraph_info}.</b>
+
+Please write the {paragraph} paragraph using the chat.
+"""
+
+    TOO_SHORT_TEXT_WARNING = "You have used a very short paragraph in this text. Please try to expand your writing to at least <b>30 words.</b>"
     TEXT_IS_NOT_ENGLISH = ("It appears that your text is not written in English. Unfortunately, "
                            "I cannot process such an answer. Please rewrite it using English words and content.")
     TEXT_IS_COPY_PASTE = ('It appears that your text contains repeated phrases and seems to be copied and pasted '
@@ -74,7 +99,11 @@ Welcome to Part 1 of the IELTS Speaking test. This part lasts 4-5 minutes. You w
 Please note that if your recording exceeds 1.5 minutes, it will be cut off at the 1.5-minute mark, and any additional content will not be counted. 
 
 This part tests your ability to speak at length on a given topic.
-
+"""
+    FIRST_PART_MESSAGE_2 = """
+    
+<b>You will be asked a question and you will need to respond using the voice recording feature available in Telegram. To activate this feature, please hold down the microphone button 🎙 and speak your response.</b>
+    
 <u><a href='https://telegra.ph/How-to-Record-an-Audio-File-in-Telegram-07-04'>How to Record an Audio File in Telegram</a></u>
 
 Let's begin!
@@ -86,9 +115,8 @@ Welcome to Part 2 of the IELTS Speaking test. This part lasts 3-4 minutes. You w
 
 Please note that if your recording exceeds 2 minutes, it will be cut off at the 2-minute mark, and any additional content will not be counted. This part tests your ability to speak at length on a given topic.
 
-<b>Here’s your topic. Take a minute to prepare.</b>
-{question}
-    """
+<b>Below is your topic. Take a minute to prepare.</b>
+"""
 
     THIRD_PART_MESSAGE = """
 Welcome to Part 3 of the IELTS Speaking test. This part lasts 4-5 minutes. You will be asked  further questions related to the topic in Part 2. This is an opportunity to discuss more abstract ideas and issues. 

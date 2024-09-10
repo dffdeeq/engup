@@ -1,3 +1,4 @@
+import logging
 import typing as T # noqa
 
 from aiohttp import FormData
@@ -24,7 +25,7 @@ class BaseAnalyticsClient:
         }
         params['api_secret'] = self.settings.api_secret
         url = self.settings.url + route
-        print(url)
+        logging.info(url)
         return await self.http_client.request(
             method,
             url,

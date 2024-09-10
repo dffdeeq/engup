@@ -2,7 +2,7 @@ from aiogram import Router, F, types
 from aiogram.fsm.context import FSMContext
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 
-from data.other.poll_questions import POLL_QUESTIONS
+from data.other.poll_questions import POLL_QUESTIONS, ADVANCED_POLL_QUESTIONS
 from src.bot.core.states import FeedbackState
 from src.bot.injector import INJECTOR
 from src.services.factories.feedback import FeedbackService
@@ -11,14 +11,29 @@ from src.services.factories.tg_user import TgUserService
 router = Router(name=__name__)
 
 
+async def write_poll_results(survey_type: str, tg_user_service, feedback_service, user_id, results) -> str:
+    free_pts = 2 if survey_type == 'advanced' else 1
+    await tg_user_service.mark_user_activity(user_id, f'end the {survey_type} survey')
+    if await feedback_service.user_can_get_free_points(user_id, survey_type):
+        await feedback_service.save_user_poll_feedback(user_id, results, survey_type)
+        await tg_user_service.add_points(user_id, free_pts)
+        await tg_user_service.mark_user_activity(user_id, 'add feedback free pt')
+        await tg_user_service.mark_user_pts(user_id, 'feedback', free_pts)
+        return f'Thanks for the feedback! You have {free_pts} more free tests'
+    else:
+        await feedback_service.save_user_poll_feedback(user_id, results)
+        return 'Thanks for the feedback! You have already received free tests for completing the survey'
+
+
 @router.callback_query(F.data == 'feedback_menu', INJECTOR.inject_tg_user)
 async def feedback_menu_callback(callback: types.CallbackQuery, tg_user_service: TgUserService):
     await tg_user_service.mark_user_activity(callback.from_user.id, 'go to feedback menu')
     await callback.answer()
 
     keyboard = InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton(text='Rate us', callback_data="rate_bot start")],
-        [InlineKeyboardButton(text='Take the survey', callback_data="leave_feedback")],
+        [InlineKeyboardButton(text='⭐️ Rate us', callback_data="rate_bot start")],
+        [InlineKeyboardButton(text='☑️ Take the survey', callback_data="take_the_survey new")],
+        [InlineKeyboardButton(text='✅ Take the advanced survey', callback_data="take_the_survey advanced")],
         [InlineKeyboardButton(text='🔙 Back', callback_data='menu'), ],
     ])
     await callback.message.edit_text(text='Here you can leave a feedback', reply_markup=keyboard)
@@ -54,7 +69,7 @@ async def feedback_get_review_callback(
     tg_user_service: TgUserService,
     feedback_service: FeedbackService
 ):
-    await tg_user_service.mark_user_activity(message.from_user.id, 'left a review')
+    await tg_user_service.mark_user_activity(message.from_user.id, 'rate completed')
     rate = (await state.get_data())['rate']
     text = message.text
     await feedback_service.save_user_review(message.from_user.id, rate, text)
@@ -68,18 +83,36 @@ async def feedback_get_review_callback(
     await state.clear()
 
 
-@router.callback_query(F.data == 'leave_feedback', INJECTOR.inject_tg_user)
+@router.callback_query(F.data.startswith('take_the_survey'), INJECTOR.inject_tg_user)
 async def leave_feedback_callback(callback: types.CallbackQuery, state: FSMContext, tg_user_service: TgUserService):
-    await tg_user_service.mark_user_activity(callback.from_user.id, 'go to leave feedback')
+    survey_type = callback.data.split()[1]
+
+    if survey_type == 'advanced':
+        user = await tg_user_service.get_or_create_tg_user(callback.from_user.id)
+        if user.completed_questions < 3:
+            await callback.answer(text='You must take at least three tests to complete this survey', show_alert=True)
+            return
+    await tg_user_service.mark_user_activity(
+        callback.from_user.id,
+        f'go to take the {survey_type} survey'
+    )
+
+    poll_questions = ADVANCED_POLL_QUESTIONS if survey_type == 'advanced' else POLL_QUESTIONS
 
     await callback.answer()
     await state.set_data({
-        'poll_questions': POLL_QUESTIONS,
-        'poll_len': len(POLL_QUESTIONS),
+        'poll_questions': poll_questions,
+        'poll_len': len(poll_questions),
         'current_question': 0,
-        'results': []
+        'results': [],
+        'survey_type': survey_type,
     })
-    question, options = POLL_QUESTIONS[0]
+    question, options = poll_questions[0]
+    if len(options) < 1:
+        await state.set_state(FeedbackState.get_other_option)
+        await state.update_data({'question_for_another_option': question, 'current_question': 0})
+        await callback.message.edit_text(text=f'{question}\n\nWrite your detailed answer')
+        return
 
     keyboard = InlineKeyboardMarkup(inline_keyboard=[
         [InlineKeyboardButton(text=option, callback_data=f"poll_answer:0:{idx}")] for idx, option in enumerate(options)
@@ -107,6 +140,7 @@ async def handle_poll_answer(
     selected_option = int(selected_option)
 
     state_data = await state.get_data()
+    survey_type = state_data['survey_type']
     poll_questions = state_data['poll_questions']
     question, options = poll_questions[current_question]
     selected_answer = options[selected_option]
@@ -122,8 +156,15 @@ async def handle_poll_answer(
     await state.update_data({'results': results})
 
     next_question = current_question + 1
+    if next_question == 1:
+        await tg_user_service.mark_user_activity(callback.from_user.id, f'start the {survey_type} survey')
     if next_question < state_data['poll_len']:
         question, options = poll_questions[next_question]
+        if len(options) < 1:
+            await state.set_state(FeedbackState.get_other_option)
+            await state.update_data({'question_for_another_option': question, 'current_question': next_question})
+            await callback.message.edit_text(text=f'{question}\n\nWrite your detailed answer')
+            return
         keyboard = InlineKeyboardMarkup(inline_keyboard=[
             [InlineKeyboardButton(text=option, callback_data=f"poll_answer:{next_question}:{idx}")] for idx, option in
             enumerate(options)
@@ -133,21 +174,13 @@ async def handle_poll_answer(
         keyboard = InlineKeyboardMarkup(inline_keyboard=[
             [InlineKeyboardButton(text='🔙 Back', callback_data='support_menu')]
         ])
-        if await feedback_service.user_can_get_free_points(callback.from_user.id):
-            await feedback_service.save_user_poll_feedback(callback.from_user.id, results)
-            await tg_user_service.mark_user_activity(callback.from_user.id, 'left a feedback')
-            await tg_user_service.add_points(callback.from_user.id, 3)
-            await tg_user_service.mark_user_pts(callback.from_user.id, 'feedback', 3)
-            await callback.message.edit_text(
-                text="Thanks for the feedback! You have 3 more free tests",
-                reply_markup=keyboard
-            )
-        else:
-            await feedback_service.save_user_poll_feedback(callback.from_user.id, results)
-            await callback.message.edit_text(
-                text="Thanks for the feedback! You have already received free tests for completing the survey",
-                reply_markup=keyboard
-            )
+
+        text = await write_poll_results(survey_type, tg_user_service, feedback_service, callback.from_user.id, results)
+        await state.clear()
+        await callback.message.edit_text(
+            text=text,
+            reply_markup=keyboard
+        )
 
 
 @router.message(
@@ -162,6 +195,7 @@ async def feedback_get_other_option(
     feedback_service: FeedbackService
 ):
     state_data = await state.get_data()
+    survey_type = state_data['survey_type']
     question = state_data['question_for_another_option']
     results = state_data['results']
     current_question = state_data['current_question']
@@ -170,8 +204,16 @@ async def feedback_get_other_option(
     await state.update_data({'results': results})
 
     next_question = current_question + 1
-    if next_question < state_data['poll_len']:
+
+    poll_len = state_data['poll_len']
+    poll_len -= 1 if survey_type == 'new' else 0
+    if next_question < poll_len:
         question, options = poll_questions[next_question]
+        if len(options) < 1:
+            await state.set_state(FeedbackState.get_other_option)
+            await state.update_data({'question_for_another_option': question, 'current_question': next_question})
+            await message.answer(text=f'{question}\n\nWrite your detailed answer')
+            return
         keyboard = InlineKeyboardMarkup(inline_keyboard=[
             [InlineKeyboardButton(text=option, callback_data=f"poll_answer:{next_question}:{idx}")] for idx, option in
             enumerate(options)
@@ -181,18 +223,7 @@ async def feedback_get_other_option(
         keyboard = InlineKeyboardMarkup(inline_keyboard=[
             [InlineKeyboardButton(text='🔙 Menu', callback_data='menu')]
         ])
-        if await feedback_service.user_can_get_free_points(message.from_user.id):
-            await feedback_service.save_user_poll_feedback(message.from_user.id, results)
-            await tg_user_service.mark_user_activity(message.from_user.id, 'left a feedback')
-            await tg_user_service.add_points(message.from_user.id, 3)
-            await tg_user_service.mark_user_pts(message.from_user.id, 'feedback', 3)
-            await message.answer(
-                text="Thanks for the feedback! You have 3 more free tests",
-                reply_markup=keyboard
-            )
-        else:
-            await feedback_service.save_user_poll_feedback(message.from_user.id, results)
-            await message.answer(
-                text="Thanks for the feedback! You have already received free tests for completing the survey",
-                reply_markup=keyboard
-            )
+
+        text = await write_poll_results(survey_type, tg_user_service, feedback_service, message.from_user.id, results)
+        await state.clear()
+        await message.answer(text=text, reply_markup=keyboard)

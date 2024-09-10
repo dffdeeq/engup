@@ -14,11 +14,16 @@ class FeedbackService(ServiceFactory):
         super().__init__(repo, adapter, session, settings)
         self.repo = repo
 
-    async def save_user_poll_feedback(self, user_id, feedback_dict: T.Dict) -> PollFeedback:
-        return await self.repo.create_user_poll_feedback(user_id, feedback_dict)
+    async def save_user_poll_feedback(
+        self,
+        user_id: int,
+        feedback_dict: T.Dict,
+        poll_type: str = 'new'
+    ) -> PollFeedback:
+        return await self.repo.create_user_poll_feedback(user_id, feedback_dict, poll_type)
 
-    async def user_can_get_free_points(self, user_id: int) -> bool:
-        return True if await self.repo.get_user_poll_feedback(user_id) is None else False
+    async def user_can_get_free_points(self, user_id: int, survey_type: str) -> bool:
+        return True if await self.repo.get_user_poll_feedback(user_id, survey_type) is None else False
 
     async def save_user_review(self, user_id: int, rating: int, text: str):
         return await self.repo.create_user_review(user_id, rating, text)

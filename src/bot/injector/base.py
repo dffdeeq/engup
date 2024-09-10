@@ -1,5 +1,5 @@
 from src.libs.adapter import Adapter
-from src.libs.factories.apihost import ApiHostClient
+from src.libs.factories.mp3tts import MP3TTSClient
 from src.libs.http_client import HttpClient
 from src.postgres.factory import initialize_postgres_pool
 from src.postgres.models.poll_feedback import PollFeedback
@@ -8,6 +8,7 @@ from src.postgres.models.temp_data import TempData
 from src.postgres.models.tg_user import TgUser
 from src.postgres.models.tg_user_activity import TgUserActivity
 from src.postgres.models.tg_user_question import TgUserQuestion
+from src.postgres.models.metrics_data import MetricsData
 from src.rabbitmq.producer.factories.apihost import ApiHostProducer
 from src.rabbitmq.producer.factories.gpt import GPTProducer
 from src.repos.factories.activity import ActivityRepo
@@ -16,6 +17,7 @@ from src.repos.factories.question import QuestionRepo
 from src.repos.factories.temp_data import TempDataRepo
 from src.repos.factories.user import TgUserRepo
 from src.repos.factories.user_question import TgUserQuestionRepo
+from src.repos.factories.metrics_data import MetricsDataRepo
 from src.services.factories.answer_process import AnswerProcessService
 from src.services.factories.feedback import FeedbackService
 from src.services.factories.question import QuestionService
@@ -23,6 +25,8 @@ from src.services.factories.status_service import StatusService
 from src.services.factories.tg_user import TgUserService
 from src.services.factories.user_question import UserQuestionService
 from src.services.factories.voice import VoiceService
+from src.services.factories.metrics import MetricsService
+from src.services.factories.S3 import S3Service
 from src.settings import Settings
 
 
@@ -32,11 +36,23 @@ class BaseInjector:
         self.session = initialize_postgres_pool(settings.postgres)
         self.http_client = HttpClient()
         self.adapter = Adapter(self.settings)
-        self.apihost_client = ApiHostClient(http_client=self.http_client, settings=self.settings.apihost)
+        self.mp3tts_client = MP3TTSClient(http_client=self.http_client, settings=self.settings.mp3tts)
         tg_user_repo = TgUserRepo(TgUser, self.session)
         tg_user_question_repo = TgUserQuestionRepo(TgUserQuestion, self.session)
-
+        activity_repo = ActivityRepo(TgUserActivity, self.session)
+        self.s3 = S3Service(
+            repo=TempDataRepo(
+                TempData,
+                self.session
+            ),
+            adapter=Adapter(
+                settings=settings,
+            ),
+            session=self.session,
+            settings=settings
+        )
         self.question_service = QuestionService(
+            s3_service=self.s3,
             repo=QuestionRepo(Question, self.session),
             adapter=self.adapter,
             session=self.session,
@@ -47,20 +63,15 @@ class BaseInjector:
             adapter=self.adapter,
             session=self.session,
             settings=self.settings,
-            user_repo=tg_user_repo
+            user_repo=tg_user_repo,
+            activity_repo=activity_repo
         )
         self.tg_user_service = TgUserService(
             repo=tg_user_repo,
-            activity_repo=ActivityRepo(TgUserActivity, self.session),
+            activity_repo=activity_repo,
             adapter=self.adapter,
             session=self.session,
             settings=self.settings,
-        )
-        self.voice_service = VoiceService(
-            repo=QuestionRepo(Question, self.session),
-            adapter=self.adapter,
-            session=self.session,
-            settings=self.settings
         )
         self.apihost_producer = ApiHostProducer(
             dsn_string=settings.rabbitmq.dsn,
@@ -93,4 +104,20 @@ class BaseInjector:
             self.adapter,
             self.session,
             self.settings
+        )
+        self.metrics_service = MetricsService(
+            repo=MetricsDataRepo(
+                MetricsData,
+                self.session
+            ),
+            adapter=self.adapter,
+            session=self.session,
+            settings=self.settings,
+        )
+        self.voice_service = VoiceService(
+            s3_service=self.s3,
+            repo=QuestionRepo(Question, self.session),
+            adapter=self.adapter,
+            session=self.session,
+            settings=self.settings
         )

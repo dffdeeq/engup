@@ -46,23 +46,19 @@ class TgUserService(ServiceFactory):
         user_id: int,
         username: T.Optional[str] = None,
         referrer_id: int = None,
-        utm_source: str = None,
-        utm_medium: str = None,
-        utm_campaign: str = None,
-        utm_content: str = None,
+        umt_data_dict: T.Optional[T.Dict] = None
     ) -> TgUser:
         user = await self.repo.get_tg_user_by_tg_id(user_id=user_id)
         if not user:
             user = await self.repo.create_tg_user(
-                user_id=user_id, username=username, referrer_id=referrer_id,
-                utm_source=utm_source, utm_medium=utm_medium, utm_campaign=utm_campaign, utm_content=utm_content)
+                user_id=user_id, username=username, referrer_id=referrer_id, umt_data_dict=umt_data_dict
+            )
             await self.mark_user_pts(user_id, 'start', 3)
+            await self.mark_user_activity(user.id, 'add start free pt')
         return user
 
     async def mark_user_activity(self, user_id: int, activity_name: str) -> None:
-        activity = await self.activity_repo.get_activity(activity_name)
-        if activity is not None:
-            await self.activity_repo.create_user_activity(user_id, activity.id)
+        await self.activity_repo.create_user_activity(user_id, activity_name)
 
     async def mark_user_balance(self, user_id: int, channel: str, amount: int, currency: str) -> TgUserWallet:
         return await self.activity_repo.create_tg_user_wallet(user_id, channel, amount, currency)

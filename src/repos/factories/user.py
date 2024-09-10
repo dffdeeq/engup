@@ -41,12 +41,9 @@ class TgUserRepo(RepoFactory):
         user_id: int,
         username: T.Optional[str],
         referrer_id: int,
-        utm_source: str = None,
-        utm_medium: str = None,
-        utm_campaign: str = None,
-        utm_content: str = None,
+        umt_data_dict: T.Dict = None
     ) -> TgUser:
         user_obj = await self.insert_one(
-            id=user_id, username=username, referrer_id=referrer_id,
-            utm_source=utm_source, utm_medium=utm_medium, utm_campaign=utm_campaign, utm_content=utm_content)
+            id=user_id, username=username, referrer_id=referrer_id, utm_data_json=umt_data_dict, pts=10
+        )
         return user_obj

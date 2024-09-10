@@ -1,11 +1,11 @@
 import logging
-import math
-import os.path
+import os
 import typing as T  # noqa
+from pathlib import Path
 
-from pydub import AudioSegment
 from sqlalchemy.ext.asyncio import async_sessionmaker
 
+from data.other.constants import PRACTISE_REGULARLY
 from data.other.criteria_json import GRAMMAR_AND_LEXICAL_ERRORS_ADVICE
 from src.libs.adapter import Adapter
 from src.libs.factories.gpt.models.result import Result
@@ -16,12 +16,12 @@ from src.postgres.models.tg_user_question import TgUserQuestion
 from src.rabbitmq.worker.factories.simple_worker import SimpleWorker
 from src.repos.factories.question import QuestionRepo
 from src.services.constants import NeuralNetworkConstants as NNConstants
+from src.services.factories.S3 import S3Service
 from src.services.factories.answer_process import AnswerProcessService
 from src.services.factories.tg_user import TgUserService
 from src.services.factory import ServiceFactory
 from src.services.factories.user_question import UserQuestionService as UQService
 from src.settings import Settings
-from src.settings.static import TEMP_FILES_DIR
 
 
 class ResultService(ServiceFactory):
@@ -33,13 +33,15 @@ class ResultService(ServiceFactory):
         settings: Settings,
         nn_service: ScoreGeneratorNNModel,
         user_service: TgUserService,
-        simple_worker: SimpleWorker
+        simple_worker: SimpleWorker,
+        s3_service: S3Service
     ) -> None:
         super().__init__(repo, adapter, session, settings)
         self.repo = repo
         self.nn_service = nn_service
         self.user_service = user_service
         self.simple_worker = simple_worker
+        self.s3_service = s3_service
 
     @timeit
     def check_or_load_models(self):
@@ -55,29 +57,37 @@ class ResultService(ServiceFactory):
     ) -> T.Tuple[T.List, str]:
         self.check_or_load_models()
         request_text = await UQService.format_user_qa_to_full_text(instance.user_answer_json, competence)
+
         if competence == CompetenceEnum.speaking:
             answers_text_only = await UQService.format_user_qa_to_answers_only(instance.user_answer_json)
             file_paths = await AnswerProcessService.get_temp_data_filepaths(self.session, instance.id)
         else:
             answers_text_only = None
             file_paths = None
+
+        additional_dict = None
+        if premium:
+            additional_dict = await self.generate_gpt_result_and_format(instance.user_answer_json, competence)
+            await self.user_service.mark_user_activity(instance.user_id, 'use gpt request')
+
         result, extended_output = await self._generate_result_local_model(
             request_text, competence, premium, **kwargs,
             answers_text_only=answers_text_only, file_paths=file_paths,
-            user_qa=instance.user_answer_json, uq_id=instance.id
+            user_qa=instance.user_answer_json, uq_id=instance.id, additional_dict=additional_dict
         )
 
+        general_text = PRACTISE_REGULARLY
         if premium:
-            additional_result = await self.generate_gpt_result_and_format(instance.user_answer_json, competence)
-            await self.user_service.mark_user_activity(instance.user_id, 'use gpt request')
-            result.extend(additional_result)
+            if vocabulary := additional_dict.get('Vocabulary', None):
+                general_text += f'\n - <b>Expand your vocabulary(Premium):</b>\n{vocabulary}'
+            result.append(general_text)
 
-        # TODO: Add common recommendations
-        # TODO: Clear temp files
+        if competence == CompetenceEnum.speaking:
+            self._clear_temp_files(file_paths)
 
         return result, extended_output
 
-    async def generate_gpt_result_and_format(self, user_answer_json: T.Dict, competence: CompetenceEnum) -> T.List[str]:
+    async def generate_gpt_result_and_format(self, user_answer_json: T.Dict, competence: CompetenceEnum) -> T.Dict:
         additional_request_text = await UQService.format_user_qa_to_text_for_gpt(user_answer_json, competence)
         for attempt in range(1, 5):
             try:
@@ -90,10 +100,10 @@ class ResultService(ServiceFactory):
                 pass
         else:
             logging.error('GPT generation failed 5/5 (ValidationError)')
-            return ['Gpt service error 5/5']
+            return {}
 
-        formatted_premium_results = self.format_premium_result(additional_result)
-        return formatted_premium_results
+        premium_results_dict = self.format_premium_result(additional_result)
+        return premium_results_dict
 
     async def _generate_result_local_model(
         self,
@@ -102,7 +112,13 @@ class ResultService(ServiceFactory):
         premium: bool = False,
         **kwargs
     ) -> T.Tuple[T.List[str], str]:
+        additional_dict = kwargs.get('additional_dict', {})
+        pronunciation_text = ''
         predict_params = NNConstants.predict_params[competence]
+        if competence == CompetenceEnum.speaking:
+            file_paths = kwargs.get('file_paths')
+            self.s3_service.download_files_list([os.path.basename(key) for key in file_paths])
+
         results = self.nn_service.predict_all(
             text, predict_params, competence=competence, **kwargs)
 
@@ -115,24 +131,19 @@ class ResultService(ServiceFactory):
         elif competence == CompetenceEnum.speaking:
             results['gr_Error density'] = gr_score
             user_qa = kwargs.get('user_qa')
-            uq_id = kwargs.get('uq_id')
-            file_paths = kwargs.get('file_paths')
 
             user_p1_p3_qa = user_qa['part_1']
             user_p1_p3_qa.extend(user_qa['part_3'])
             lr_paraphrase_score, lr_premium_result = self.nn_service.lr_paraphrase_effectively(
                 questions_and_answers=user_p1_p3_qa, premium=premium, **kwargs)
             results['lr_Paraphrases Effectively'] = lr_paraphrase_score
-            pronunciation_score = await self.get_pronunciation(uq_id, file_paths, premium)
-            if pronunciation_score:
-                results['pr_Pronunciation'] = pronunciation_score
 
         advice_dict = self.nn_service.select_random_advice(results, competence)
 
         if competence == CompetenceEnum.writing:
             advice_dict['Grammatical Range']['Clear and correct grammar'] = GRAMMAR_AND_LEXICAL_ERRORS_ADVICE[gr_score]
 
-        result = self.format_advice(advice_dict, results, competence)
+        result = self.format_advice(advice_dict, results, competence, pronunciation_text, additional_dict)
         if premium:
             if competence == CompetenceEnum.speaking:
                 result.extend(lr_premium_result)  # noqa
@@ -143,28 +154,24 @@ class ResultService(ServiceFactory):
         extended_output = self.dict_to_string(results)
         return result, extended_output
 
-    async def get_pronunciation(self, uq_id: int, filepaths, premium: bool = False) -> T.Optional[float]:
-        combined = AudioSegment.empty()
-        for file in filepaths:
-            audio = AudioSegment.from_ogg(file)
-            combined += audio
-        output_filepath = os.path.join(TEMP_FILES_DIR, f"output_{uq_id}.ogg")
-        combined.export(output_filepath, format="ogg")
+    async def get_pronunciation(self, uq_id: int, filepaths, premium: bool = False):
         await self.simple_worker.initialize()
         await self.simple_worker.publish(
-            {'filepath': output_filepath, 'uq_id': uq_id},
+            {'filepaths': filepaths, 'uq_id': uq_id},
             'pronunciation_score_generate',
             self.simple_worker.get_priority(premium)
         )
         payload = await self.simple_worker.try_get_one_message(f'pronunciation_score_get_{uq_id}')
-        return payload['pronunciation_score']
+        if payload is None:
+            return None
+        return payload['pronunciation_score'], payload['pronunciation_text']
 
     @staticmethod
-    def format_premium_result(result: Result) -> T.List[str]:
-        def format_suggestion(suggestion_name: str, suggestion: T.Optional[Suggestion]) -> T.Optional[str]:
+    def format_premium_result(result: Result) -> T.Dict[str, str]:
+        def format_suggestion(suggestion: T.Optional[Suggestion]) -> T.Optional[str]:
             if suggestion is None:
                 return None
-            formatted_text = f"{suggestion_name}:\n"
+            formatted_text = ""
             for enhancement in suggestion.enhancements:
                 formatted_text += (
                     f"\n{enhancement.basic_suggestion}\n"
@@ -173,28 +180,30 @@ class ResultService(ServiceFactory):
                 )
             return formatted_text.strip()
 
-        premium_texts = ['<b>Advanced Recommendations (Premium)</b>', ]
+        premium_dict = {}
         competence_results = result.competence_results
         suggestion_names = [
             ("Task Achievement", competence_results.task_achievement),
-            ("Fluency Coherence", competence_results.fluency_coherence),
+            ("Coherence and Cohesion", competence_results.fluency_coherence),
             ("Lexical Resources", competence_results.lexical_resources),
             ("Grammatical Range", competence_results.grammatical_range)
         ]
-        formatted_suggestions = [format_suggestion(name, suggestion) for name, suggestion in suggestion_names if
-                                 suggestion is not None]
-
-        premium_texts.extend(formatted_suggestions)
-        vocabulary = '<b>Vocabulary (Premium):</b>\n' + '\n'.join(f'- {word}' for word in result.vocabulary)
-        premium_texts.append(vocabulary)
-        return premium_texts
+        for name, suggestion in suggestion_names:
+            formatted_text = format_suggestion(suggestion)
+            if formatted_text:
+                premium_dict[name] = formatted_text
+        vocabulary = '\n'.join(f'- {word}' for word in result.vocabulary)
+        premium_dict["Vocabulary"] = vocabulary
+        logging.info(f'premium_dict: {premium_dict}')
+        return premium_dict
 
     @staticmethod
     def dict_to_string(d):
         return '\n'.join([f"{key}: {value}" for key, value in d.items()])
 
     @staticmethod
-    def format_advice(advice_dict, results, competence: CompetenceEnum):
+    def format_advice(advice_dict, results, competence: CompetenceEnum, pronunciation_text: str, premium_dict):
+        premium_dict = {}
         output_texts = []
         all_category_min_scores = []
         for category, subcategories in advice_dict.items():
@@ -206,11 +215,19 @@ class ResultService(ServiceFactory):
             if sorted_advice:
                 category_min_score = sorted_advice[0][0]
                 all_category_min_scores.append(category_min_score)
-                category_advice_text = [f"{'✅' if score >= 7 else '⚠️'} {advice}" for score, advice in sorted_advice]
-                category_text = f"<b>{category} (score {category_min_score}):</b>\n\n" + "\n".join(category_advice_text)
+                # if category == 'Pronunciation' and pronunciation_text:
+                #     category_advice_text = pronunciation_text
+                # else:
+                #     category_advice_texts = [f"{'✅' if score >= 7 else '⚠️'} {advice}" for score, advice in sorted_advice]  # noqa
+                #     category_advice_text = "\n".join(category_advice_texts)
+                category_advice_texts = [f"{'✅' if score >= 7 else '⚠️'} {advice}" for score, advice in sorted_advice]
+                category_advice_text = "\n".join(category_advice_texts)
+                category_text = f"<b>{category} (score {category_min_score}):</b>\n\n" + category_advice_text
                 output_texts.append(category_text)
+                if premium_text := premium_dict.get(category, None):
+                    output_texts.append(premium_text)
         if all_category_min_scores:
-            average_score = math.floor(sum(all_category_min_scores) / len(all_category_min_scores) * 2) / 2
+            average_score = round(sum(all_category_min_scores) / len(all_category_min_scores) * 2) / 2
             output_texts.insert(0, f"\nYour <b>IELTS</b> {competence.value} <b>score</b> is <b>{average_score:.1f}</b>")
         return output_texts
 
@@ -261,3 +278,10 @@ class ResultService(ServiceFactory):
         for part in output:
             final_output.append(''.join(part))
         return final_output
+
+    @staticmethod
+    def _clear_temp_files(filepaths: T.List[str]) -> None:
+        for file in filepaths:
+            path = Path(file)
+            if path.exists():
+                path.unlink()

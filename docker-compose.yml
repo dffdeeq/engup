@@ -35,6 +35,14 @@ services:
       timeout: 5s
       retries: 3
 
+  engup_redis:
+    container_name: engup_redis
+    image: "redis:7.2.1-alpine3.18"
+    volumes:
+      - ./data/redis:/data
+    ports:
+      - '6379:6379'
+
   engup_api:
     container_name: engup_api
     build: .
@@ -59,16 +67,17 @@ services:
       RABBITMQ_SETTINGS_HOST: engup_rabbitmq
       POSTGRES_SETTINGS_HOST: engup_postgres
       POSTGRES_SETTINGS_PORT: 5432
+      REDIS_SETTINGS_HOST: engup_redis
     depends_on:
       engup_rabbitmq:
         condition: service_healthy
       engup_postgres:
         condition: service_healthy
 
-  engup_apihost_worker:
-    container_name: engup_apihost_worker
+  engup_mp3tts_worker:
+    container_name: engup_mp3tts_worker
     build: .
-    command: python run_queue_apihost.py
+    command: python run_queue_mp3tts.py
     volumes:
       - ./data/temp_files:/app/data/temp_files
     environment:
@@ -81,6 +90,7 @@ services:
 
   engup_gpt_worker:
     container_name: engup_gpt_worker
+    restart: always
     build:
       dockerfile: Dockerfile.neuro
     command: python run_queue_gpt.py
@@ -116,23 +126,8 @@ services:
       dockerfile: Dockerfile.weekly_status
     command: python run_weekly_status_updater.py
     environment:
+      POSTGRES_SETTINGS_HOST: engup_postgres
       POSTGRES_SETTINGS_PORT: 5432
     depends_on:
       engup_postgres:
         condition: service_healthy
-
-  engup_pronunciation_worker:
-    container_name: engup_pronunciation_worker
-    command: python run_pronunciation.py
-    environment:
-      RABBITMQ_SETTINGS_HOST: engup_rabbitmq
-      POSTGRES_SETTINGS_HOST: engup_postgres
-      POSTGRES_SETTINGS_PORT: 5432
-    build:
-      dockerfile: Dockerfile.pronunciation
-    ports:
-      - '3000:3000'
-    volumes:
-      - ./data:/app/data
-    env_file:
-      - .env

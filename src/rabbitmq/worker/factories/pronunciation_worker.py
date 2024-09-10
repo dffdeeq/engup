@@ -6,7 +6,8 @@ import torch
 from sqlalchemy.ext.asyncio import async_sessionmaker
 from torchaudio.transforms import Resample
 
-from data.nn_models.ai_pronunciation_trainer.lambdaSpeechToScore import audioread_load, trainer_SST_lambda
+from data.nn_models.ai_pronunciation_trainer import pronunciationTrainer
+from data.nn_models.ai_pronunciation_trainer.lambdaSpeechToScore import audioread_load
 from src.libs.factories.gpt import GPTClient
 from src.rabbitmq.worker.factory import RabbitMQWorkerFactory
 from src.repos.factories.user_question_metric import TgUserQuestionMetricRepo
@@ -26,54 +27,81 @@ class PronunciationWorker(RabbitMQWorkerFactory):
         self.repo = repo
         self.gpt_client = gpt_client
 
-    async def get_pronuncation(self, data: T.Dict):
+    async def process_pronuncation(self, data: T.Dict):
+        filepaths = data['filepaths']
+        results = {
+            'score': [],
+            'levenshtein_score': [],
+            'pronunciation_accuracy': [],
+            'real_and_transcribed_words_ipa': []
+        }
+        for filepath in filepaths:
+            try:
+                score, levenshtein_score, accuracy, transcribed_words = await self.get_pronunciation(filepath)
+                results['score'].append(score)
+                results['levenshtein_score'].append(levenshtein_score)
+                results['pronunciation_accuracy'].append(accuracy)
+                results['real_and_transcribed_words_ipa'].append(transcribed_words)
+            except Exception as e:
+                logging.exception(e)
+
+        logging.info(f'result scores: {results["score"]}')
+        score = np.mean(results['score'])
+        logging.info(score)
+        score = self.score_to_band(score)
+        levenshtein_score = np.mean(results['levenshtein_score'])
+        accuracy = np.mean(results['pronunciation_accuracy'])
+        transcribed_words = []
+        for ipa_list in results['real_and_transcribed_words_ipa']:
+            transcribed_words.extend(ipa_list)
+
+        pronunciation_text = 'You have made the following pronunciation errors:\n'
+        for real_and_transcribed_words in transcribed_words[:10]:
+            pronunciation_text += real_and_transcribed_words + '\n'
+
+        uq_id = data["uq_id"]
+        await self.repo.create(uq_id, 'pr_score', score, f"leven: {levenshtein_score}, acc: {accuracy},"
+                               f" errors: {transcribed_words}")
+
+        await self.publish({'pronunciation_score': score, 'pronunciation_text': pronunciation_text},
+                           routing_key=f'pronunciation_score_get_{uq_id}', priority=data['priority'])
+
+    async def get_pronunciation(self, filepath: str):
+        transform = Resample(orig_freq=48000, new_freq=16000)
+        signal, fs = audioread_load(filepath)
+        signal = transform(torch.Tensor(signal)).unsqueeze(0)
+
+        trainer_sst_lambda = {'en': pronunciationTrainer.getTrainer("en")}
         try:
-            # filepath = data['filepath']
-            transform = Resample(orig_freq=48000, new_freq=16000)
-            filepath = data['filepath']
-            signal, fs = audioread_load(filepath)
-            logging.info(signal)
-            logging.info(fs)
-            signal = transform(torch.Tensor(signal)).unsqueeze(0)
-            logging.info(signal)
-
-            recording_transcript, recording_ipa, word_locations = trainer_SST_lambda['en'].getAudioTranscript(signal)
-            logging.info(recording_transcript)
-            logging.info(recording_ipa)
-            logging.info(word_locations)
-
-            # if not is_english(recording_transcript):
-            #     details = 'Lang is not Eng'
-            #     return 1.0
-
-            result = await self.gpt_client.generate_transcript(recording_transcript)
-            real_text = result.text
-
-            logging.info(f'real_text sssss: {real_text}')
-            result = trainer_SST_lambda['en'].processAudioForGivenText(signal, real_text)
-            logging.info(result)
-            result_score = int(result['pronunciation_accuracy']) / 100
-            logging.info(f'result_score: {result_score}')
-
-            levenshtein_score = self.similarity_score(recording_transcript, real_text)
-            logging.info(levenshtein_score)
-            score = result_score * 0.5 + levenshtein_score * 0.5
-            logging.info(score)
-            score = self.score_to_band(score)
-            pronunciation_text = ''
-
-            uq_id = data["uq_id"]
-
-            await self.repo.create(
-                uq_id,
-                'pr_score', score, f"leven: {levenshtein_score}, acc: {result['pronunciation_accuracy']},"
-                                   f" errors: {result['real_and_transcribed_words_ipa']}")
-
-            await self.publish({'pronunciation_score': score, 'pronunciation_text': pronunciation_text},
-                               routing_key=f'pronunciation_score_get_{uq_id}', priority=data['priority'])
-            return score
+            recording_transcript, recording_ipa, word_locations = trainer_sst_lambda['en'].getAudioTranscript(
+                signal)
         except Exception as e:
-            logging.exception(e)
+            logging.exception("Error during getAudioTranscript")
+            raise e
+
+        # if not is_english(recording_transcript):
+        #     details = 'Lang is not Eng'
+        #     return 1.0
+
+        result = await self.gpt_client.generate_transcript(recording_transcript)
+        real_text = result.text
+
+        result = trainer_sst_lambda['en'].processAudioForGivenText(signal, real_text)
+        logging.info(result)
+        result_score = int(result['pronunciation_accuracy']) / 100
+
+        levenshtein_score = self.similarity_score(recording_transcript, real_text)
+        score = result_score * 0.5 + levenshtein_score * 0.5
+
+        real_and_transcribed_words_ipa = []
+        for index, pair in enumerate(result["real_and_transcribed_words_ipa"]):
+            if result['pronunciation_categories'][index] == 2 and (len(result['real_and_transcribed_words'][index][0]) >= 5 and len(result['real_and_transcribed_words'][index][1]) >= 5):  # noqa
+                text = (f"{result['real_and_transcribed_words'][index][0]}:\n"
+                        f"{pair[1]}⚠️\n"
+                        f"{pair[0]}✅\n")
+                real_and_transcribed_words_ipa.append(text)
+
+        return score, levenshtein_score, result['pronunciation_accuracy'], real_and_transcribed_words_ipa
 
     def levenshtein_distance(self, a, b):
         if len(a) < len(b):
@@ -103,21 +131,21 @@ class PronunciationWorker(RabbitMQWorkerFactory):
 
     @staticmethod
     def score_to_band(score):
-        if score >= 0.9:
+        if score >= 0.7:
             return 9
-        elif score >= 0.85:
-            return 8
-        elif score >= 0.8:
-            return 7
-        elif score >= 0.75:
-            return 6
-        elif score >= 0.7:
-            return 5
         elif score >= 0.65:
-            return 4
+            return 8
         elif score >= 0.6:
-            return 3
+            return 7
         elif score >= 0.55:
+            return 6
+        elif score >= 0.5:
+            return 5
+        elif score >= 0.45:
+            return 4
+        elif score >= 0.4:
+            return 3
+        elif score >= 0.35:
             return 2
         else:
             return 1

@@ -5,12 +5,12 @@ from pathlib import Path
 import aiofiles
 import aiohttp
 
-from src.libs.factories.apihost.base import BaseApiHostClient
-from src.libs.factories.apihost.models.transcription_response import UploadResponse
-from src.libs.factories.apihost.routes import SEND_FILES_TO_TRANSCRIPTION
+from src.libs.factories.mp3tts.base import BaseMP3TTSClient
+from src.libs.factories.mp3tts.models.transcription_response import UploadResponse
+from src.libs.factories.mp3tts.routes import SEND_FILES_TO_TRANSCRIPTION
 
 
-class SendAudioToTranscriptionMixin(BaseApiHostClient):
+class SendAudioToTranscriptionMixin(BaseMP3TTSClient):
     async def send_files_to_transcription(self, filepaths: T.List[str | Path],) -> UploadResponse:
         data = aiohttp.FormData()
         for filepath in filepaths:

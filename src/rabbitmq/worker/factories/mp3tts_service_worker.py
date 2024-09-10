@@ -9,26 +9,26 @@ from src.postgres.models.temp_data import TempData
 from src.postgres.models.tg_user_question import TgUserQuestion
 from src.rabbitmq.worker.factory import RabbitMQWorkerFactory
 from src.repos.factories.temp_data import TempDataRepo
-from src.services.factories.apihost import ApiHostService
+from src.services.factories.mp3tts import MP3TTSService
 from src.services.factories.status_service import StatusService
 from src.services.factories.tg_user import TgUserService
 
 
-class ApiHostWorker(RabbitMQWorkerFactory):
+class MP3TTSWorker(RabbitMQWorkerFactory):
     def __init__(
         self,
         session: async_sessionmaker,
         repo: TempDataRepo,
         dsn_string: str,
         queue_name: str,
-        apihost_service: ApiHostService,
+        mp3tts_service: MP3TTSService,
         status_service: StatusService,
         user_service: TgUserService
     ):
         super().__init__(repo, dsn_string, queue_name)
         self.session = session
         self.repo = repo
-        self.apihost_service = apihost_service
+        self.mp3tts_service = mp3tts_service
         self.status_service = status_service
         self.user_service = user_service
 
@@ -86,4 +86,4 @@ class ApiHostWorker(RabbitMQWorkerFactory):
             return collected_data
 
     async def send_files_to_transcription_and_clear(self, filepaths: T.Dict[str, T.List[str]]) -> None:
-        await self.apihost_service.send_to_transcription(filepaths['file_names'])
+        await self.mp3tts_service.send_to_transcription(filepaths['file_names'])

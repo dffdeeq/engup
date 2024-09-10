@@ -17,10 +17,12 @@ from src.repos.factories.temp_data import TempDataRepo
 from src.repos.factories.user import TgUserRepo
 from src.repos.factories.user_question import TgUserQuestionRepo
 from src.repos.factories.user_question_metric import TgUserQuestionMetricRepo
+from src.services.factories.S3 import S3Service
 from src.services.factories.answer_process import AnswerProcessService
 from src.services.factories.result import ResultService
 from src.services.factories.status_service import StatusService
 from src.services.factories.tg_user import TgUserService
+from src.services.factories.user_question import UserQuestionService
 from src.settings import Settings
 
 for handler in logging.root.handlers[:]:
@@ -41,9 +43,11 @@ async def main():
     adapter = Adapter(settings)
     repo = TempDataRepo(TempData, session)
     uq_repo = TgUserQuestionRepo(TgUserQuestion, session)
+    tg_user_repo = TgUserRepo(TgUser, session)
+    activity_repo = ActivityRepo(TgUserActivity, session)
     user_service = TgUserService(
-        TgUserRepo(TgUser, session),
-        ActivityRepo(TgUserActivity, session),
+        tg_user_repo,
+        activity_repo,
         adapter,
         session,
         settings
@@ -60,6 +64,12 @@ async def main():
             repo=repo,
             dsn_string=settings.rabbitmq.dsn,
             queue_name='public'
+        ),
+        s3_service=S3Service(
+            repo=repo,
+            adapter=adapter,
+            session=session,
+            settings=settings,
         )
     )
     answer_process_service = AnswerProcessService(
@@ -85,7 +95,15 @@ async def main():
         heartbeat=600,
         answer_process_service=answer_process_service,
         status_service=status_service,
-        user_service=user_service
+        user_service=user_service,
+        uq_service=UserQuestionService(
+            uq_repo,
+            adapter,
+            session,
+            settings,
+            tg_user_repo,
+            activity_repo
+        )
     )
     await gpt_worker.start_listening(
         'gpt_generate_result_use_local_model', gpt_worker.process_result_local_model_task)

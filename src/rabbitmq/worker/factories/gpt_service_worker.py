@@ -42,6 +42,7 @@ class GPTWorker(RabbitMQWorkerFactory):
         answer_process_service: AnswerProcessService,
         status_service: StatusService,
         user_service: TgUserService,
+        uq_service: UserQuestionService
     ):
         super().__init__(temp_data_repo, dsn_string, queue_name, heartbeat=heartbeat)
         self.temp_data_repo = temp_data_repo
@@ -51,6 +52,7 @@ class GPTWorker(RabbitMQWorkerFactory):
         self.answer_process_service = answer_process_service
         self.status_service = status_service
         self.user_service = user_service
+        self.uq_service = uq_service
 
     async def start_listening(self, routing_key, func):
         self.result_service.check_or_load_models()
@@ -69,10 +71,10 @@ class GPTWorker(RabbitMQWorkerFactory):
             )
 
         elif competence == CompetenceEnum.speaking:
-            await self.user_service.mark_user_activity(user.id, 'use voice request')
             result, extended_output = await self.result_service.generate_result(
                 instance, competence, premium=data['priority'], extended_output=True
             )
+            await self.user_service.mark_user_activity(user.id, 'use voice request')
         else:
             return
 
@@ -84,9 +86,9 @@ class GPTWorker(RabbitMQWorkerFactory):
                 uq_result.insert(0, extended_output)
                 if is_admin:
                     result.insert(0, extended_output)
-            await UserQuestionService.update_uq(self.session, instance, json.dumps(uq_result))
+            await self.uq_service.update_uq(instance, json.dumps(uq_result))
             await self.status_service.change_qa_status(data['uq_id'], 'Sending results for processing.')
-            await self.user_service.mark_user_activity(user.id, 'response generated')
+            await self.user_service.mark_user_activity(user.id, f'response generated {competence.value}')
             await self.publish(
                 {
                     'user_id': user.id,

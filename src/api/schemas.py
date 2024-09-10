@@ -1,4 +1,6 @@
 import typing as T  # noqa
+
+import uuid
 from pydantic import BaseModel
 
 
@@ -13,3 +15,8 @@ class TranscriptionData(BaseModel):
 
     def dump_transcriptions(self):
         return [t.model_dump() for t in self.transcriptions]
+
+
+class MetricsData(BaseModel):
+    uuid: uuid.UUID
+    metrics_string: str
