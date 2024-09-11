@@ -51,4 +51,4 @@ class QuestionRepo(RepoFactory):
         async with self.session() as session:
             query = select(QuestionAudioFile.filename).where(and_(QuestionAudioFile.text_hash == text_hash))
             result = await session.execute(query)
-            return result.scalar_one_or_none()
+            return result.scalar()
