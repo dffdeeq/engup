@@ -121,11 +121,9 @@ async def writing_get_paragraphs(
     if user.pts >= 1:
         text = ('Thank you for completing all the questions! To confirm your response, '
                 'please choose one of the following options:\n\n'
-                '1. Use 1 Premium Test to receive a detailed analysis\n'
-                '2. Receive a brief result without charge.')
+                '1. Use 1 Premium Test to receive a detailed analysis\n')
         builder = InlineKeyboardBuilder([
             [InlineKeyboardButton(text='1', callback_data='confirm_task_writing premium')],
-            [InlineKeyboardButton(text='2', callback_data='confirm_task_writing default')],
         ])
 
     else:
