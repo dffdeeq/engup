@@ -11,14 +11,22 @@ async def get_pricing(user: TgUser) -> T.Tuple[str, InlineKeyboardBuilder]:
             f'You have: {user.pts} premium test{"" if user.pts == 1 else "s"}\n\n'
             'Choose how many premium tests to buy')
     builder = InlineKeyboardBuilder([
-            [InlineKeyboardButton(
-                text='💸 Package of 3 premium tests – 150 ⭐', callback_data='buy_pts_by_tg_stars 3'),],
-            [InlineKeyboardButton(
-                text='💸 Package of 10 premium tests – 450 ⭐', callback_data='buy_pts_by_tg_stars 10'),],
-            [InlineKeyboardButton(
-                text='💸 Package of 100 premium tests – 4000 ⭐', callback_data='buy_pts_by_tg_stars 100'),],
-            [InlineKeyboardButton(
-                text='🔙 Back', callback_data='balance_menu'),]
+        [InlineKeyboardButton(
+            text='💸 Package of 3 premium tests – 150 ⭐', callback_data='buy_by_tg_stars pts 3'), ],
+        [InlineKeyboardButton(
+            text='💸 Package of 10 premium tests – 450 ⭐', callback_data='buy_by_tg_stars pts 10'), ],
+        [InlineKeyboardButton(
+            text='💸 Package of 100 premium tests – 4000 ⭐', callback_data='buy_by_tg_stars pts 100'), ],
+        [InlineKeyboardButton(
+            text='------------------------------', callback_data='separator_callback'), ],
+        [InlineKeyboardButton(
+            text='a. 1 month subscription - 1500 ⭐', callback_data='buy_by_tg_stars month_sub 1'),],
+        [InlineKeyboardButton(
+            text='b. 3 month subscription - 4000 ⭐', callback_data='buy_by_tg_stars month_sub 3'),],
+        [InlineKeyboardButton(
+            text='c. 6 month subscription - 7000 ⭐', callback_data='buy_by_tg_stars month_sub 6'),],
+        [InlineKeyboardButton(
+            text='🔙 Back', callback_data='balance_menu'),],
     ])
     return text, builder
 

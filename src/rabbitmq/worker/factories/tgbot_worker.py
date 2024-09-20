@@ -78,7 +78,7 @@ class TgBotWorker(RabbitMQWorkerFactory):
     def get_less_than_three_points_msg_and_keyboard() -> T.Tuple[str, InlineKeyboardBuilder]:
         text = DefaultMessages.LOW_POINTS_BALANCE_ALERT
         builder = InlineKeyboardBuilder([
-                [InlineKeyboardButton(text='Buy points', callback_data='pricing'),],
+                [InlineKeyboardButton(text='Buy', callback_data='pricing'),],
                 [InlineKeyboardButton(text='Recommend/Share', callback_data='free_tests'),],
                 [InlineKeyboardButton(text='Leave Feedback', callback_data='take_the_survey')],
                 [InlineKeyboardButton(text='Menu', callback_data='menu'), ],

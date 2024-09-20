@@ -10,11 +10,14 @@ from aiogram.utils.keyboard import InlineKeyboardBuilder
 from src.bot.core.filters.essay_filter import EssayFilter
 from src.bot.core.states import WritingState
 from src.bot.constants import DefaultMessages
+from src.bot.handlers.defaults.menu_end_question import answer_menu_for_user_with_pts_or_sub, \
+    answer_menu_for_user_without_pts_and_sub
 from src.bot.injector import INJECTOR
 from src.postgres.enums import CompetenceEnum
 from src.rabbitmq.producer.factories.gpt import GPTProducer
 from src.services.factories.question import QuestionService
 from src.services.factories.status_service import StatusService
+from src.services.factories.subscription import SubscriptionService
 from src.services.factories.tg_user import TgUserService
 from src.services.factories.user_question import UserQuestionService
 
@@ -81,6 +84,7 @@ async def writing_start(
     INJECTOR.inject_question,
     INJECTOR.inject_tg_user,
     INJECTOR.inject_uq,
+    INJECTOR.inject_subscription
 )
 async def writing_get_paragraphs(
     message: types.Message,
@@ -88,6 +92,7 @@ async def writing_get_paragraphs(
     question_service: QuestionService,
     uq_service: UserQuestionService,
     tg_user_service: TgUserService,
+    subscription_service: SubscriptionService,
 ):
     paragraph_text = message.text
     state_data = await state.get_data()
@@ -119,22 +124,11 @@ async def writing_get_paragraphs(
     await state.update_data({'user_answer_json': user_answer_json, 'task_ready_to_proceed': 'writing'})
 
     if user.pts >= 1:
-        text = ('Thank you for completing all the questions! To confirm your response, '
-                'please choose one of the following options:\n\n'
-                '1. Use 1 Premium Test to receive a detailed analysis\n')
-        builder = InlineKeyboardBuilder([
-            [InlineKeyboardButton(text='1', callback_data='confirm_task_writing premium')],
-        ])
-
+        await answer_menu_for_user_with_pts_or_sub(message, CompetenceEnum.writing, 'premium')
+    elif await subscription_service.user_have_active_subscription(user.id):
+        await answer_menu_for_user_with_pts_or_sub(message, CompetenceEnum.writing, 'subscription')
     else:
-        text = ('You do not have any Premium Tests (PTs) left in your account.\n\n'
-                'If you would like to spend 1 Premium Test and receive a detailed analysis and '
-                'personalized recommendations based on your answers, please purchase some PTs, then go back and '
-                'continue')
-        builder = InlineKeyboardBuilder([
-            [InlineKeyboardButton(text='Buy PTs', callback_data='pricing')],
-        ])
-    await message.answer(text, reply_markup=builder.as_markup())
+        await answer_menu_for_user_without_pts_and_sub(message)
 
 
 @router.callback_query(
@@ -152,11 +146,10 @@ async def writing_confirm_task(
     gpt_producer: GPTProducer,
     status_service: StatusService,
 ):
-    param = callback.data.split()[1]
-    premium = True if param == 'premium' else False
-
     state_data = await state.get_data()
-    if premium is True:
+    param = callback.data.split()[1]
+    premium = True if param in ['premium', 'subscription'] else False
+    if param == 'premium':
         await tg_user_service.repo.deduct_point(callback.from_user.id)
         await tg_user_service.mark_user_activity(callback.from_user.id, 'spent pt writing')
         await tg_user_service.mark_user_pts(callback.from_user.id, 'spent', -1)

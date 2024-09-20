@@ -55,17 +55,18 @@ Please write the {paragraph} paragraph using the chat.
                           'multiple times. Unfortunately, I cannot process such an answer. Please rewrite it with '
                           'original and meaningful content.')
     ASSESSMENT_FAILURE = "Sorry, but we could not assess your text, please try again with another card."
-    DONT_HAVE_POINTS = ("<i>You don't have enough points on your balance to pass the test in advanced mode. "
-                        "The advanced mode provides additional recommendations for effectively growing your skills "
-                        "and increasing your grades, and also provides a priority pass to minimize waiting in line. "
-                        "You can always buy additional points in the menu.</i>")
-    CALCULATING_RESULT = "Once you have confirmed, we will begin evaluating your answers. Your answers are currently being processed, and we expect to provide you with results in a few minutes. Thank you for your patience."
+    DONT_HAVE_POINTS = ('You do not have neither Premium Tests (PTs), nor active subscription left in your account.\n\n'
+                        'If you would like to receive a detailed analysis and '
+                        'personalized recommendations based on your answers, please purchase some')
+    HAVE_POINTS = ('Thank you for completing all the questions! To confirm your response, '
+                   'please click "Continue":')
+    CALCULATING_RESULT = "Once you have confirmed, we have started evaluating your answers. Your answers are currently being processed, and we expect to provide you with results in a few minutes. Thank you for your patience."
 
     LOW_POINTS_BALANCE_ALERT = """
 <b>Low Points Balance Alert</b>
 It looks like you have less than 3 points remaining in your balance. To continue using our IELTS Speaking Practice service, you have three options to refill your points:
 
-    1. <b>Buy Points:</b> Purchase additional points to keep practicing without interruption.
+    1. <b>Buy PTs or subscription:</b> Purchase additional points or subscribe to keep practicing without interruption.
 
     2. <b>Recommend/Share Our Service:</b> Share our service with friends or on social media to earn extra points.
 
