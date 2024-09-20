@@ -140,7 +140,7 @@ async def successful_payment_handler(
         text = ('Thank you for completing all the questions! To confirm your response, '
                 'please click "Continue"')
         builder = InlineKeyboardBuilder([
-            [InlineKeyboardButton(text='Continue', callback_data=f'confirm_task_{task_ready_to_proceed} premium')],
+            [InlineKeyboardButton(text='Continue', callback_data=f'confirm_task_{task_ready_to_proceed} {method}')],
         ])
         await message.answer(text, reply_markup=builder.as_markup())
     else:
