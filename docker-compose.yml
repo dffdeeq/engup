@@ -123,7 +123,7 @@ services:
     env_file:
       - .env
     build:
-      dockerfile: Dockerfile.weekly_status
+      dockerfile: Dockerfile.ap_scheduler
     command: python run_ap_scheduler.py
     environment:
       POSTGRES_SETTINGS_HOST: engup_postgres
