@@ -21,7 +21,7 @@ class SubscriptionService(ServiceFactory):
         super().__init__(repo, adapter, session, settings)
         self.repo = repo
 
-    async def get_user_active_subscription(self, user_id: int) -> Subscription:
+    async def get_user_active_subscription(self, user_id: int) -> T.Optional[Subscription]:
         return await self.repo.get_user_active_subscription_or_none(user_id)
 
     async def get_user_subscriptions(self, user_id: int) -> T.List[Subscription]:

@@ -208,10 +208,10 @@ async def speaking_third_part(
         await tg_user_service.mark_user_activity(message.from_user.id, 'end speaking')
         await state.update_data({'task_ready_to_proceed': 'speaking'})
 
-        if user.pts >= 1:
-            await answer_menu_for_user_with_pts_or_sub(message, CompetenceEnum.speaking, 'premium')
-        elif await subscription_service.user_have_active_subscription(user.id):
+        if await subscription_service.user_have_active_subscription(user.id):
             await answer_menu_for_user_with_pts_or_sub(message, CompetenceEnum.speaking, 'subscription')
+        elif user.pts >= 1:
+            await answer_menu_for_user_with_pts_or_sub(message, CompetenceEnum.speaking, 'premium')
         else:
             await answer_menu_for_user_without_pts_and_sub(message)
 

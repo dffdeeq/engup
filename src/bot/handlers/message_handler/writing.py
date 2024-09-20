@@ -123,10 +123,10 @@ async def writing_get_paragraphs(
     user_answer_json = await uq_service.format_question_answer_to_dict(state_data['card_body'], user_essay)
     await state.update_data({'user_answer_json': user_answer_json, 'task_ready_to_proceed': 'writing'})
 
-    if user.pts >= 1:
-        await answer_menu_for_user_with_pts_or_sub(message, CompetenceEnum.writing, 'premium')
-    elif await subscription_service.user_have_active_subscription(user.id):
+    if await subscription_service.user_have_active_subscription(user.id):
         await answer_menu_for_user_with_pts_or_sub(message, CompetenceEnum.writing, 'subscription')
+    elif user.pts >= 1:
+        await answer_menu_for_user_with_pts_or_sub(message, CompetenceEnum.writing, 'premium')
     else:
         await answer_menu_for_user_without_pts_and_sub(message)
 

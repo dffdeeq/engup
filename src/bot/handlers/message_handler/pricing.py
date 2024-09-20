@@ -18,7 +18,7 @@ router = Router(name=__name__)
 
 @router.callback_query(F.data == 'not_implemented', INJECTOR.inject_tg_user)
 async def not_implemented(callback: types.CallbackQuery):
-    await callback.answer(text='Not implemented yet.', show_alert=True)
+    await callback.answer(text="There's nothing here.", show_alert=True)
 
 
 @router.callback_query(F.data == 'pricing', INJECTOR.inject_tg_user)
