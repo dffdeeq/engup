@@ -212,7 +212,7 @@ async def speaking_third_part(
         else:
             text = ('You do not have any Premium Tests (PTs) left in your account.\n\n'
                     'If you would like to spend 1 PT and receive a detailed analysis and '
-                    'personalized recommendations based on your answers, please purchase some PTs, then go back and'
+                    'personalized recommendations based on your answers, please purchase some PTs, then go back and '
                     'continue')
             builder = InlineKeyboardBuilder([
                 [InlineKeyboardButton(text='Buy PTs', callback_data='pricing')],

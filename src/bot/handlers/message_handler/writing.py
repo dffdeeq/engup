@@ -129,7 +129,7 @@ async def writing_get_paragraphs(
     else:
         text = ('You do not have any Premium Tests (PTs) left in your account.\n\n'
                 'If you would like to spend 1 Premium Test and receive a detailed analysis and '
-                'personalized recommendations based on your answers, please purchase some PTs, then go back and'
+                'personalized recommendations based on your answers, please purchase some PTs, then go back and '
                 'continue')
         builder = InlineKeyboardBuilder([
             [InlineKeyboardButton(text='Buy PTs', callback_data='pricing')],
