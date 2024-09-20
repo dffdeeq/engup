@@ -130,10 +130,9 @@ async def writing_get_paragraphs(
         text = ('You do not have any Premium Tests (PTs) left in your account.\n\n'
                 'If you would like to spend 1 Premium Test and receive a detailed analysis and '
                 'personalized recommendations based on your answers, please purchase some PTs, then go back and'
-                'click on "Update PTs" button for proceed test in premium')
+                'continue')
         builder = InlineKeyboardBuilder([
             [InlineKeyboardButton(text='Buy PTs', callback_data='pricing')],
-            [InlineKeyboardButton(text='Proceed for free', callback_data='confirm_task_writing default')],
         ])
     await message.answer(text, reply_markup=builder.as_markup())
 
