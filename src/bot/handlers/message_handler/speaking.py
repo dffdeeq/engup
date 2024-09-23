@@ -76,7 +76,7 @@ async def speaking_start(
             Messages.FIRST_PART_MESSAGE_2, disable_web_page_preview=True, reply_markup=builder.as_markup()
         )
     else:
-        await tg_user_service.mark_user_activity(callback.from_user.id, 'start speaking')
+        await tg_user_service.mark_user_activity(callback.from_user.id, 'button start speaking')
         await callback.answer(text='Generating the question, please wait a few seconds...', show_alert=True)
         state_data = await state.get_data()
         input_file = await question_service.get_buffered_input_file_for_question_text(state_data['part_1_questions'][0])
