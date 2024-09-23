@@ -6,6 +6,7 @@ from src.libs.factories.analytics.base import BaseAnalyticsClient
 
 class SendEventMixin(BaseAnalyticsClient):
     async def send_event(self, client_id: str, event_name: str, umt_data_dict: T.Dict):
+        umt_data_dict = umt_data_dict if umt_data_dict is not None else {}
         params = {
             "category": "payment",
             "action": "complete",

@@ -10,6 +10,8 @@ from aiogram.utils.keyboard import InlineKeyboardBuilder
 
 from src.bot.core.filters.voicemail_filter import VoicemailFilter
 from src.bot.core.states import SpeakingState
+from src.bot.handlers.defaults.menu_end_question import answer_menu_for_user_without_pts_and_sub, \
+    answer_menu_for_user_with_pts_or_sub
 from src.bot.injector import INJECTOR
 from src.postgres.enums import CompetenceEnum, PartEnum
 from src.rabbitmq.producer.factories.apihost import ApiHostProducer
@@ -17,6 +19,7 @@ from src.services.factories.S3 import S3Service
 from src.services.factories.answer_process import AnswerProcessService
 from src.services.factories.question import QuestionService
 from src.services.factories.status_service import StatusService
+from src.services.factories.subscription import SubscriptionService
 from src.services.factories.tg_user import TgUserService
 from src.services.factories.user_question import UserQuestionService
 from src.services.factories.voice import VoiceService
@@ -73,7 +76,7 @@ async def speaking_start(
             Messages.FIRST_PART_MESSAGE_2, disable_web_page_preview=True, reply_markup=builder.as_markup()
         )
     else:
-        await tg_user_service.mark_user_activity(callback.from_user.id, 'start speaking')
+        await tg_user_service.mark_user_activity(callback.from_user.id, 'button start speaking')
         await callback.answer(text='Generating the question, please wait a few seconds...', show_alert=True)
         state_data = await state.get_data()
         input_file = await question_service.get_buffered_input_file_for_question_text(state_data['part_1_questions'][0])
@@ -170,7 +173,8 @@ async def speaking_second_part(
     INJECTOR.inject_apihost_producer,
     INJECTOR.inject_answer_process,
     INJECTOR.inject_status,
-    INJECTOR.inject_question
+    INJECTOR.inject_question,
+    INJECTOR.inject_subscription
 )
 async def speaking_third_part(
     message: types.Message,
@@ -179,6 +183,7 @@ async def speaking_third_part(
     voice_service: VoiceService,
     answer_process: AnswerProcessService,
     question_service: QuestionService,
+    subscription_service: SubscriptionService,
 ):
     user = await tg_user_service.get_or_create_tg_user(message.from_user.id)
     state_data = await state.get_data()
@@ -202,22 +207,13 @@ async def speaking_third_part(
         await state.set_state(SpeakingState.end)
         await tg_user_service.mark_user_activity(message.from_user.id, 'end speaking')
         await state.update_data({'task_ready_to_proceed': 'speaking'})
-        if user.pts >= 1:
-            text = ('Thank you for completing all the questions! To confirm your response, '
-                    'please choose one of the following options:\n\n'
-                    '1. Use 1 PT to receive a detailed analysis\n')
-            builder = InlineKeyboardBuilder([
-                [InlineKeyboardButton(text='1', callback_data='confirm_task_speaking premium')],
-            ])
+
+        if await subscription_service.user_have_active_subscription(user.id):
+            await answer_menu_for_user_with_pts_or_sub(message, CompetenceEnum.speaking, 'subscription')
+        elif user.pts >= 1:
+            await answer_menu_for_user_with_pts_or_sub(message, CompetenceEnum.speaking, 'premium')
         else:
-            text = ('You do not have any Premium Tests (PTs) left in your account.\n\n'
-                    'If you would like to spend 1 PT and receive a detailed analysis and '
-                    'personalized recommendations based on your answers, please purchase some PTs, then go back and '
-                    'continue')
-            builder = InlineKeyboardBuilder([
-                [InlineKeyboardButton(text='Buy PTs', callback_data='pricing')],
-            ])
-        await message.answer(text=text, reply_markup=builder.as_markup())
+            await answer_menu_for_user_without_pts_and_sub(message)
 
 
 @router.callback_query(
@@ -239,8 +235,8 @@ async def speaking_confirm_task(
 ):
     state_data = await state.get_data()
     param = callback.data.split()[1]
-    premium = True if param == 'premium' else False
-    if premium is True:
+    premium = True if param in ['premium', 'subscription'] else False
+    if param == 'premium':
         await tg_user_service.repo.deduct_point(callback.from_user.id)
         await tg_user_service.mark_user_activity(callback.from_user.id, 'spent pt speaking')
         await tg_user_service.mark_user_pts(callback.from_user.id, 'spent', -1)

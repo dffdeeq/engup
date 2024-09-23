@@ -116,15 +116,15 @@ services:
       engup_rabbitmq:
         condition: service_healthy
 
-  engup_weekly_status_updater:
-    container_name: engup_weekly_status_updater
+  engup_ap_scheduler:
+    container_name: engup_ap_scheduler
     volumes:
       - ./data:/app/data
     env_file:
       - .env
     build:
-      dockerfile: Dockerfile.weekly_status
-    command: python run_weekly_status_updater.py
+      dockerfile: Dockerfile.ap_scheduler
+    command: python run_ap_scheduler.py
     environment:
       POSTGRES_SETTINGS_HOST: engup_postgres
       POSTGRES_SETTINGS_PORT: 5432
