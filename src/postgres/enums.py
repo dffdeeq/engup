@@ -12,3 +12,8 @@ class PartEnum(str, enum.Enum):
     first = 1
     second = 2
     third = 3
+
+
+class SubscriptionStatusEnum(str, enum.Enum):
+    active = 'active'
+    inactive = 'inactive'
