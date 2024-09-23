@@ -55,7 +55,8 @@ async def main():
             settings=settings
         ),
         status_service=status_service,
-        user_service=user_service
+        user_service=user_service,
+        settings=settings
     )
     mp3tts_process_answers_worker = MP3TTSWorker(
         repo=TempDataRepo(TempData, session),
@@ -69,11 +70,12 @@ async def main():
             settings=settings
         ),
         status_service=status_service,
-        user_service=user_service
+        user_service=user_service,
+        settings=settings
     )
     await asyncio.gather(
         mp3tts_transcription_worker.start_listening(
-            'apihost_to_transcription', mp3tts_transcription_worker.send_files_to_transcription_and_clear),
+            'apihost_to_transcription', mp3tts_transcription_worker.send_files_to_transcription),
         mp3tts_process_answers_worker.start_listening(
             'apihost_update_answers', mp3tts_process_answers_worker.process_answers)
     )
