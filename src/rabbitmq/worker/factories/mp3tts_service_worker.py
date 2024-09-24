@@ -1,7 +1,10 @@
+import asyncio
 import logging
+import os.path
 import typing as T  # noqa
 from collections import defaultdict
 
+import fal_client
 from sqlalchemy import update, and_, select
 from sqlalchemy.ext.asyncio import async_sessionmaker
 
@@ -12,6 +15,8 @@ from src.repos.factories.temp_data import TempDataRepo
 from src.services.factories.mp3tts import MP3TTSService
 from src.services.factories.status_service import StatusService
 from src.services.factories.tg_user import TgUserService
+from src.settings import Settings
+from src.settings.static import TEMP_FILES_DIR
 
 
 class MP3TTSWorker(RabbitMQWorkerFactory):
@@ -20,6 +25,7 @@ class MP3TTSWorker(RabbitMQWorkerFactory):
         session: async_sessionmaker,
         repo: TempDataRepo,
         dsn_string: str,
+        settings: Settings,
         queue_name: str,
         mp3tts_service: MP3TTSService,
         status_service: StatusService,
@@ -28,37 +34,49 @@ class MP3TTSWorker(RabbitMQWorkerFactory):
         super().__init__(repo, dsn_string, queue_name)
         self.session = session
         self.repo = repo
+        self.settings = settings
         self.mp3tts_service = mp3tts_service
         self.status_service = status_service
         self.user_service = user_service
 
+        os.environ["FAL_KEY"] = self.settings.nn_models.fal_key
+        self.fal_client = fal_client
+
     async def process_answers(self, updates: T.Dict[str, T.Any]):
         logging.info(f'---------- Start of Task {self.process_answers.__name__} ----------')
         uq_id = await self.update_multiple_temp_data_answers(updates['file_names'])
+        if uq_id is None:
+            return
 
+        await self.update_user_qa_and_send_to_gpt(uq_id)
+
+    async def update_user_qa_and_send_to_gpt(self, uq_id: int):
         await self.status_service.change_qa_status(uq_id, 'Processing transcription.')
-        if uq_id:
-            logging.info('apihost --> update_multiple_temp_data_answers == OK')
-            all_user_qa = await self.get_all_user_qa(uq_id)
-            async with self.session() as session:
-                premium_queue = (await session.execute(
-                    update(TgUserQuestion)
-                    .where(and_(TgUserQuestion.id == uq_id))
-                    .values(user_answer_json=all_user_qa, status=True, current_result_status='Processing transcription')
-                    .returning(TgUserQuestion.premium_queue)
-                )).scalar_one_or_none()
-                await session.commit()
-                logging.info('apihost --> update_user_answer_json == OK')
-            await self.publish(
-                json_serializable_dict={'uq_id': uq_id},
-                routing_key='gpt_generate_result_use_local_model',
-                priority=self.get_priority(premium_queue)
-            )
-            logging.info('apihost --> gpt (create_task_generate_result) == OK')
+        logging.info('apihost --> update_multiple_temp_data_answers == OK')
+        all_user_qa = await self.get_all_user_qa(uq_id)
+        async with self.session() as session:
+            premium_queue = (await session.execute(
+                update(TgUserQuestion)
+                .where(and_(TgUserQuestion.id == uq_id))
+                .values(user_answer_json=all_user_qa, status=True, current_result_status='Processing transcription')
+                .returning(TgUserQuestion.premium_queue)
+            )).scalar_one_or_none()
+            await session.commit()
+            logging.info('apihost --> update_user_answer_json == OK')
+        await self.publish(
+            json_serializable_dict={'uq_id': uq_id},
+            routing_key='gpt_generate_result_use_local_model',
+            priority=self.get_priority(premium_queue)
+        )
+        logging.info('apihost --> gpt (create_task_generate_result) == OK')
         logging.info(f'---------- End of Task {self.process_answers.__name__} ----------')
 
     async def update_multiple_temp_data_answers(self, updates: T.List[T.Dict[str, str]]) -> T.Optional[int]:
         async with self.session() as session:
+            non_existent_filenames = await self.get_non_existent_temp_data([i['name'] for i in updates])
+            if not non_existent_filenames:
+                return None
+
             async with session.begin():
                 for update_data in updates:
                     filename = update_data['name']
@@ -71,6 +89,14 @@ class MP3TTSWorker(RabbitMQWorkerFactory):
                     )
                 await session.commit()
                 return result.scalars().first()
+
+    async def get_non_existent_temp_data(self, filenames) -> T.Optional[T.List]:
+        async with self.session() as session:
+            already_exists_query = select(TempData.filename).where(
+                and_(TempData.answer_text.is_(None), TempData.filename.in_(filenames))
+            )
+            result = await session.execute(already_exists_query)
+            return list(result.scalars().all())
 
     async def get_all_user_qa(self, uq_id: int):
         async with self.session() as session:
@@ -85,5 +111,64 @@ class MP3TTSWorker(RabbitMQWorkerFactory):
                 })
             return collected_data
 
-    async def send_files_to_transcription_and_clear(self, filepaths: T.Dict[str, T.List[str]]) -> None:
-        await self.mp3tts_service.send_to_transcription(filepaths['file_names'])
+    async def send_files_to_transcription(self, filepaths: T.Dict[str, T.List[str]]) -> None:
+        try:
+            await self.mp3tts_service.send_to_transcription(filepaths['file_names'])
+        except Exception as e:
+            logging.error(e)
+            await self.fal_ai_process_transcription(filepaths)
+            return
+        logging.info('waiting mp3tts for 5 minutes...')
+        await asyncio.sleep(10)  # change 10s to 5min
+        await self.fal_ai_process_transcription(filepaths)
+
+    async def fal_ai_process_transcription(self, filepaths: T.Dict[str, T.List[str]]) -> None:
+        filenames = [os.path.basename(file) for file in filepaths['file_names']]
+        non_existent_filenames = await self.get_non_existent_temp_data(filenames)
+        if non_existent_filenames:
+            logging.info('temp data is not yet updated')
+            non_existent_filepaths = [str(os.path.join(TEMP_FILES_DIR, f)) for f in non_existent_filenames]
+            await self.transcribe_files(non_existent_filepaths)
+        logging.info('temp data updated')
+
+    async def transcribe_files(self, filepaths: T.List[str]):
+        urls = await self.fal_ai_upload_files_and_get_urls(filepaths)
+        for url in urls:
+            url['text'] = await self.fal_ai_transcribe_file(url['url'])
+        uq_id = await self.update_multiple_temp_data_answers(urls)
+        await self.update_user_qa_and_send_to_gpt(uq_id)
+
+    async def fal_ai_transcribe_file(self, audio_url: str) -> T.Optional[str]:
+        handler = await self.fal_client.submit_async(
+            "fal-ai/wizper",
+            arguments={
+                "audio_url": audio_url,
+                "task": "transcribe",
+                "language": "en",
+                "chunk_level": "segment",
+                "version": "3"
+            },
+        )
+
+        log_index = 0
+        async for event in handler.iter_events(with_logs=False):
+            try:
+                if isinstance(event, fal_client.InProgress):
+                    new_logs = event.logs[log_index:]
+                    for log in new_logs:
+                        print(log['message'])
+                    log_index = len(event.logs)
+            except Exception as e:
+                logging.error(e)
+                break
+
+        result = await handler.get()
+        text = result.get('text')
+        return text
+
+    async def fal_ai_upload_files_and_get_urls(self, filepaths: T.List[str]) -> T.List[T.Dict[str, str]]:
+        urls = []
+        for filepath in filepaths:
+            url = await self.fal_client.upload_file_async(filepath)
+            urls.append({'name': os.path.basename(filepath), 'url': url})
+        return urls

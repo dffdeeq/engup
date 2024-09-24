@@ -43,7 +43,7 @@ async def buy_pts_by_tg_start(callback: types.CallbackQuery, tg_user_service: Tg
         }
     elif method == 'month_sub':
         price = {
-            1: [LabeledPrice(label="1 month", amount=1)],
+            1: [LabeledPrice(label="1 month", amount=1500)],
             3: [LabeledPrice(label="3 month", amount=4000)],
             6: [LabeledPrice(label="6 month", amount=7000)]
         }
