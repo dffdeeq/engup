@@ -10,7 +10,7 @@ from src.postgres.models.tg_user import TgUser
 from src.postgres.models.tg_user_activity import TgUserActivity
 from src.postgres.models.tg_user_question import TgUserQuestion
 from src.postgres.models.metrics_data import MetricsData
-from src.rabbitmq.producer.factories.apihost import ApiHostProducer
+from src.rabbitmq.producer.factories.mp3tts import MP3TTSProducer
 from src.rabbitmq.producer.factories.gpt import GPTProducer
 from src.repos.factories.activity import ActivityRepo
 from src.repos.factories.feedback import FeedbackRepo
@@ -84,7 +84,7 @@ class BaseInjector:
             session=self.session,
             settings=self.settings,
         )
-        self.apihost_producer = ApiHostProducer(
+        self.apihost_producer = MP3TTSProducer(
             dsn_string=settings.rabbitmq.dsn,
             exchange_name='direct',
             adapter=self.adapter

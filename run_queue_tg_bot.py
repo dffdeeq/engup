@@ -33,12 +33,29 @@ async def main():
     tg_bot_worker = TgBotWorker(
         repo=TempDataRepo(TempData, session),
         dsn_string=settings.rabbitmq.dsn,
+        settings=settings,
         queue_name='tg_bot',
         session=session,
         status_service=status_service
     )
-    await tg_bot_worker.start_listening(
-        'tg_bot_return_simple_result_to_user', tg_bot_worker.process_return_simple_result_task)
+
+    tg_bot_sender = TgBotWorker(
+        repo=TempDataRepo(TempData, session),
+        dsn_string=settings.rabbitmq.dsn,
+        settings=settings,
+        queue_name='tg_bot_sender',
+        session=session,
+        status_service=status_service
+    )
+
+    await asyncio.gather(
+        tg_bot_worker.start_listening(
+            'tg_bot_return_simple_result_to_user', tg_bot_worker.process_return_simple_result_task,
+        ),
+        tg_bot_sender.start_listening(
+            'log_error_into_support_group', tg_bot_sender.log_error_into_support_group,
+        ),
+    )
 
 
 if __name__ == '__main__':
