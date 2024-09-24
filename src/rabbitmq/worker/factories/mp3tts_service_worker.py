@@ -9,7 +9,9 @@ from sqlalchemy import update, and_, select
 from sqlalchemy.ext.asyncio import async_sessionmaker
 
 from src.postgres.models.temp_data import TempData
+from src.postgres.models.tg_user import TgUser
 from src.postgres.models.tg_user_question import TgUserQuestion
+from src.rabbitmq.worker.enums import ErrorTypeEnum
 from src.rabbitmq.worker.factory import RabbitMQWorkerFactory
 from src.repos.factories.temp_data import TempDataRepo
 from src.services.factories.mp3tts import MP3TTSService
@@ -111,24 +113,43 @@ class MP3TTSWorker(RabbitMQWorkerFactory):
                 })
             return collected_data
 
-    async def send_files_to_transcription(self, filepaths: T.Dict[str, T.List[str]]) -> None:
-        try:
-            await self.mp3tts_service.send_to_transcription(filepaths['file_names'])
-        except Exception as e:
-            logging.error(e)
-            await self.fal_ai_process_transcription(filepaths)
-            return
-        logging.info('waiting mp3tts for 5 minutes...')
-        await asyncio.sleep(10)  # change 10s to 5min
-        await self.fal_ai_process_transcription(filepaths)
+    async def send_files_to_transcription(self, data: T.Dict[str, T.Any]) -> None:
+        user_obj = await self.user_service.get_tg_user_by_uq_id(data['uq_id'])
+        filenames = [os.path.basename(file) for file in data['file_names']]
+        if await self.get_non_existent_temp_data(filenames):
+            try:
+                if not self.mp3tts_service.settings.mp3tts.debug_mode:
+                    await self.mp3tts_service.send_to_transcription(data['file_names'])
+            except Exception as e:
+                logging.error(e)
+                await self.fal_ai_process_transcription(filenames, data['uq_id'], user_obj, str(e))
+                return
+            timeout = 5*60
+            logging.info(f'waiting mp3tts for {timeout} seconds...')
+            await asyncio.sleep(timeout)
+            await self.fal_ai_process_transcription(
+                filenames, data['uq_id'], user_obj,
+                f'The mp3tts service did not send a webhook within {timeout} seconds, so the backup service '
+                'fal.ai is being used for transcription.'
+            )
+        else:
+            logging.info('temp data already updated, skipping...')
 
-    async def fal_ai_process_transcription(self, filepaths: T.Dict[str, T.List[str]]) -> None:
-        filenames = [os.path.basename(file) for file in filepaths['file_names']]
-        non_existent_filenames = await self.get_non_existent_temp_data(filenames)
-        if non_existent_filenames:
+    async def fal_ai_process_transcription(
+        self,
+        filenames: T.List[str],
+        uq_id: int,
+        user_obj: TgUser,
+        error_text: str = ''
+    ) -> None:
+        if non_existent_filenames := await self.get_non_existent_temp_data(filenames):
             logging.info('temp data is not yet updated')
-            non_existent_filepaths = [str(os.path.join(TEMP_FILES_DIR, f)) for f in non_existent_filenames]
-            await self.transcribe_files(non_existent_filepaths)
+            await self.log_error_into_support_group(uq_id, user_obj, ErrorTypeEnum.mp3tts, error_text)
+            try:
+                non_existent_filepaths = [str(os.path.join(TEMP_FILES_DIR, f)) for f in non_existent_filenames]
+                await self.transcribe_files(non_existent_filepaths)
+            except Exception as e:
+                await self.log_error_into_support_group(uq_id, user_obj, ErrorTypeEnum.fal_ai, str(e))
         logging.info('temp data updated')
 
     async def transcribe_files(self, filepaths: T.List[str]):
@@ -172,3 +193,22 @@ class MP3TTSWorker(RabbitMQWorkerFactory):
             url = await self.fal_client.upload_file_async(filepath)
             urls.append({'name': os.path.basename(filepath), 'url': url})
         return urls
+
+    async def log_error_into_support_group(
+        self,
+        uq_id: int,
+        user_obj: TgUser,
+        error_type: ErrorTypeEnum,
+        error_text: str
+    ):
+        if error_type == ErrorTypeEnum.mp3tts:
+            text = 'Mp3tts service error'
+        elif error_type == ErrorTypeEnum.fal_ai:
+            text = 'The transcription generation by the fal.ai service has failed. A retry will start in 1 hour.'
+        else:
+            text = 'Undescribed error'
+
+        text += f'\n\nuser_id: {user_obj.id}\n@{user_obj.username}\nuq_id: {uq_id}\n\n<code>{error_text}</code>'
+
+        data = {'error_text': text}
+        await self.publish(data, 'log_error_into_support_group')

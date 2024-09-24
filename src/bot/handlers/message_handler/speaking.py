@@ -14,7 +14,7 @@ from src.bot.handlers.defaults.menu_end_question import answer_menu_for_user_wit
     answer_menu_for_user_with_pts_or_sub
 from src.bot.injector import INJECTOR
 from src.postgres.enums import CompetenceEnum, PartEnum
-from src.rabbitmq.producer.factories.apihost import ApiHostProducer
+from src.rabbitmq.producer.factories.mp3tts import MP3TTSProducer
 from src.services.factories.S3 import S3Service
 from src.services.factories.answer_process import AnswerProcessService
 from src.services.factories.question import QuestionService
@@ -228,7 +228,7 @@ async def speaking_confirm_task(
     callback: types.CallbackQuery,
     state: FSMContext,
     tg_user_service: TgUserService,
-    apihost_producer: ApiHostProducer,
+    apihost_producer: MP3TTSProducer,
     answer_process: AnswerProcessService,
     status_service: StatusService,
     s3: S3Service
@@ -246,7 +246,7 @@ async def speaking_confirm_task(
 
     s3.download_files_list([os.path.basename(key) for key in filepaths])
 
-    await apihost_producer.create_task_send_to_transcription(filepaths, premium_queue=premium)
+    await apihost_producer.create_task_send_to_transcription(filepaths, state_data['uq_id'], premium_queue=premium)
     await status_service.change_qa_status(state_data['uq_id'], status='Sent for transcription.')
     await state.clear()
     builder = InlineKeyboardBuilder([
