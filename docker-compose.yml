@@ -37,6 +37,7 @@ services:
 
   engup_redis:
     container_name: engup_redis
+    restart: always
     image: "redis:7.2.1-alpine3.18"
     volumes:
       - ./data/redis:/data
@@ -45,6 +46,7 @@ services:
 
   engup_api:
     container_name: engup_api
+    restart: always
     build: .
     command: python run_api.py
     ports:
@@ -59,6 +61,7 @@ services:
 
   engup_tgbot:
     container_name: engup_tgbot
+    restart: always
     build: .
     command: /bin/sh -c "alembic upgrade head && python run_bot.py"
     volumes:
@@ -76,6 +79,7 @@ services:
 
   engup_mp3tts_worker:
     container_name: engup_mp3tts_worker
+    restart: always
     build: .
     command: python run_queue_mp3tts.py
     volumes:
@@ -106,6 +110,7 @@ services:
 
   engup_tg_bot_worker:
     container_name: engup_tg_bot_worker
+    restart: always
     build: .
     command: python run_queue_tg_bot.py
     environment:
@@ -118,6 +123,7 @@ services:
 
   engup_ap_scheduler:
     container_name: engup_ap_scheduler
+    restart: always
     volumes:
       - ./data:/app/data
     env_file:
