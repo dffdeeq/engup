@@ -11,6 +11,11 @@ class TextTemplates:
         '{q_a_part_3}'
     )
 
+    MP3TTS_TIMEOUT_ERROR = (
+        'The mp3tts service did not send a webhook within {timeout} seconds, '
+        'so the backup service fal.ai is being used for transcription.'
+    )
+
 
 class NeuralNetworkConstants:
     predict_params = {
