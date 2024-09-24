@@ -14,6 +14,7 @@ from src.postgres.models.tg_user_question import TgUserQuestion
 from src.rabbitmq.worker.enums import ErrorTypeEnum
 from src.rabbitmq.worker.factory import RabbitMQWorkerFactory
 from src.repos.factories.temp_data import TempDataRepo
+from src.services.constants import TextTemplates
 from src.services.factories.mp3tts import MP3TTSService
 from src.services.factories.status_service import StatusService
 from src.services.factories.tg_user import TgUserService
@@ -116,24 +117,26 @@ class MP3TTSWorker(RabbitMQWorkerFactory):
     async def send_files_to_transcription(self, data: T.Dict[str, T.Any]) -> None:
         user_obj = await self.user_service.get_tg_user_by_uq_id(data['uq_id'])
         filenames = [os.path.basename(file) for file in data['file_names']]
-        if await self.get_non_existent_temp_data(filenames):
-            try:
-                if not self.mp3tts_service.settings.mp3tts.debug_mode:
-                    await self.mp3tts_service.send_to_transcription(data['file_names'])
-            except Exception as e:
-                logging.error(e)
-                await self.fal_ai_process_transcription(filenames, data['uq_id'], user_obj, str(e))
-                return
-            timeout = 5*60
-            logging.info(f'waiting mp3tts for {timeout} seconds...')
-            await asyncio.sleep(timeout)
-            await self.fal_ai_process_transcription(
-                filenames, data['uq_id'], user_obj,
-                f'The mp3tts service did not send a webhook within {timeout} seconds, so the backup service '
-                'fal.ai is being used for transcription.'
-            )
-        else:
+        timeout = 5 * 60
+        message = TextTemplates.MP3TTS_TIMEOUT_ERROR.format(timeout=timeout)
+
+        if not await self.get_non_existent_temp_data(filenames):
             logging.info('temp data already updated, skipping...')
+            return
+
+        try:
+            if not self.mp3tts_service.settings.mp3tts.debug_mode:
+                result = await self.mp3tts_service.send_to_transcription(data['file_names'])
+                if result is None:
+                    raise Exception(message)
+        except Exception as e:
+            logging.error(e)
+            await self.fal_ai_process_transcription(filenames, data['uq_id'], user_obj, str(e))
+            return
+
+        logging.info(f'waiting mp3tts for {timeout} seconds...')
+        await asyncio.sleep(timeout)
+        await self.fal_ai_process_transcription(filenames, data['uq_id'], user_obj, message)
 
     async def fal_ai_process_transcription(
         self,
@@ -145,11 +148,13 @@ class MP3TTSWorker(RabbitMQWorkerFactory):
         if non_existent_filenames := await self.get_non_existent_temp_data(filenames):
             logging.info('temp data is not yet updated')
             await self.log_error_into_support_group(uq_id, user_obj, ErrorTypeEnum.mp3tts, error_text)
+
+            non_existent_filepaths = [str(os.path.join(TEMP_FILES_DIR, f)) for f in non_existent_filenames]
             try:
-                non_existent_filepaths = [str(os.path.join(TEMP_FILES_DIR, f)) for f in non_existent_filenames]
                 await self.transcribe_files(non_existent_filepaths)
             except Exception as e:
                 await self.log_error_into_support_group(uq_id, user_obj, ErrorTypeEnum.fal_ai, str(e))
+
         logging.info('temp data updated')
 
     async def transcribe_files(self, filepaths: T.List[str]):
