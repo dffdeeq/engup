@@ -3,8 +3,10 @@ import logging
 import os.path
 import typing as T  # noqa
 from collections import defaultdict
+from datetime import datetime, timedelta
 
 import fal_client
+from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from sqlalchemy import update, and_, select
 from sqlalchemy.ext.asyncio import async_sessionmaker
 
@@ -44,6 +46,9 @@ class MP3TTSWorker(RabbitMQWorkerFactory):
 
         os.environ["FAL_KEY"] = self.settings.nn_models.fal_key
         self.fal_client = fal_client
+
+        self.scheduler = AsyncIOScheduler()
+        self.scheduler.start()
 
     async def process_answers(self, updates: T.Dict[str, T.Any]):
         logging.info(f'---------- Start of Task {self.process_answers.__name__} ----------')
@@ -115,6 +120,7 @@ class MP3TTSWorker(RabbitMQWorkerFactory):
             return collected_data
 
     async def send_files_to_transcription(self, data: T.Dict[str, T.Any]) -> None:
+        logging.info('start sending files to transcription')
         user_obj = await self.user_service.get_tg_user_by_uq_id(data['uq_id'])
         filenames = [os.path.basename(file) for file in data['file_names']]
         timeout = 5 * 60
@@ -131,29 +137,31 @@ class MP3TTSWorker(RabbitMQWorkerFactory):
                     raise Exception(message)
         except Exception as e:
             logging.error(e)
-            await self.fal_ai_process_transcription(filenames, data['uq_id'], user_obj, str(e))
+            await self.fal_ai_process_transcription(filenames, user_obj, data, str(e))
             return
 
         logging.info(f'waiting mp3tts for {timeout} seconds...')
         await asyncio.sleep(timeout)
-        await self.fal_ai_process_transcription(filenames, data['uq_id'], user_obj, message)
+        await self.fal_ai_process_transcription(filenames, user_obj, data, message)
 
     async def fal_ai_process_transcription(
         self,
         filenames: T.List[str],
-        uq_id: int,
         user_obj: TgUser,
+        data=None,
         error_text: str = ''
     ) -> None:
         if non_existent_filenames := await self.get_non_existent_temp_data(filenames):
             logging.info('temp data is not yet updated')
-            await self.log_error_into_support_group(uq_id, user_obj, ErrorTypeEnum.mp3tts, error_text)
+            await self.log_error_into_support_group(data['uq_id'], user_obj, ErrorTypeEnum.mp3tts, error_text)
 
             non_existent_filepaths = [str(os.path.join(TEMP_FILES_DIR, f)) for f in non_existent_filenames]
             try:
                 await self.transcribe_files(non_existent_filepaths)
             except Exception as e:
-                await self.log_error_into_support_group(uq_id, user_obj, ErrorTypeEnum.fal_ai, str(e))
+                await self.log_error_into_support_group(data['uq_id'], user_obj, ErrorTypeEnum.fal_ai, str(e))
+                self.scheduler.add_job(self.send_files_to_transcription, 'date',
+                                       run_date=datetime.now() + timedelta(hours=1), args=(data, ))
 
         logging.info('temp data updated')
 
