@@ -64,7 +64,7 @@ class TgUserService(ServiceFactory):
             user = await self.repo.create_tg_user(
                 user_id=user_id, username=username, referrer_id=referrer_id, umt_data_dict=umt_data_dict
             )
-            await self.mark_user_pts(user_id, 'start', 3)
+            await self.mark_user_pts(user_id, 'start', 2)
             await self.mark_user_activity(user.id, 'add start free pt')
         return user
 

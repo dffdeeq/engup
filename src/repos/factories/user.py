@@ -44,6 +44,6 @@ class TgUserRepo(RepoFactory):
         umt_data_dict: T.Dict = None
     ) -> TgUser:
         user_obj = await self.insert_one(
-            id=user_id, username=username, referrer_id=referrer_id, utm_data_json=umt_data_dict, pts=3
+            id=user_id, username=username, referrer_id=referrer_id, utm_data_json=umt_data_dict, pts=2
         )
         return user_obj
