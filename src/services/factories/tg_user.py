@@ -8,6 +8,7 @@ from sqlalchemy.ext.asyncio import async_sessionmaker
 from src.libs.adapter import Adapter
 from src.postgres.models.tg_user import TgUser
 from src.postgres.models.tg_user_pts import TgUserPts
+from src.postgres.models.tg_user_question import TgUserQuestion
 from src.postgres.models.tg_user_wallet import TgUserWallet
 from src.repos.factories.activity import ActivityRepo
 from src.repos.factories.user import TgUserRepo
@@ -41,6 +42,16 @@ class TgUserService(ServiceFactory):
                 referrals = result.scalars().all()
                 return referrals  # noqa
 
+    async def get_tg_user_by_uq_id(self, uq_id: int) -> TgUser:
+        async with self.session() as session:
+            result = await session.execute(
+                select(TgUser)
+                .join(TgUserQuestion, TgUser.id == TgUserQuestion.user_id)
+                .where(and_(TgUserQuestion.id == uq_id))
+            )
+            user = result.scalars().first()
+            return user
+
     async def get_or_create_tg_user(
         self,
         user_id: int,
@@ -53,7 +64,7 @@ class TgUserService(ServiceFactory):
             user = await self.repo.create_tg_user(
                 user_id=user_id, username=username, referrer_id=referrer_id, umt_data_dict=umt_data_dict
             )
-            await self.mark_user_pts(user_id, 'start', 3)
+            await self.mark_user_pts(user_id, 'start', 2)
             await self.mark_user_activity(user.id, 'add start free pt')
         return user
 

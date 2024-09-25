@@ -7,7 +7,7 @@ from aiogram.utils.keyboard import InlineKeyboardBuilder
 
 from src.bot.core.states import AdminState
 from src.bot.injector import INJECTOR
-from src.rabbitmq.producer.factories.apihost import ApiHostProducer
+from src.rabbitmq.producer.factories.mp3tts import MP3TTSProducer
 from src.rabbitmq.producer.factories.gpt import GPTProducer
 from src.services.factories.S3 import S3Service
 from src.services.factories.answer_process import AnswerProcessService
@@ -53,7 +53,7 @@ async def admin_run_task(
     state: FSMContext,
     gpt_producer: GPTProducer,
     answer_process: AnswerProcessService,
-    apihost_producer: ApiHostProducer,
+    apihost_producer: MP3TTSProducer,
     s3: S3Service,
 ):
     try:
@@ -70,7 +70,7 @@ async def admin_run_task(
         filepaths = await answer_process.get_temp_data_filepaths(answer_process.session, uq_id)
         if filepaths:
             s3.download_files_list([os.path.basename(key) for key in filepaths])
-            await apihost_producer.create_task_send_to_transcription(filepaths, premium_queue=premium_queue)
+            await apihost_producer.create_task_send_to_transcription(filepaths, uq_id, premium_queue=premium_queue)
     elif to == 'gpt':
         await gpt_producer.create_task_generate_result(uq_id, premium_queue=premium_queue)
     else:

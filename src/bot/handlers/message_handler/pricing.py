@@ -116,7 +116,8 @@ async def successful_payment_handler(
             logging.error(f'Cannot parse method (pts/month_sub) {method}')
             return
         if user_instance:
-            await tg_user_service.mark_user_activity(message.from_user.id, f'buy {method}')
+            activity = 'subscription' if method == 'month_sub' else method
+            await tg_user_service.mark_user_activity(message.from_user.id, f'buy {activity}')
             await tg_user_service.mark_user_balance(message.from_user.id, 'Telegram', price, 'TGS')
             if method == 'pts':
                 await tg_user_service.mark_user_pts(message.from_user.id, 'buy', purchased_amount)
