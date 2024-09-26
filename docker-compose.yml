@@ -1,3 +1,9 @@
+x-logging: &default-log
+  driver: "json-file"
+  options:
+    max-size: "10m"
+    max-file: "5"
+
 services:
   engup_postgres:
     container_name: engup_postgres
@@ -58,6 +64,7 @@ services:
     depends_on:
       engup_rabbitmq:
         condition: service_healthy
+    logging: *default-log
 
   engup_tgbot:
     container_name: engup_tgbot
@@ -76,6 +83,7 @@ services:
         condition: service_healthy
       engup_postgres:
         condition: service_healthy
+    logging: *default-log
 
   engup_mp3tts_worker:
     container_name: engup_mp3tts_worker
@@ -91,6 +99,7 @@ services:
     depends_on:
       engup_rabbitmq:
         condition: service_healthy
+    logging: *default-log
 
   engup_gpt_worker:
     container_name: engup_gpt_worker
@@ -107,6 +116,7 @@ services:
     depends_on:
       engup_rabbitmq:
         condition: service_healthy
+    logging: *default-log
 
   engup_tg_bot_worker:
     container_name: engup_tg_bot_worker
@@ -120,6 +130,7 @@ services:
     depends_on:
       engup_rabbitmq:
         condition: service_healthy
+    logging: *default-log
 
   engup_ap_scheduler:
     container_name: engup_ap_scheduler
@@ -137,3 +148,4 @@ services:
     depends_on:
       engup_postgres:
         condition: service_healthy
+    logging: *default-log
