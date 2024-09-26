@@ -17,3 +17,11 @@ class PartEnum(str, enum.Enum):
 class SubscriptionStatusEnum(str, enum.Enum):
     active = 'active'
     inactive = 'inactive'
+
+
+class BlockTypeEnum(str, enum.Enum):
+    true_false = 'true_false'
+    match_headings = 'match_headings'
+    match_notions = 'match_notions'
+    complete_sentence = 'complete_sentence'
+    one_option_choice = 'one_option_choice'
