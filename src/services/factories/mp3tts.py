@@ -1,5 +1,4 @@
 import asyncio
-import logging
 import typing as T  # noqa
 import uuid
 
