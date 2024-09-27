@@ -1,5 +1,4 @@
 import asyncio
-import logging
 import typing as T  # noqa
 import uuid
 
@@ -30,15 +29,9 @@ class MP3TTSService(ServiceFactory):
             return transcribe_id
 
     async def _send_files_to_transcription(self, filepaths: T.List[str]) -> uuid.UUID:
-        try:
-            transcription = await self.adapter.mp3tts_client.send_files_to_transcription(filepaths)
-            return transcription.upload_id
-        except Exception as e:
-            logging.error(e)
+        transcription = await self.adapter.mp3tts_client.send_files_to_transcription(filepaths)
+        return transcription.upload_id
 
     async def _confirm_transcription(self, transcription_id: uuid.UUID) -> uuid.UUID:
-        try:
-            transcription = await self.adapter.mp3tts_client.confirm_transcription(transcription_id)
-            return transcription.transcribe_id
-        except Exception as e:
-            logging.error(e)
+        transcription = await self.adapter.mp3tts_client.confirm_transcription(transcription_id)
+        return transcription.transcribe_id
