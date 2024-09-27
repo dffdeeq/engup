@@ -28,7 +28,8 @@ router = Router(name=__name__)
     F.data.startswith('writing'),
     INJECTOR.inject_tg_user,
     INJECTOR.inject_question,
-    INJECTOR.inject_uq
+    INJECTOR.inject_uq,
+    INJECTOR.inject_subscription
 )
 async def writing_start(
     callback: types.CallbackQuery,
@@ -36,6 +37,7 @@ async def writing_start(
     tg_user_service: TgUserService,
     question_service: QuestionService,
     uq_service: UserQuestionService,
+    subscription_service: SubscriptionService,
 ):
     if len(callback.data.split()) == 1:
         await tg_user_service.mark_user_activity(callback.from_user.id, 'go to writing')
@@ -45,7 +47,6 @@ async def writing_start(
         card_title, card_body = question_json.get('card_title'), question_json.get('card_body')
         essay_description, paragraphs = await question_service.get_question_essay_parts(card_title)
 
-        await state.set_state(WritingState.get_user_answer)
         uq_instance = await uq_service.get_or_create_user_question(
             user_id=callback.from_user.id, question_id=question.id)
         await state.set_data({
@@ -66,16 +67,22 @@ async def writing_start(
     else:
         await callback.answer()
         await tg_user_service.mark_user_activity(callback.from_user.id, 'button start writing')
-        state_data = await state.get_data()
-        for text in [
-            DefaultMessages.WRITING_FIRST_PARAGRAPH_1.format(card_text=state_data['card_body']),
-            DefaultMessages.WRITING_FIRST_PARAGRAPH_2.format(
-                essay_type=state_data['card_title'], essay_description=state_data['essay_description']
-            ),
-            DefaultMessages.WRITING_FIRST_PARAGRAPH_3.format(first_paragraph_info=state_data['paragraphs'][0])
-        ]:
-            await asyncio.sleep(2)
-            await callback.message.answer(text=text)
+
+        user = await tg_user_service.get_or_create_tg_user(callback.from_user.id)
+        if await subscription_service.user_have_active_subscription(user.id) or user.pts >= 1:
+            await state.set_state(WritingState.get_user_answer)
+            state_data = await state.get_data()
+            for text in [
+                DefaultMessages.WRITING_FIRST_PARAGRAPH_1.format(card_text=state_data['card_body']),
+                DefaultMessages.WRITING_FIRST_PARAGRAPH_2.format(
+                    essay_type=state_data['card_title'], essay_description=state_data['essay_description']
+                ),
+                DefaultMessages.WRITING_FIRST_PARAGRAPH_3.format(first_paragraph_info=state_data['paragraphs'][0])
+            ]:
+                await asyncio.sleep(2)
+                await callback.message.answer(text=text)
+        else:
+            await answer_menu_for_user_without_pts_and_sub(callback)
 
 
 @router.message(
@@ -108,7 +115,7 @@ async def writing_get_paragraphs(
         await state.update_data({'current_paragraph': next_paragraph, 'user_paragraphs': user_paragraphs})
 
         text = DefaultMessages.WRITING_PARAGRAPH_DEFAULT.format(
-            paragraph=question_service.number_to_text(next_paragraph+1),
+            paragraph=question_service.number_to_text(next_paragraph + 1),
             paragraph_info=paragraphs[next_paragraph]
         )
         await message.answer(text=text)
@@ -123,12 +130,9 @@ async def writing_get_paragraphs(
     user_answer_json = await uq_service.format_question_answer_to_dict(state_data['card_body'], user_essay)
     await state.update_data({'user_answer_json': user_answer_json, 'task_ready_to_proceed': 'writing'})
 
-    if await subscription_service.user_have_active_subscription(user.id):
-        await answer_menu_for_user_with_pts_or_sub(message, CompetenceEnum.writing, 'subscription')
-    elif user.pts >= 1:
-        await answer_menu_for_user_with_pts_or_sub(message, CompetenceEnum.writing, 'premium')
-    else:
-        await answer_menu_for_user_without_pts_and_sub(message)
+    status = 'subscription' if await subscription_service.user_have_active_subscription(
+        user.id) else 'premium' if user.pts >= 1 else 'subscription'
+    await answer_menu_for_user_with_pts_or_sub(message, CompetenceEnum.writing, status)
 
 
 @router.callback_query(
