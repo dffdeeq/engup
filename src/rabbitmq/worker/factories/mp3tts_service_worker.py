@@ -131,7 +131,10 @@ class MP3TTSWorker(RabbitMQWorkerFactory):
             return
 
         try:
-            if not self.mp3tts_service.settings.mp3tts.debug_mode:
+            if self.mp3tts_service.settings.mp3tts.debug_mode:
+                await self.fal_ai_process_transcription(filenames, user_obj, data, message)
+                return
+            else:
                 result = await self.mp3tts_service.send_to_transcription(data['file_names'])
                 if result is None:
                     raise Exception(message)
