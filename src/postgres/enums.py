@@ -20,8 +20,7 @@ class SubscriptionStatusEnum(str, enum.Enum):
 
 
 class BlockTypeEnum(str, enum.Enum):
+    type_word = 'type_word'
     true_false = 'true_false'
-    match_headings = 'match_headings'
-    match_notions = 'match_notions'
-    complete_sentence = 'complete_sentence'
-    one_option_choice = 'one_option_choice'
+    multi_choice = 'multi_choice'
+    choose_letter = 'choose_letter'
