@@ -5,9 +5,19 @@ from starlette.status import HTTP_201_CREATED
 from src.api.depends import get_question_service
 from src.api.question.schemas import QuestionObjectSchema, UpdateObjectSchema, QuestionObjectResponseSchema, \
     MessageResponse
+from src.postgres.enums import CompetenceEnum
 from src.services.factories.question import QuestionService
 
 router = APIRouter(prefix='/questions')
+
+
+@router.get(
+    "/get",
+    response_model=QuestionObjectResponseSchema,
+)
+async def get_question(user_id: int, question_service: QuestionService = Depends(get_question_service)):
+    question = await question_service.get_or_generate_question_for_user(user_id, CompetenceEnum.reading)
+    return question
 
 
 @router.post(
