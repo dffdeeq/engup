@@ -54,7 +54,7 @@ class ResultService(ServiceFactory):
         competence: CompetenceEnum,
         premium: bool = False,
         **kwargs
-    ) -> T.Tuple[T.List, str]:
+    ) -> T.Tuple[T.List, str, T.Dict]:
         self.check_or_load_models()
         request_text = await UQService.format_user_qa_to_full_text(instance.user_answer_json, competence)
 
@@ -70,7 +70,7 @@ class ResultService(ServiceFactory):
             additional_dict = await self.generate_gpt_result_and_format(instance.user_answer_json, competence)
             await self.user_service.mark_user_activity(instance.user_id, 'use gpt request')
 
-        result, extended_output = await self._generate_result_local_model(
+        result, extended_output, raw_results = await self._generate_result_local_model(
             request_text, competence, premium, **kwargs,
             answers_text_only=answers_text_only, file_paths=file_paths,
             user_qa=instance.user_answer_json, uq_id=instance.id, additional_dict=additional_dict
@@ -85,7 +85,7 @@ class ResultService(ServiceFactory):
         if competence == CompetenceEnum.speaking:
             self._clear_temp_files(file_paths)
 
-        return result, extended_output
+        return result, extended_output, raw_results
 
     async def generate_gpt_result_and_format(self, user_answer_json: T.Dict, competence: CompetenceEnum) -> T.Dict:
         additional_request_text = await UQService.format_user_qa_to_text_for_gpt(user_answer_json, competence)
@@ -111,7 +111,7 @@ class ResultService(ServiceFactory):
         competence: CompetenceEnum,
         premium: bool = False,
         **kwargs
-    ) -> T.Tuple[T.List[str], str]:
+    ) -> T.Tuple[T.List[str], str, T.Dict]:
         additional_dict = kwargs.get('additional_dict', {})
         pronunciation_text = ''
         predict_params = NNConstants.predict_params[competence]
@@ -156,7 +156,7 @@ class ResultService(ServiceFactory):
             grammar_errors = self.format_grammar_errors(gr_errors, lxc_errors, pnkt_errors, competence)
             result.extend(grammar_errors)
         extended_output = self.dict_to_string(results)
-        return result, extended_output
+        return result, extended_output, results
 
     async def get_pronunciation(self, uq_id: int, filepaths, premium: bool = False):
         await self.simple_worker.initialize()

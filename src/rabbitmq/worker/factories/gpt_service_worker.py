@@ -66,12 +66,12 @@ class GPTWorker(RabbitMQWorkerFactory):
         is_admin = True if str(user.id) in self.result_service.settings.bot.admin_ids else False
 
         if competence == CompetenceEnum.writing:
-            result, extended_output = await self.result_service.generate_result(
+            result, extended_output, raw_results = await self.result_service.generate_result(
                 instance, competence, premium=data['priority'], extended_output=True
             )
 
         elif competence == CompetenceEnum.speaking:
-            result, extended_output = await self.result_service.generate_result(
+            result, extended_output, raw_results = await self.result_service.generate_result(
                 instance, competence, premium=data['priority'], extended_output=True
             )
             await self.user_service.mark_user_activity(user.id, 'use voice request')
@@ -94,7 +94,7 @@ class GPTWorker(RabbitMQWorkerFactory):
                     'user_id': user.id,
                     'result': result,
                     'uq_id': data['uq_id'],
-                    'less_than_three_points': less_than_three_points
+                    'less_than_three_points': less_than_three_points,
                 },
                 'tg_bot_return_simple_result_to_user',
                 self.get_priority(data['priority'])
