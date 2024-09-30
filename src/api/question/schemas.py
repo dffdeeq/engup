@@ -15,8 +15,6 @@ class QuestionSchema(pydantic.BaseModel):
 class QuestionBlockSchema(pydantic.BaseModel):
     id: int
     content: str
-    heading: str
-    description: str
     block_type: BlockTypeEnum
     questions: T.List[QuestionSchema]
 
