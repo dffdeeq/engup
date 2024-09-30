@@ -79,6 +79,7 @@ class GPTWorker(RabbitMQWorkerFactory):
             return
 
         less_than_three_points = True if user.pts < 3 else False
+        bad_pronunciation = True if raw_results['pr_Pronunciation'] < 7 else False
 
         if result:
             uq_result = result.copy()
@@ -95,6 +96,7 @@ class GPTWorker(RabbitMQWorkerFactory):
                     'result': result,
                     'uq_id': data['uq_id'],
                     'less_than_three_points': less_than_three_points,
+                    'bad_pronunciation': bad_pronunciation,
                 },
                 'tg_bot_return_simple_result_to_user',
                 self.get_priority(data['priority'])
