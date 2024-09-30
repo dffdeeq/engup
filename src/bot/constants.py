@@ -74,6 +74,10 @@ It looks like you have less than 3 points remaining in your balance. To continue
 Choose the option that works best for you and continue your IELTS Speaking journey without any delays. Thank you for being a part of our community!
     """
 
+    BAD_PRONUNCIATION_ALERT = """
+Bad pronunciation alert
+"""
+
 
 class SpeakingMessages:
     DEFAULT_MESSAGE = """
