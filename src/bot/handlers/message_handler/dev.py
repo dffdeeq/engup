@@ -15,7 +15,7 @@ from src.services.factories.answer_process import AnswerProcessService
 router = Router(name=__name__)
 
 
-@router.callback_query(F.data.startswith('admin_run_task_processing'), INJECTOR.inject_tg_user)
+@router.callback_query(F.data.startswith('dev_run_task_processing'), INJECTOR.inject_tg_user)
 async def admin_run_task_processing(callback: types.CallbackQuery, state: FSMContext):
     processing_option = callback.data.split()[1]
     prem = False
@@ -26,15 +26,15 @@ async def admin_run_task_processing(callback: types.CallbackQuery, state: FSMCon
 
     builder = InlineKeyboardBuilder([
         [
-            InlineKeyboardButton(text='To mp3tts', callback_data='admin_to apihost'),
-            InlineKeyboardButton(text='To gpt', callback_data='admin_to gpt'),
+            InlineKeyboardButton(text='To mp3tts', callback_data='dev_to apihost'),
+            InlineKeyboardButton(text='To gpt', callback_data='dev_to gpt'),
         ],
     ])
 
     await callback.message.edit_text(text='Choose', reply_markup=builder.as_markup())
 
 
-@router.callback_query(F.data.startswith('admin_to'), INJECTOR.inject_tg_user)
+@router.callback_query(F.data.startswith('dev_to'), INJECTOR.inject_tg_user)
 async def admin_to_(callback: types.CallbackQuery, state: FSMContext):
     to = callback.data.split()[1]
     await state.update_data({'to': to})
