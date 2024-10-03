@@ -8,7 +8,7 @@ WITH WeekCalculation AS (
 ActivityData AS (
   SELECT
         a.user_id,
-        BOOL_OR(a.activity_name = 'buy points' AND EXTRACT(WEEK FROM a.activity_timestamp) = wc.week_minus_1) AS is_pay_user,
+        BOOL_OR((a.activity_name = 'buy points' OR a.activity_name = 'buy subscription') AND EXTRACT(WEEK FROM a.activity_timestamp) = wc.week_minus_1) AS is_pay_user,
         COUNT(*) FILTER (WHERE EXTRACT(WEEK FROM a.activity_timestamp) = wc.week_minus_1) > 0 AS is_active_user,
         BOOL_OR(EXTRACT(WEEK FROM a.activity_timestamp) = wc.week_minus_2) AS is_active_two_weeks_ago
     FROM
