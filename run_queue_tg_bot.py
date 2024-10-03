@@ -48,6 +48,15 @@ async def main():
         status_service=status_service
     )
 
+    # tg_bot_mailing = TgBotWorker(
+    #     repo=TempDataRepo(TempData, session),
+    #     dsn_string=settings.rabbitmq.dsn,
+    #     settings=settings,
+    #     queue_name='tg_bot_mailing',
+    #     session=session,
+    #     status_service=status_service
+    # )
+
     await asyncio.gather(
         tg_bot_worker.start_listening(
             'tg_bot_return_simple_result_to_user', tg_bot_worker.process_return_simple_result_task,

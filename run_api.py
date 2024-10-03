@@ -3,7 +3,7 @@ import logging
 from fastapi import FastAPI, Depends
 from fastapi.middleware.cors import CORSMiddleware
 
-from src.api.depends import get_apihost_producer, get_metrics_repo, get_question_service
+from src.api import depends
 from src.api.mp3tts.router import router as mp3tts_router
 from src.api.metrics.router import router as metrics_router
 from src.api.question.router import router as question_router
@@ -16,9 +16,10 @@ def create_app() -> FastAPI:
     )
 
     app = FastAPI(dependencies=[
-        Depends(get_apihost_producer),
-        Depends(get_metrics_repo),
-        Depends(get_question_service)
+        Depends(depends.get_apihost_producer),
+        Depends(depends.get_metrics_repo),
+        Depends(depends.get_question_service),
+        Depends(depends.get_user_question_service)
     ])
 
     app.include_router(mp3tts_router)

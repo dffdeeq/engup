@@ -82,6 +82,13 @@ class TgBotWorker(RabbitMQWorkerFactory):
         error_text = data['error_text']
         await self.send_messages([self.settings.bot.support_group_id, ], error_text)
 
+    async def mailing(self, data: T.Dict[str, T.Any]):
+        users_list = data['users_list']
+        # text = data['text']
+
+        if users_list == 'all':
+            pass
+
     @staticmethod
     def get_less_than_three_points_msg_and_keyboard() -> T.Tuple[str, InlineKeyboardBuilder]:
         text = DefaultMessages.LOW_POINTS_BALANCE_ALERT
