@@ -12,7 +12,7 @@ from pydantic import ValidationError
 from sqlalchemy import insert, select, and_, cast, String
 from sqlalchemy.ext.asyncio import async_sessionmaker
 
-from src.api.question.schemas import TestSchema
+from src.api.question.schemas.test import TestSchema
 from src.libs.adapter import Adapter
 from src.postgres.enums import CompetenceEnum
 from src.repos.factories.question import QuestionRepo
