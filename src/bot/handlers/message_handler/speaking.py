@@ -35,6 +35,7 @@ router = Router(name=__name__)
     INJECTOR.inject_question,
     INJECTOR.inject_uq,
     INJECTOR.inject_answer_process,
+    INJECTOR.inject_subscription
 )
 async def speaking_start(
     callback: types.CallbackQuery,
@@ -42,6 +43,7 @@ async def speaking_start(
     tg_user_service: TgUserService,
     question_service: QuestionService,
     uq_service: UserQuestionService,
+    subscription_service: SubscriptionService,
 ):
     if len(callback.data.split()) == 1:
         await tg_user_service.mark_user_activity(callback.from_user.id, 'go to speaking')
@@ -54,7 +56,6 @@ async def speaking_start(
         uq_instance = await uq_service.get_or_create_user_question(callback.from_user.id, question.id)
         question_json: T.Dict = json.loads(question.question_json)
 
-        await state.set_state(SpeakingState.first_part)
         await state.set_data({
             'part_1_questions': question_json['part_1'],
             'part_2_question': question_json['part_2'],
@@ -77,11 +78,18 @@ async def speaking_start(
         )
     else:
         await tg_user_service.mark_user_activity(callback.from_user.id, 'button start speaking')
-        await callback.answer(text='Generating the question, please wait a few seconds...', show_alert=True)
-        state_data = await state.get_data()
-        input_file = await question_service.get_buffered_input_file_for_question_text(state_data['part_1_questions'][0])
-        await callback.message.answer_voice(
-            voice=input_file, caption=f"<blockquote>{state_data['part_1_questions'][0]}</blockquote>")
+        user = await tg_user_service.get_or_create_tg_user(callback.from_user.id)
+        if await subscription_service.user_have_active_subscription(user.id) or user.pts >= 1:
+            await state.set_state(SpeakingState.first_part)
+            await callback.answer(text='Generating the question, please wait a few seconds...', show_alert=True)
+            state_data = await state.get_data()
+            input_file = await question_service.get_buffered_input_file_for_question_text(
+                state_data['part_1_questions'][0]
+            )
+            await callback.message.answer_voice(
+                voice=input_file, caption=f"<blockquote>{state_data['part_1_questions'][0]}</blockquote>")
+        else:
+            await answer_menu_for_user_without_pts_and_sub(callback)
 
 
 @router.message(
@@ -208,12 +216,9 @@ async def speaking_third_part(
         await tg_user_service.mark_user_activity(message.from_user.id, 'end speaking')
         await state.update_data({'task_ready_to_proceed': 'speaking'})
 
-        if await subscription_service.user_have_active_subscription(user.id):
-            await answer_menu_for_user_with_pts_or_sub(message, CompetenceEnum.speaking, 'subscription')
-        elif user.pts >= 1:
-            await answer_menu_for_user_with_pts_or_sub(message, CompetenceEnum.speaking, 'premium')
-        else:
-            await answer_menu_for_user_without_pts_and_sub(message)
+        status = 'subscription' if await subscription_service.user_have_active_subscription(
+            user.id) else 'premium' if user.pts >= 1 else 'subscription'
+        await answer_menu_for_user_with_pts_or_sub(message, CompetenceEnum.speaking, status)
 
 
 @router.callback_query(
