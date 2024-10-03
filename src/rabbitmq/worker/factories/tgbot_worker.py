@@ -5,7 +5,7 @@ import asyncio
 from functools import wraps
 
 from aio_pika import Message
-from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
+from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup, WebAppInfo
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 from sqlalchemy.ext.asyncio import async_sessionmaker
 from tqdm.asyncio import tqdm
@@ -64,6 +64,9 @@ class TgBotWorker(RabbitMQWorkerFactory):
             logger.info(msg)
             await self.send_messages([data['user_id']], msg)
 
+        if data['bad_pronunciation']:
+            msg, builder = self.get_pronunciation_mini_app()
+            await self.bot.send_message(data['user_id'], msg, reply_markup=builder.as_markup())
         if data['less_than_three_points']:
             msg, builder = self.get_less_than_three_points_msg_and_keyboard()
             await self.bot.send_message(data['user_id'], msg, reply_markup=builder.as_markup())
@@ -75,7 +78,7 @@ class TgBotWorker(RabbitMQWorkerFactory):
 
         await self.status_service.change_qa_status(data['uq_id'], status='Finished.')
 
-    async def send_messages(self, chat_ids: T.List, message: str) -> int:
+    async def send_messages(self, chat_ids: T.List[int], message: str) -> None:
         i = 0
         async for user_id in tqdm(chat_ids, desc="Sending messages", total=len(chat_ids)):
             try:
@@ -89,6 +92,17 @@ class TgBotWorker(RabbitMQWorkerFactory):
     async def log_error_into_support_group(self, data: T.Dict[str, T.Any]):
         error_text = data['error_text']
         await self.send_messages([self.settings.bot.support_group_id, ], error_text)
+
+    def get_pronunciation_mini_app(self) -> T.Tuple[str, InlineKeyboardBuilder]:
+        text = DefaultMessages.BAD_PRONUNCIATION_ALERT
+        builder = InlineKeyboardBuilder([
+            [
+                InlineKeyboardButton(
+                    text="Open Mini App",
+                    web_app=WebAppInfo(url=self.settings.bot.mini_app_pronunciation_url))
+            ]
+        ])
+        return text, builder
 
     async def mailing(self, data: T.Dict[str, T.Any]):
         users_list = data['users_list']

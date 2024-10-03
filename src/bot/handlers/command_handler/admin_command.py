@@ -16,4 +16,4 @@ async def command_admin_menu_handler(message: Message, tg_user_service: TgUserSe
         return
 
     await tg_user_service.get_or_create_tg_user(message.from_user.id, message.from_user.username)
-    await answer_admin_menu(message)
+    await answer_admin_menu(message, tg_user_service.settings.bot.mini_app_pronunciation_url)
