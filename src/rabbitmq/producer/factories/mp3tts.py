@@ -22,7 +22,7 @@ class MP3TTSProducer(RabbitMQProducerFactory):
                 'utf-8'),
             content_type='json',
         )
-        await self._publish(message, 'apihost_to_transcription', priority=self.get_priority(premium_queue))
+        await self.publish(message, 'apihost_to_transcription', priority=self.get_priority(premium_queue))
 
     async def create_task_update_answers(
         self,
@@ -33,4 +33,4 @@ class MP3TTSProducer(RabbitMQProducerFactory):
             body=bytes(json.dumps({'file_names': answers_and_filenames}), 'utf-8'),
             content_type='json',
         )
-        await self._publish(message, 'apihost_update_answers', priority=self.get_priority(premium_queue))
+        await self.publish(message, 'apihost_update_answers', priority=self.get_priority(premium_queue))

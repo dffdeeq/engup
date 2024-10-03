@@ -20,7 +20,7 @@ class GPTProducer(RabbitMQProducerFactory):
             body=bytes(json.dumps({'uq_id': uq_id}), 'utf-8'),
             content_type='json',
         )
-        await self._publish(
+        await self.publish(
             message,
             'gpt_generate_result_use_local_model',
             priority=self.get_priority(premium_queue)

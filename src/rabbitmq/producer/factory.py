@@ -37,7 +37,7 @@ class RabbitMQProducerFactory:
         self.connection_max_retries: int = max_retries
         self.connection_retry_delay: float = retry_delay
 
-    async def _publish(self, message: Message, routing_key: str, priority: int = 0):
+    async def publish(self, message: Message, routing_key: str, priority: int = 0):
         channel = await self.__get_channel()
         exchange = await self.__get_exchange(channel)
         message.priority = priority

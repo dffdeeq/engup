@@ -1,5 +1,6 @@
 import asyncio
 import hashlib
+import logging
 import os.path
 import typing as T  # noqa
 import uuid
@@ -7,9 +8,11 @@ import uuid
 import pandas as pd
 import requests
 from aiogram.types import CallbackQuery, BufferedInputFile
-from sqlalchemy import insert
+from pydantic import ValidationError
+from sqlalchemy import insert, select, and_, cast, String
 from sqlalchemy.ext.asyncio import async_sessionmaker
 
+from src.api.question.schemas.test import TestSchema
 from src.libs.adapter import Adapter
 from src.postgres.enums import CompetenceEnum
 from src.repos.factories.question import QuestionRepo
@@ -33,6 +36,48 @@ class QuestionService(ServiceFactory):
         super().__init__(repo, adapter, session, settings)
         self.repo = repo
         self.s3_service = s3_service
+
+    async def create_question(
+        self,
+        competence: CompetenceEnum,
+        question_json: T.Dict,
+        is_active: bool = True,
+        question_audio_json: T.Dict = None
+    ) -> T.Optional[Question]:
+        async with self.session() as session:
+            query = select(Question).where(
+                and_(cast(Question.question_json['unique_id'], String) == str(question_json['unique_id']))
+            )
+            result = await session.execute(query)
+            obj = result.scalar()
+
+            if obj:
+                return None
+            else:
+                if competence == CompetenceEnum.reading:
+                    try:
+                        _ = TestSchema(**question_json)
+                    except ValidationError as e:
+                        logging.exception(f"Json does not validate {question_json} --> {e}")
+                        raise e
+                return await self.repo.create_question(competence, question_json, is_active, question_audio_json)
+
+    async def update_question(
+        self,
+        question_id: int,
+        competence: CompetenceEnum = None,
+        question_json: T.Dict = None,
+        is_active: bool = True,
+        question_audio_json: T.Dict = None
+    ):
+        if competence == CompetenceEnum.reading and question_json is not None:
+            try:
+                _ = TestSchema(**question_json)
+            except ValidationError as e:
+                logging.exception(f"Json does not validate {question_json} --> {e}")
+                raise e
+
+        return await self.repo.update_question(question_id, competence, question_json, is_active, question_audio_json)
 
     async def get_or_generate_question_for_user(
         self,

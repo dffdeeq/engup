@@ -2,7 +2,7 @@ import logging
 import typing as T # noqa
 
 from sqlalchemy import delete, update, insert
-from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.exc import SQLAlchemyError, IntegrityError
 from sqlalchemy.ext.asyncio import async_sessionmaker
 
 from src.postgres.base import Base
@@ -27,10 +27,14 @@ class RepoFactory:
                     await session.flush()
                     await session.refresh(instance)
                     return instance
+                except IntegrityError as e:
+                    await session.rollback()
+                    logging.error(f"Duplicate entry for {model.__name__}: {e}")
+                    raise ValueError(f"Duplicate entry for {model.__name__}: {e}")
                 except SQLAlchemyError as e:
                     await session.rollback()
                     logging.error(f"Error inserting {model.__name__}: {e}")
-                    raise
+                    raise e
 
     async def insert_many(self, *args: T.Any) -> T.List[Model]:
         async with self.session() as session:
@@ -38,16 +42,16 @@ class RepoFactory:
                 instances = await session.execute(insert(self.model).values(*args).returning(self.model))
                 return list(instances.scalars().all())
 
-    async def update(self, conditions: T.Dict[str, T.Any], values: T.Dict[str, T.Any]) -> int:
+    async def update(self, conditions: T.Dict[str, T.Any], values: T.Dict[str, T.Any]):
         async with self.session() as session:
             async with session.begin():
                 stmt = update(self.model).where(
                     *[getattr(self.model, k) == v for k, v in conditions.items()]
-                ).values(values)
+                ).values(values).returning(self.model)
                 try:
                     result = await session.execute(stmt)
                     await session.commit()
-                    return result.rowcount  # noqa
+                    return result.scalars().all()
                 except SQLAlchemyError as e:
                     await session.rollback()
                     logging.error(f"Error updating {self.model.__name__}: {e}")
@@ -60,7 +64,7 @@ class RepoFactory:
                 try:
                     result = await session.execute(stmt)
                     await session.commit()
-                    return result.rowcount()
+                    return result.rowcount  # noqa
                 except SQLAlchemyError as e:
                     await session.rollback()
                     logging.error(f"Error deleting from {self.model.__name__}: {e}")
