@@ -1,3 +1,4 @@
+import logging
 import typing as T  # noqa
 
 from sqlalchemy import select, not_, and_, func
@@ -12,6 +13,41 @@ from src.repos.factory import RepoFactory
 class QuestionRepo(RepoFactory):
     def __init__(self, model: T.Type[Question], session: async_sessionmaker):
         super().__init__(model, session)
+
+    async def create_question(
+        self,
+        competence: CompetenceEnum,
+        question_json: T.Dict,
+        is_active: bool = True,
+        question_audio_json: T.Dict = None
+    ):
+        return await self.insert_one(
+            competence=competence,
+            question_json=question_json,
+            is_active=is_active,
+            question_audio_json=question_audio_json
+        )
+
+    async def update_question(
+        self,
+        question_id: int,
+        competence: CompetenceEnum = None,
+        question_json: T.Dict = None,
+        is_active: bool = None,
+        question_audio_json: T.Dict = None
+    ) -> bool:
+        values = {
+            "competence": competence,
+            "question_json": question_json,
+            "is_active": is_active,
+            "question_audio_json": question_audio_json
+        }
+        values = {k: v for k, v in values.items() if v is not None}
+        if not values:
+            raise ValueError("At least one value must be provided")
+        instance = await self.update({'id': question_id}, values)
+        logging.info(instance)
+        return instance
 
     async def get_question_by_id(self, question_id: int) -> T.Optional[Question]:
         async with self.session() as session:

@@ -20,7 +20,9 @@ pipelines:
                   COMMAND: |
                     cd /opt/enguptelegramrepo
                     git pull
-                    docker-compose up -d --build
+                    docker-compose build
+                    docker-compose up -d
+                    docker system prune -f
     main:
       - parallel:
         - step:
@@ -39,7 +41,9 @@ pipelines:
                   COMMAND: |
                     cd /opt/engup
                     git pull
-                    docker-compose up -d --build
+                    docker-compose build
+                    docker-compose up -d
+                    docker system prune -f
   default:
     - step:
         name: Lint code
