@@ -13,7 +13,7 @@ class WritingState(StatesGroup):
     ending = State()
 
 
-class AdminState(StatesGroup):
+class DevState(StatesGroup):
     get_uq_id = State()
 
 
@@ -21,3 +21,8 @@ class FeedbackState(StatesGroup):
     get_other_option = State()
 
     get_user_review = State()
+
+
+class AdminState(StatesGroup):
+    get_mailing_users_list = State()
+    get_mailing_msg = State()

@@ -5,7 +5,7 @@ from aiogram.fsm.context import FSMContext
 from aiogram.types import InlineKeyboardButton
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 
-from src.bot.core.states import AdminState
+from src.bot.core.states import DevState
 from src.bot.injector import INJECTOR
 from src.rabbitmq.producer.factories.mp3tts import MP3TTSProducer
 from src.rabbitmq.producer.factories.gpt import GPTProducer
@@ -21,7 +21,7 @@ async def dev_run_task_processing(callback: types.CallbackQuery, state: FSMConte
     prem = False
     if processing_option == 'premium':
         prem = True
-    await state.set_state(AdminState.get_uq_id)
+    await state.set_state(DevState.get_uq_id)
     await state.set_data({'premium': prem})
 
     builder = InlineKeyboardBuilder([
@@ -42,7 +42,7 @@ async def dev_to_(callback: types.CallbackQuery, state: FSMContext):
 
 
 @router.message(
-    AdminState.get_uq_id,
+    DevState.get_uq_id,
     INJECTOR.inject_s3,
     INJECTOR.inject_gpt_producer,
     INJECTOR.inject_answer_process,
