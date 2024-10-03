@@ -4,18 +4,19 @@ from aiogram.types import InlineKeyboardButton, Message, CallbackQuery
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 
 
-async def get_admin_menu() -> T.Tuple[str, InlineKeyboardBuilder]:
-    text = 'Admin Menu\n----------'
+async def get_dev_menu() -> T.Tuple[str, InlineKeyboardBuilder]:
+    text = 'Dev Menu\n----------'
     builder = InlineKeyboardBuilder([
         [
-            InlineKeyboardButton(text='Send message', callback_data='admin_start_send_msg'),
+            InlineKeyboardButton(text='Run task', callback_data='dev_run_task_processing default'),
+            InlineKeyboardButton(text='Run task premium', callback_data='dev_run_task_processing premium'),
         ],
     ])
     return text, builder
 
 
-async def answer_admin_menu(instance: T.Union[Message, CallbackQuery]) -> None:
-    text, builder = await get_admin_menu()
+async def answer_dev_menu(instance: T.Union[Message, CallbackQuery]) -> None:
+    text, builder = await get_dev_menu()
     if isinstance(instance, CallbackQuery):
         await instance.message.edit_text(text, reply_markup=builder.as_markup())
     else:

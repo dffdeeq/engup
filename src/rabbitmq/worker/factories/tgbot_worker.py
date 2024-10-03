@@ -8,6 +8,7 @@ from aio_pika import Message
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup, WebAppInfo
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 from sqlalchemy.ext.asyncio import async_sessionmaker
+from tqdm.asyncio import tqdm
 
 from src.bot.constants import DefaultMessages
 from src.bot.core.bot import get_bot
@@ -66,7 +67,6 @@ class TgBotWorker(RabbitMQWorkerFactory):
         if data['bad_pronunciation']:
             msg, builder = self.get_pronunciation_mini_app()
             await self.bot.send_message(data['user_id'], msg, reply_markup=builder.as_markup())
-
         if data['less_than_three_points']:
             msg, builder = self.get_less_than_three_points_msg_and_keyboard()
             await self.bot.send_message(data['user_id'], msg, reply_markup=builder.as_markup())
@@ -79,8 +79,15 @@ class TgBotWorker(RabbitMQWorkerFactory):
         await self.status_service.change_qa_status(data['uq_id'], status='Finished.')
 
     async def send_messages(self, chat_ids: T.List[int], message: str) -> None:
-        for user_id in chat_ids:
-            await self.bot.send_message(user_id, message)
+        i = 0
+        async for user_id in tqdm(chat_ids, desc="Sending messages", total=len(chat_ids)):
+            try:
+                await asyncio.sleep(0.2)
+                await self.bot.send_message(user_id, message)
+                i += 1
+            except Exception as e:
+                logger.info(f"Error sending message to user {user_id}: {e}")
+        return i
 
     async def log_error_into_support_group(self, data: T.Dict[str, T.Any]):
         error_text = data['error_text']
@@ -96,6 +103,12 @@ class TgBotWorker(RabbitMQWorkerFactory):
             ]
         ])
         return text, builder
+
+    async def mailing(self, data: T.Dict[str, T.Any]):
+        users_list = data['users_list']
+        text = data['text']
+        i = await self.send_messages(users_list, text)
+        await self.send_messages([data['sender_id']], f'{i}/{len(users_list)} users received mailing')
 
     @staticmethod
     def get_less_than_three_points_msg_and_keyboard() -> T.Tuple[str, InlineKeyboardBuilder]:
