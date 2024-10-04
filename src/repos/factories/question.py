@@ -59,10 +59,9 @@ class QuestionRepo(RepoFactory):
         """
         Returns the question associated with the given user and competence if available.
 
-        Checks if there's a question already started for the user. If found, returns it.
-        If no started question exists, retrieves another question based on competence.
+        Retrieves question based on competence.
 
-        If neither started nor available questions exist, returns None.
+        If available question doesn't exist, returns None.
 
         :param user_id: The ID of the user for whom to retrieve the question.
         :param competence: The lesson section (competence) for which to retrieve the question, e.g., 'writing', etc.
@@ -74,9 +73,6 @@ class QuestionRepo(RepoFactory):
         query = select(Question).where(
             not_(Question.id.in_(subq)),
             and_(Question.competence == competence, Question.is_active.is_(True))
-        ).outerjoin(
-            TgUserQuestion,
-            and_(TgUserQuestion.user_id == user_id, TgUserQuestion.question_id == Question.id)
         ).order_by(func.random())
 
         async with self.session() as session:
@@ -87,4 +83,4 @@ class QuestionRepo(RepoFactory):
         async with self.session() as session:
             query = select(QuestionAudioFile.filename).where(and_(QuestionAudioFile.text_hash == text_hash))
             result = await session.execute(query)
-            return result.scalar()  # TODO: find the better way to avoid multiple filenames
+            return result.scalar()

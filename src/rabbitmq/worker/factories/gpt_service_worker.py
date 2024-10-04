@@ -69,17 +69,19 @@ class GPTWorker(RabbitMQWorkerFactory):
             result, extended_output, raw_results = await self.result_service.generate_result(
                 instance, competence, premium=data['priority'], extended_output=True
             )
+            bad_pronunciation = False
 
         elif competence == CompetenceEnum.speaking:
             result, extended_output, raw_results = await self.result_service.generate_result(
                 instance, competence, premium=data['priority'], extended_output=True
             )
             await self.user_service.mark_user_activity(user.id, 'use voice request')
+
+            bad_pronunciation = True if raw_results['pr_Pronunciation'] < 7 else False
         else:
             return
 
         less_than_three_points = True if user.pts < 3 else False
-        bad_pronunciation = True if raw_results['pr_Pronunciation'] < 7 else False
 
         if result:
             uq_result = result.copy()

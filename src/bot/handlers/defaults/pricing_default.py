@@ -19,11 +19,11 @@ async def get_pricing(user: TgUser) -> T.Tuple[str, InlineKeyboardBuilder]:
         [InlineKeyboardButton(
             text='------------------------------', callback_data='not_implemented'),],
         [InlineKeyboardButton(
-            text='1 month subscription - 1500 ⭐', callback_data='buy_by_tg_stars month_sub 1'),],
+            text='1 month subscription - 1500 ⭐', callback_data='buy_by_tg_stars subscription 1'),],
         [InlineKeyboardButton(
-            text='3 month subscription - 4000 ⭐', callback_data='buy_by_tg_stars month_sub 3'),],
+            text='3 month subscription - 4000 ⭐', callback_data='buy_by_tg_stars subscription 3'),],
         [InlineKeyboardButton(
-            text='6 month subscription - 7000 ⭐', callback_data='buy_by_tg_stars month_sub 6'),],
+            text='6 month subscription - 7000 ⭐', callback_data='buy_by_tg_stars subscription 6'),],
         [InlineKeyboardButton(
             text='🔙 Back', callback_data='balance_menu'),],
     ])

@@ -41,14 +41,14 @@ async def buy_pts_by_tg_start(callback: types.CallbackQuery, tg_user_service: Tg
             10: [LabeledPrice(label="10 PTs", amount=450)],
             100: [LabeledPrice(label="100 PTs", amount=4000)]
         }
-    elif method == 'month_sub':
+    elif method == 'subscription':
         price = {
             1: [LabeledPrice(label="1 month", amount=1500)],
             3: [LabeledPrice(label="3 month", amount=4000)],
             6: [LabeledPrice(label="6 month", amount=7000)]
         }
     else:
-        logging.error('Cannot parse method (pts/month_sub)', method)
+        logging.error('Cannot parse method (pts/subscription)', method)
         return
 
     try:
@@ -109,15 +109,14 @@ async def successful_payment_handler(
     if user_id_from_payload == message.from_user.id:
         if method == 'pts':
             user_instance = await tg_user_service.add_points(user_id_from_payload, purchased_amount)
-        elif method == 'month_sub':
+        elif method == 'subscription':
             user_instance = await tg_user_service.get_or_create_tg_user(user_id_from_payload)
             await subscription_service.add_subscription(user_instance.id, purchased_amount)
         else:
-            logging.error(f'Cannot parse method (pts/month_sub) {method}')
+            logging.error(f'Cannot parse method (pts/subscription) {method}')
             return
         if user_instance:
-            activity = 'subscription' if method == 'month_sub' else method
-            await tg_user_service.mark_user_activity(message.from_user.id, f'buy {activity}')
+            await tg_user_service.mark_user_activity(message.from_user.id, f'buy {method}')
             await tg_user_service.mark_user_balance(message.from_user.id, 'Telegram', price, 'TGS')
             if method == 'pts':
                 await tg_user_service.mark_user_pts(message.from_user.id, 'buy', purchased_amount)
