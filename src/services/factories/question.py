@@ -6,6 +6,7 @@ import typing as T  # noqa
 import uuid
 
 import pandas as pd
+from redis import asyncio as aioredis
 import requests
 from aiogram.types import CallbackQuery, BufferedInputFile
 from pydantic import ValidationError
@@ -36,6 +37,7 @@ class QuestionService(ServiceFactory):
         super().__init__(repo, adapter, session, settings)
         self.repo = repo
         self.s3_service = s3_service
+        self.redis = aioredis.from_url(settings.redis.dsn, decode_responses=True)
 
     async def create_question(
         self,
@@ -119,9 +121,20 @@ class QuestionService(ServiceFactory):
 
     async def get_question_audio_filename(self, question_text: str):
         text_hash = hashlib.md5(question_text.encode('utf-8')).hexdigest()
-        filename = await self.repo.get_question_filename(text_hash)
-        if not filename:
-            filename = await self.synthesize_question_text(question_text, text_hash)
+        lock_key = f'synthesize_lock:{text_hash}'
+        not_locked = await self.redis.set(lock_key, "locked", ex=30, nx=True)
+        if not_locked:
+            filename = await self.repo.get_question_filename(text_hash)
+            if not filename:
+                filename = await self.synthesize_question_text(question_text, text_hash)
+        else:
+            for i in range(15):
+                filename = await self.repo.get_question_filename(text_hash)
+                if filename:
+                    break
+                await asyncio.sleep(2)
+            else:
+                filename = await self.synthesize_question_text(question_text, text_hash)
 
         return filename
 
