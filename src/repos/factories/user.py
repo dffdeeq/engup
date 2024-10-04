@@ -14,7 +14,7 @@ class TgUserRepo(RepoFactory):
     async def deduct_point(self, user_id: int) -> T.Optional[TgUser]:
         async with self.session() as session:
             async with session.begin():
-                user = await self.get_tg_user_by_tg_id(user_id)
+                user = await self.get_tg_user_by_tg_id(user_id, True)
                 if user.pts >= 1:
                     user.pts -= 1
                     session.add(user)
@@ -25,16 +25,18 @@ class TgUserRepo(RepoFactory):
     async def return_point(self, user_id: int) -> T.Optional[TgUser]:
         async with self.session() as session:
             async with session.begin():
-                user = await self.get_tg_user_by_tg_id(user_id)
+                user = await self.get_tg_user_by_tg_id(user_id, True)
                 user.pts += 1
                 session.add(user)
                 await session.commit()
                 await session.refresh(user)
                 return user
 
-    async def get_tg_user_by_tg_id(self, user_id: int) -> T.Optional[TgUser]:
+    async def get_tg_user_by_tg_id(self, user_id: int, for_update: bool = False) -> T.Optional[TgUser]:
         async with self.session() as session:
             query = select(TgUser).filter(and_(self.model.id == user_id))
+            if for_update:
+                query = query.with_for_update()
             user = await session.execute(query)
             return user.scalar_one_or_none()
 
