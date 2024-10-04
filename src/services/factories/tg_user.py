@@ -79,20 +79,21 @@ class TgUserService(ServiceFactory):
 
     async def add_points(self, user_id: int, points: int) -> T.Optional[TgUser]:
         async with self.session() as session:
-            try:
-                user_query = await session.execute(
-                    select(TgUser)
-                    .where(and_(TgUser.id == user_id)).with_for_update()
-                )
-                user = user_query.scalars().first()
-                if user is None:
+            async with session.begin():
+                try:
+                    user_query = await session.execute(
+                        select(TgUser)
+                        .where(and_(TgUser.id == user_id)).with_for_update()
+                    )
+                    user = user_query.scalars().first()
+                    if user is None:
+                        return
+                    user.pts += points
+                    session.add(user)
+                    await session.commit()
+                    await session.refresh(user)
+                    return user
+                except SQLAlchemyError as e:
+                    await session.rollback()
+                    logging.critical(e)
                     return
-                user.pts += points
-                session.add(user)
-                await session.commit()
-                await session.refresh(user)
-                return user
-            except SQLAlchemyError as e:
-                await session.rollback()
-                logging.critical(e)
-                return
